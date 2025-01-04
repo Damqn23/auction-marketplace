@@ -24,7 +24,7 @@ INSTALLED_APPS = [
     'auctions',
     'rest_framework',
     'corsheaders',
-    
+    'rest_framework_simplejwt',         # Add this line
 ]
 
 MIDDLEWARE = [
@@ -57,15 +57,13 @@ TEMPLATES = [
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
-    ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ),
 }
-
 WSGI_APPLICATION = 'config.wsgi.application'  # Replace 'config' with your project name if different
 
 # Database
@@ -123,3 +121,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     # Add other origins if necessary
 ]
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
