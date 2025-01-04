@@ -22,10 +22,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',          # Messaging framework
     'django.contrib.staticfiles',       # Static files handling
     'auctions',
+    'rest_framework',
+    'corsheaders',
     
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',      # Required for sessions
     'django.middleware.common.CommonMiddleware',
@@ -52,6 +55,16 @@ TEMPLATES = [
         },
     },
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+}
 
 WSGI_APPLICATION = 'config.wsgi.application'  # Replace 'config' with your project name if different
 
@@ -103,3 +116,10 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# settings.py
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    # Add other origins if necessary
+]
