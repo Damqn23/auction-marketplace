@@ -1,49 +1,47 @@
 // frontend/src/services/axiosConfig.js
 
 import axios from 'axios';
+import { refreshToken } from './authService';
+import { toast } from 'react-toastify';
 
 const axiosInstance = axios.create({
     baseURL: 'http://127.0.0.1:8000/api/',
     timeout: 5000,
     headers: {
         'Content-Type': 'application/json',
+        accept: 'application/json',
     },
 });
 
-// Request interceptor to add the token to headers
+// Add a request interceptor to include the JWT token in headers
 axiosInstance.interceptors.request.use(
-    (config) => {
+    config => {
         const token = localStorage.getItem('access_token');
         if (token) {
-            config.headers['Authorization'] = 'Bearer ' + token;
+            config.headers['Authorization'] = `Bearer ${token}`;
         }
         return config;
     },
-    (error) => Promise.reject(error)
+    error => {
+        return Promise.reject(error);
+    }
 );
 
-// Optional: Response interceptor to handle token refresh
+// Add a response interceptor to handle token refreshing
 axiosInstance.interceptors.response.use(
-    (response) => response,
-    async (error) => {
+    response => response,
+    async error => {
         const originalRequest = error.config;
-        if (
-            error.response.status === 401 &&
-            !originalRequest._retry &&
-            localStorage.getItem('refresh_token')
-        ) {
+        if (error.response.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             try {
-                const response = await axiosInstance.post('token/refresh/', {
-                    refresh: localStorage.getItem('refresh_token'),
-                });
-                localStorage.setItem('access_token', response.data.access);
-                axiosInstance.defaults.headers.common['Authorization'] =
-                    'Bearer ' + response.data.access;
+                await refreshToken();
+                const token = localStorage.getItem('access_token');
+                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
                 return axiosInstance(originalRequest);
             } catch (err) {
-                console.error('Token refresh failed:', err);
-                // Optionally, redirect to login
+                toast.error('Session expired. Please log in again.');
+                // Redirect to login page
                 window.location.href = '/login';
                 return Promise.reject(err);
             }

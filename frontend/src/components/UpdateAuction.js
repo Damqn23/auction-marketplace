@@ -1,12 +1,14 @@
-// src/components/UpdateAuction.js
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { getAuctionItem, updateAuctionItem } from '../services/auctionService';
 import { useParams, useNavigate } from 'react-router-dom'; // v6/v7
+import styles from './UpdateAuction.module.css'; // Import CSS Module
+import { UserContext } from '../contexts/UserContext'; // Import UserContext
+import { toast } from 'react-toastify'; // For toast notifications
 
 const UpdateAuction = () => {
     const { id } = useParams();
     const navigate = useNavigate(); // v6/v7
+    const { user } = useContext(UserContext); // Access current user
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -14,6 +16,7 @@ const UpdateAuction = () => {
     const [image, setImage] = useState(null);
     const [status, setStatus] = useState('active');
     const [message, setMessage] = useState('');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchAuctionItem();
@@ -24,14 +27,22 @@ const UpdateAuction = () => {
         try {
             const response = await getAuctionItem(id);
             const data = response.data;
+            // Check ownership
+            if (user && user.username !== data.owner) {
+                toast.error('You are not authorized to update this auction item.');
+                navigate('/');
+                return;
+            }
             setTitle(data.title);
             setDescription(data.description);
             setStartingBid(data.starting_bid);
             setStatus(data.status);
-            // Note: Image is optional to update
+            setLoading(false);
         } catch (err) {
             setMessage('Error fetching auction item');
             console.error('Error:', err);
+            toast.error('Error fetching auction item.');
+            setLoading(false);
         }
     };
 
@@ -49,41 +60,44 @@ const UpdateAuction = () => {
         try {
             await updateAuctionItem(id, formData);
             setMessage('Auction item updated successfully');
+            toast.success('Auction item updated successfully!');
             // Redirect to Auction List
             navigate('/');
         } catch (err) {
             setMessage('Error updating auction item');
             console.error('Error:', err);
+            toast.error('Failed to update auction item. Please try again.');
         }
     };
 
+    if (loading) return <p>Loading...</p>;
+
     return (
-        <div>
+        <div className={styles.container}>
             <h2>Update Auction Item</h2>
             <form onSubmit={handleSubmit}>
-                <div>
-                    <label>Title:</label><br />
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Title:</label>
                     <input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         required
-                        style={{ width: '300px' }}
+                        className={styles.input}
                     />
                 </div>
-                <div>
-                    <label>Description:</label><br />
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Description:</label>
                     <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         required
                         rows="4"
-                        cols="50"
-                        style={{ width: '300px' }}
+                        className={`${styles.input} ${styles.textarea}`}
                     ></textarea>
                 </div>
-                <div>
-                    <label>Starting Bid:</label><br />
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Starting Bid:</label>
                     <input
                         type="number"
                         value={startingBid}
@@ -91,31 +105,32 @@ const UpdateAuction = () => {
                         required
                         min="0"
                         step="0.01"
-                        style={{ width: '300px' }}
+                        className={`${styles.input}`}
                     />
                 </div>
-                <div>
-                    <label>Image:</label><br />
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Image:</label>
                     <input
                         type="file"
                         accept="image/*"
                         onChange={(e) => setImage(e.target.files[0])}
+                        className={`${styles.input}`}
                     />
                 </div>
-                <div>
-                    <label>Status:</label><br />
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Status:</label>
                     <select
                         value={status}
                         onChange={(e) => setStatus(e.target.value)}
-                        style={{ width: '310px' }}
+                        className={`${styles.input} ${styles.select}`}
                     >
                         <option value="active">Active</option>
                         <option value="closed">Closed</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
                 </div>
-                {message && <p>{message}</p>}
-                <button type="submit">Update Auction</button>
+                {message && <p className={styles.message}>{message}</p>}
+                <button type="submit" className={styles.button}>Update Auction</button>
             </form>
         </div>
     );

@@ -6,6 +6,8 @@ import AuctionList from './components/AuctionList';
 import CreateAuction from './components/CreateAuction';
 import UpdateAuction from './components/UpdateAuction';
 import Login from './components/Login';
+import Register from './components/Register'; // Import Register component
+import NavBar from './components/NavBar'; // Import NavBar
 import { ToastContainer } from 'react-toastify'; // For toast notifications
 import 'react-toastify/dist/ReactToastify.css';   // Import toastify CSS
 
@@ -21,10 +23,11 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <h1>Auction Marketplace</h1>
+        <NavBar />
         <Routes>
           <Route path="/" element={<AuctionList />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/create" element={<PrivateRoute element={CreateAuction} />} />
           <Route path="/update/:id" element={<PrivateRoute element={UpdateAuction} />} />
           {/* Add more routes as needed */}

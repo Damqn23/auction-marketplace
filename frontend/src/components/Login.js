@@ -1,9 +1,10 @@
-// frontend/src/components/Login.js
-
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { loginUser } from '../services/authService';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify'; // Optional: For toast notifications
+import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'react-toastify'; // For toast notifications
+import styles from './Login.module.css';   // Import CSS Module
+import { UserContext } from '../contexts/UserContext'; // Import UserContext
+import { getCurrentUser } from '../services/userService'; // Import getCurrentUser
 
 const Login = () => {
     const [username, setUsername] = useState('');
@@ -11,6 +12,7 @@ const Login = () => {
     const [error, setError] = useState('');
 
     const navigate = useNavigate();
+    const { setUser } = useContext(UserContext); // Access setUser to update context
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -18,44 +20,48 @@ const Login = () => {
 
         try {
             await loginUser(username, password);
-            toast.success('Logged in successfully!'); // Optional
+            toast.success('Logged in successfully!');
+            // Fetch and set the current user
+            const userData = await getCurrentUser();
+            setUser(userData);
             navigate('/'); // Redirect to home after login
         } catch (err) {
             console.error('Login error:', err);
             setError('Invalid username or password.');
-            toast.error('Login failed. Please try again.'); // Optional
+            toast.error('Login failed. Please check your credentials.');
         }
     };
 
     return (
-        <div style={{ maxWidth: '400px', margin: 'auto' }}>
+        <div className={styles.container}>
             <h2>Login</h2>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {error && <p className={styles.error}>{error}</p>}
             <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: '10px' }}>
-                    <label>Username:</label><br />
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Username:</label>
                     <input
                         type="text"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
-                        style={{ width: '100%', padding: '8px' }}
+                        className={styles.input}
                     />
                 </div>
-                <div style={{ marginBottom: '10px' }}>
-                    <label>Password:</label><br />
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Password:</label>
                     <input
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        style={{ width: '100%', padding: '8px' }}
+                        className={styles.input}
                     />
                 </div>
-                <button type="submit" style={{ padding: '10px', width: '100%' }}>
-                    Login
-                </button>
+                <button type="submit" className={styles.button}>Login</button>
             </form>
+            <p style={{ marginTop: '10px' }}>
+                Don't have an account? <Link to="/register">Register here</Link>.
+            </p>
         </div>
     );
 };

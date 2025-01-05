@@ -1,13 +1,16 @@
-// src/index.js
+// frontend/src/index.js
 
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
-// Import any global styles if needed
+import { UserProvider } from './contexts/UserContext';
+import './index.css';
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <UserProvider>
+      <App />
+    </UserProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );

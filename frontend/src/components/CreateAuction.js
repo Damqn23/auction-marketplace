@@ -1,10 +1,9 @@
-// frontend/src/components/CreateAuction.js
-
 import React, { useState } from 'react';
 import { createAuctionItem } from '../services/auctionService';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify'; // Import ToastContainer and toast
 import 'react-toastify/dist/ReactToastify.css';        // Import react-toastify CSS
+import styles from './CreateAuction.module.css';        // Import CSS Module
 
 const CreateAuction = () => {
     const [title, setTitle] = useState('');
@@ -51,32 +50,31 @@ const CreateAuction = () => {
     };
 
     return (
-        <div>
+        <div className={styles.container}>
             <h2>Create Auction Item</h2>
             <form onSubmit={handleSubmit}>
-                <div>
-                    <label>Title:</label><br />
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Title:</label>
                     <input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         required
-                        style={{ width: '300px' }}
+                        className={styles.input}
                     />
                 </div>
-                <div>
-                    <label>Description:</label><br />
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Description:</label>
                     <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         required
                         rows="4"
-                        cols="50"
-                        style={{ width: '300px' }}
+                        className={`${styles.input} ${styles.textarea}`}
                     ></textarea>
                 </div>
-                <div>
-                    <label>Starting Bid:</label><br />
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Starting Bid:</label>
                     <input
                         type="number"
                         value={startingBid}
@@ -84,30 +82,31 @@ const CreateAuction = () => {
                         required
                         min="0"
                         step="0.01"
-                        style={{ width: '300px' }}
+                        className={styles.input}
                     />
                 </div>
-                <div>
-                    <label>Image:</label><br />
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Image:</label>
                     <input
                         type="file"
                         accept="image/*"
                         onChange={(e) => setImage(e.target.files[0])}
+                        className={styles.input}
                     />
                 </div>
-                <div>
-                    <label>Status:</label><br />
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Status:</label>
                     <select
                         value={status}
                         onChange={(e) => setStatus(e.target.value)}
-                        style={{ width: '310px' }}
+                        className={`${styles.input} ${styles.select}`}
                     >
                         <option value="active">Active</option>
                         <option value="closed">Closed</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
                 </div>
-                <button type="submit" style={{ marginTop: '10px' }}>Create Auction</button>
+                <button type="submit" className={styles.button}>Create Auction</button>
             </form>
             <ToastContainer /> {/* Include ToastContainer to display toasts */}
         </div>
