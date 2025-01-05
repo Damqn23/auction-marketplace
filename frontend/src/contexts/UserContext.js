@@ -1,3 +1,5 @@
+// frontend/src/contexts/UserContext.js
+
 import React, { createContext, useState, useEffect } from 'react';
 import { getCurrentUser } from '../services/userService';
 import { toast } from 'react-toastify';

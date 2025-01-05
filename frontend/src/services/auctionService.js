@@ -34,3 +34,18 @@ export const updateAuctionItem = (id, auctionData) => {
 export const deleteAuctionItem = (id) => {
     return axiosInstance.delete(`auction-items/${id}/`);
 };
+
+export const placeBid = async (auctionItemId, bidAmount) => {
+    try {
+        const response = await axiosInstance.post(`auction-items/${auctionItemId}/bid/`, {
+            amount: bidAmount,
+        }, {
+            headers: {
+                'Content-Type': 'application/json', // Ensure correct Content-Type
+            },
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};

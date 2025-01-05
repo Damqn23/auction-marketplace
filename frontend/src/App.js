@@ -6,10 +6,11 @@ import AuctionList from './components/AuctionList';
 import CreateAuction from './components/CreateAuction';
 import UpdateAuction from './components/UpdateAuction';
 import Login from './components/Login';
-import Register from './components/Register'; // Import Register component
-import NavBar from './components/NavBar'; // Import NavBar
-import { ToastContainer } from 'react-toastify'; // For toast notifications
-import 'react-toastify/dist/ReactToastify.css';   // Import toastify CSS
+import Register from './components/Register';
+import NavBar from './components/NavBar';
+import BidHistory from './components/BidHistory'; // Import BidHistory component
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const isAuthenticated = () => {
   return localStorage.getItem('access_token') ? true : false;
@@ -30,9 +31,10 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/create" element={<PrivateRoute element={CreateAuction} />} />
           <Route path="/update/:id" element={<PrivateRoute element={UpdateAuction} />} />
+          <Route path="/my-bids" element={<PrivateRoute element={BidHistory} />} /> {/* Add this line */}
           {/* Add more routes as needed */}
         </Routes>
-        <ToastContainer /> {/* Centralized ToastContainer */}
+        <ToastContainer />
       </div>
     </Router>
   );

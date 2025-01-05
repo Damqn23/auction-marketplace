@@ -2,10 +2,11 @@
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import AuctionItemViewSet, RegisterView, UserViewSet
+from .views import AuctionItemViewSet, RegisterView, UserViewSet, BidViewSet
 
 router = DefaultRouter()
 router.register(r'auction-items', AuctionItemViewSet, basename='auctionitem')
+router.register(r'bids', BidViewSet, basename='bid')
 
 urlpatterns = [
         path('', include(router.urls)),

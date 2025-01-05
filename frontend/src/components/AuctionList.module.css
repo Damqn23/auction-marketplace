@@ -32,3 +32,18 @@
 .button {
     margin-right: 10px;
 }
+
+.bidSection {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.bidInput {
+    margin-right: 10px;
+    width: 150px;
+}
+
+.bidButton {
+    height: 40px;
+}

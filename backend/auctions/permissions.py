@@ -16,3 +16,13 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
         # Write permissions are only allowed to the owner of the auction item.
         return obj.owner == request.user
+
+
+class IsBidderOrReadOnly(permissions.BasePermission):
+    """
+    Custom permission to only allow the bidder to view their own bids.
+    """
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return obj.bidder == request.user
+        return False

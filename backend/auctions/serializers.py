@@ -5,22 +5,7 @@ from .models import AuctionItem, Bid
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 
-class AuctionItemSerializer(serializers.ModelSerializer):
-    owner = serializers.ReadOnlyField(source='owner.username')
-    image = serializers.ImageField(required=False, allow_null=True)
 
-    class Meta:
-        model = AuctionItem
-        fields = ['id', 'title', 'description', 'starting_bid', 'current_bid', 'image', 'status', 'created_at', 'updated_at', 'owner']
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        request = self.context.get('request')
-        if instance.image and request:
-            representation['image'] = request.build_absolute_uri(instance.image.url)
-        else:
-            representation['image'] = None
-        return representation
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
@@ -55,10 +40,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return user
     
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+
 
 class BidSerializer(serializers.ModelSerializer):
     bidder = serializers.ReadOnlyField(source='bidder.username')
@@ -67,3 +49,30 @@ class BidSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bid
         fields = ['id', 'auction_item', 'bidder', 'amount', 'timestamp']
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        bids = BidSerializer(many=True, read_only=True)
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'bids']
+
+
+class AuctionItemSerializer(serializers.ModelSerializer):    
+    owner = serializers.ReadOnlyField(source='owner.username')
+    image = serializers.ImageField(required=False, allow_null=True)
+    bids = BidSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = AuctionItem
+        fields = ['id', 'title', 'description', 'starting_bid', 'current_bid', 'image', 'status', 'owner', 'bids']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        request = self.context.get('request')
+        if instance.image and request:
+            representation['image'] = request.build_absolute_uri(instance.image.url)
+        else:
+            representation['image'] = None
+        return representation
+    
+    

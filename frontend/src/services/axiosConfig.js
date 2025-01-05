@@ -8,9 +8,10 @@ const axiosInstance = axios.create({
     baseURL: 'http://127.0.0.1:8000/api/',
     timeout: 5000,
     headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json', // Default to JSON
         accept: 'application/json',
     },
+
 });
 
 // Add a request interceptor to include the JWT token in headers
@@ -41,7 +42,6 @@ axiosInstance.interceptors.response.use(
                 return axiosInstance(originalRequest);
             } catch (err) {
                 toast.error('Session expired. Please log in again.');
-                // Redirect to login page
                 window.location.href = '/login';
                 return Promise.reject(err);
             }

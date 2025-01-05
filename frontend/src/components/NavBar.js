@@ -1,3 +1,5 @@
+// frontend/src/components/NavBar.js
+
 import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './NavBar.module.css'; // Import CSS Module
@@ -23,6 +25,7 @@ const NavBar = () => {
                 {user ? (
                     <>
                         <Link to="/create" className={styles.navLink}>Create Auction</Link>
+                        <Link to="/my-bids" className={styles.navLink}>My Bids</Link> {/* Optional: Add My Bids link */}
                         <button onClick={handleLogout} className={styles.logoutButton}>Logout</button>
                     </>
                 ) : (
