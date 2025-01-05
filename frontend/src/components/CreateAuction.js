@@ -1,25 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { createAuctionItem } from '../services/auctionService';
-import { useNavigate } from 'react-router-dom';
-import { ToastContainer, toast } from 'react-toastify'; // Import ToastContainer and toast
-import 'react-toastify/dist/ReactToastify.css';        // Import react-toastify CSS
-import styles from './CreateAuction.module.css';        // Import CSS Module
+import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import styles from './CreateAuction.module.css';
+import { UserContext } from '../contexts/UserContext';
 
 const CreateAuction = () => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [startingBid, setStartingBid] = useState('');
     const [image, setImage] = useState(null);
-    const [status, setStatus] = useState('active');
+    const [endTime, setEndTime] = useState('');
+    const [message, setMessage] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
+    const { user } = useContext(UserContext);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setMessage('');
+        setLoading(true);
 
-        // Basic form validation
-        if (!title || !description || !startingBid) {
-            toast.error('Please fill in all required fields.');
+        if (!endTime) {
+            setMessage('End time is required.');
+            setLoading(false);
             return;
         }
 
@@ -27,31 +32,28 @@ const CreateAuction = () => {
         formData.append('title', title);
         formData.append('description', description);
         formData.append('starting_bid', startingBid);
-        formData.append('status', status);
+        formData.append('end_time', endTime);
         if (image) {
             formData.append('image', image);
         }
 
         try {
             await createAuctionItem(formData);
+            setMessage('Auction item created successfully');
             toast.success('Auction item created successfully!');
-            // Reset form fields
-            setTitle('');
-            setDescription('');
-            setStartingBid('');
-            setImage(null);
-            setStatus('active');
-            // Redirect to auction list
-            navigate('/');
-        } catch (error) {
-            console.error('Error creating auction item:', error);
+            navigate('/'); // Redirect to Auction List
+        } catch (err) {
+            setMessage('Error creating auction item');
+            console.error('Error:', err);
             toast.error('Failed to create auction item. Please try again.');
         }
+        setLoading(false);
     };
 
     return (
         <div className={styles.container}>
-            <h2>Create Auction Item</h2>
+            <h2>Create New Auction Item</h2>
+            {message && <p className={styles.message}>{message}</p>}
             <form onSubmit={handleSubmit}>
                 <div className={styles.formGroup}>
                     <label className={styles.label}>Title:</label>
@@ -82,7 +84,17 @@ const CreateAuction = () => {
                         required
                         min="0"
                         step="0.01"
-                        className={styles.input}
+                        className={`${styles.input}`}
+                    />
+                </div>
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>End Time:</label>
+                    <input
+                        type="datetime-local"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        required
+                        className={`${styles.input}`}
                     />
                 </div>
                 <div className={styles.formGroup}>
@@ -91,24 +103,16 @@ const CreateAuction = () => {
                         type="file"
                         accept="image/*"
                         onChange={(e) => setImage(e.target.files[0])}
-                        className={styles.input}
+                        className={`${styles.input}`}
                     />
                 </div>
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Status:</label>
-                    <select
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        className={`${styles.input} ${styles.select}`}
-                    >
-                        <option value="active">Active</option>
-                        <option value="closed">Closed</option>
-                        <option value="cancelled">Cancelled</option>
-                    </select>
-                </div>
-                <button type="submit" className={styles.button}>Create Auction</button>
+                <button type="submit" className={styles.button} disabled={loading}>
+                    {loading ? 'Creating...' : 'Create Auction'}
+                </button>
             </form>
-            <ToastContainer /> {/* Include ToastContainer to display toasts */}
+            <p style={{ marginTop: '10px' }}>
+                <Link to="/">Back to Auction List</Link>
+            </p>
         </div>
     );
 };

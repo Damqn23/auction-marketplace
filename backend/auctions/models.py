@@ -17,6 +17,8 @@ class AuctionItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(User, related_name='auction_items', on_delete=models.CASCADE)
+    end_time = models.DateTimeField()  # New field for auction end time
+
 
     def __str__(self):
         return self.title

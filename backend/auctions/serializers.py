@@ -64,7 +64,7 @@ class AuctionItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AuctionItem
-        fields = ['id', 'title', 'description', 'starting_bid', 'current_bid', 'image', 'status', 'owner', 'bids']
+        fields = ['id', 'title', 'description', 'starting_bid', 'current_bid', 'image', 'status', 'owner', 'bids', 'end_time']
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

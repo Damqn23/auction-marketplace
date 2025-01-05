@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from .models import AuctionItem, Bid
 from .serializers import UserSerializer
 from decimal import Decimal, InvalidOperation
+from django.utils import timezone
 from .serializers import AuctionItemSerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
 from rest_framework.decorators import action, parser_classes
@@ -17,14 +18,36 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
     queryset = AuctionItem.objects.all()
     serializer_class = AuctionItemSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
-    parser_classes = [MultiPartParser, FormParser, JSONParser]  
+    parser_classes = [MultiPartParser, FormParser, JSONParser]  # Include JSONParser
+
+    def get_queryset(self):
+        # Before returning the queryset, update the status of auctions that have ended
+        current_time = timezone.now()
+        active_auctions = AuctionItem.objects.filter(status='active', end_time__lte=current_time)
+        active_auctions.update(status='closed')
+        return super().get_queryset()
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+    def destroy(self, request, *args, **kwargs):
+        auction_item = self.get_object()
+        if auction_item.bids.exists():
+            return Response(
+                {'detail': 'Cannot delete auction items that have received bids.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticatedOrReadOnly], parser_classes=[JSONParser])
     def bid(self, request, pk=None):
         auction_item = self.get_object()
+
+        # Update status if auction has ended
+        if auction_item.status == 'active' and auction_item.end_time <= timezone.now():
+            auction_item.status = 'closed'
+            auction_item.save()
+            return Response({'detail': 'Bidding is closed for this item.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Check if auction is active
         if auction_item.status != 'active':
@@ -40,6 +63,7 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'Bid amount is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            # Convert amount to Decimal
             amount = Decimal(str(amount))
         except (ValueError, InvalidOperation):
             return Response({'detail': 'Invalid bid amount.'}, status=status.HTTP_400_BAD_REQUEST)

@@ -13,21 +13,31 @@ export const getAuctionItem = (id) => {
 };
 
 // Create a new auction item
-export const createAuctionItem = (auctionData) => {
-    return axiosInstance.post('auction-items/', auctionData, {
-        headers: {
-            'Content-Type': 'multipart/form-data', // Necessary for file uploads
-        },
-    });
+export const createAuctionItem = async (formData) => {
+    try {
+        const response = await axiosInstance.post('auction-items/', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // For file uploads
+            },
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 // Update an auction item
-export const updateAuctionItem = (id, auctionData) => {
-    return axiosInstance.put(`auction-items/${id}/`, auctionData, {
-        headers: {
-            'Content-Type': 'multipart/form-data', // Necessary for file uploads
-        },
-    });
+export const updateAuctionItem = async (auctionItemId, formData) => {
+    try {
+        const response = await axiosInstance.put(`auction-items/${auctionItemId}/`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // For file uploads
+            },
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 // Delete an auction item

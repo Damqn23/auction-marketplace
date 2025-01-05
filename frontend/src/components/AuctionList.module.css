@@ -16,6 +16,8 @@
 .auctionCard {
     margin-bottom: 20px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    border-radius: 8px;
 }
 
 .auctionImage {
@@ -23,6 +25,7 @@
     max-height: 200px;
     object-fit: cover;
     margin-top: 10px;
+    border-radius: 4px;
 }
 
 .buttonGroup {
@@ -46,4 +49,8 @@
 
 .bidButton {
     height: 40px;
+}
+
+.bidSection .MuiTypography-root {
+    margin-right: 10px;
 }

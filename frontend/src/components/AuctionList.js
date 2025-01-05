@@ -1,5 +1,3 @@
-// frontend/src/components/AuctionList.js
-
 import React, { useEffect, useState, useContext } from 'react';
 import { getAllAuctionItems, deleteAuctionItem, placeBid } from '../services/auctionService';
 import { Link } from 'react-router-dom'; // v6/v7
@@ -7,6 +5,7 @@ import { Button, Card, CardContent, Typography, TextField } from '@mui/material'
 import styles from './AuctionList.module.css'; // Import CSS Module
 import { UserContext } from '../contexts/UserContext'; // Import UserContext
 import { toast } from 'react-toastify';
+import moment from 'moment'; // For date formatting
 
 const AuctionList = () => {
     const [auctionItems, setAuctionItems] = useState([]);
@@ -79,6 +78,32 @@ const AuctionList = () => {
         }
     };
 
+
+    const calculateRemainingTime = (endTime) => {
+        const now = moment();
+        const end = moment(endTime);
+        const duration = moment.duration(end.diff(now));
+
+        if (duration.asSeconds() <= 0) {
+            return 'Auction ended';
+        }
+
+        const days = Math.floor(duration.asDays());
+        const hours = Math.floor(duration.asHours() % 24);
+        const minutes = Math.floor(duration.asMinutes() % 60);
+        const seconds = Math.floor(duration.asSeconds() % 60);
+
+        return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    };
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setAuctionItems([...auctionItems]); // Trigger re-render
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [auctionItems]);
+
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error loading auction items.</p>;
 
@@ -102,6 +127,11 @@ const AuctionList = () => {
                     const minIncrement = minBid * 0.02;
                     const minRequiredBid = (minBid + minIncrement).toFixed(2);
 
+                    const remainingTime = calculateRemainingTime(item.end_time);
+
+                    // Format end time for display
+                    const formattedEndTime = moment(item.end_time).format('MMMM Do YYYY, h:mm:ss a');
+
                     return (
                         <Card key={item.id} className={styles.auctionCard}>
                             <CardContent>
@@ -111,6 +141,8 @@ const AuctionList = () => {
                                 <Typography variant="body1">Current Bid: ${item.current_bid || 'No bids yet'}</Typography>
                                 {item.image && <img src={item.image} alt={item.title} className={styles.auctionImage} />}
                                 <Typography variant="body2">Status: {item.status}</Typography>
+                                <Typography variant="body2">End Time: {formattedEndTime}</Typography>
+                                <Typography variant="body2">Time Remaining: {remainingTime}</Typography>
                                 <Typography variant="body2">Owner: {item.owner}</Typography>
                                 {/* Conditionally render Update and Delete buttons */}
                                 {user && user.username === item.owner && (
@@ -120,6 +152,7 @@ const AuctionList = () => {
                                             color="secondary"
                                             onClick={() => handleDelete(item.id)}
                                             className={styles.button}
+                                            disabled={item.bids.length > 0} // Disable delete if bids exist
                                         >
                                             Delete
                                         </Button>
