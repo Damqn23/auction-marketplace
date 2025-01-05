@@ -39,6 +39,25 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
             )
         return super().destroy(request, *args, **kwargs)
 
+    def update(self, request, *args, **kwargs):
+        auction_item = self.get_object()
+
+        # Check if auction has received any bids
+        if auction_item.bids.exists():
+            return Response(
+                {'detail': 'Cannot update auction items that have received bids.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if the auction has already ended
+        if auction_item.end_time <= timezone.now():
+            return Response(
+                {'detail': 'Cannot update auction items that have already ended.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return super().update(request, *args, **kwargs)
+
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticatedOrReadOnly], parser_classes=[JSONParser])
     def bid(self, request, pk=None):
         auction_item = self.get_object()
@@ -89,7 +108,9 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
 
         serializer = BidSerializer(bid)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
+
+
 class BidViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Bid.objects.all()
     serializer_class = BidSerializer

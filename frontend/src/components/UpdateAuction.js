@@ -14,9 +14,10 @@ const UpdateAuction = () => {
     const [description, setDescription] = useState('');
     const [startingBid, setStartingBid] = useState('');
     const [image, setImage] = useState(null);
-    const [status, setStatus] = useState('active');
+    // Removed status state as it's now read-only
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(true);
+    const [hasBids, setHasBids] = useState(false); // New state to track if auction has bids
 
     useEffect(() => {
         fetchAuctionItem();
@@ -33,10 +34,23 @@ const UpdateAuction = () => {
                 navigate('/');
                 return;
             }
+            // Check if auction has bids
+            if (data.bids && data.bids.length > 0) {
+                setHasBids(true);
+                toast.info('This auction has received bids and cannot be updated.');
+                setLoading(false);
+                return;
+            }
+            // Optionally, check if the auction has already ended
+            if (new Date(data.end_time) <= new Date()) {
+                setHasBids(true);
+                toast.info('This auction has already ended and cannot be updated.');
+                setLoading(false);
+                return;
+            }
             setTitle(data.title);
             setDescription(data.description);
             setStartingBid(data.starting_bid);
-            setStatus(data.status);
             setLoading(false);
         } catch (err) {
             setMessage('Error fetching auction item');
@@ -52,7 +66,7 @@ const UpdateAuction = () => {
         formData.append('title', title);
         formData.append('description', description);
         formData.append('starting_bid', startingBid);
-        formData.append('status', status);
+        // Removed status as it's read-only
         if (image) {
             formData.append('image', image);
         }
@@ -72,9 +86,24 @@ const UpdateAuction = () => {
 
     if (loading) return <p>Loading...</p>;
 
+    if (hasBids) {
+        return (
+            <div className={styles.container}>
+                <h2>Update Auction Item</h2>
+                <p>This auction has received bids and cannot be updated.</p>
+                <p>
+                    <button onClick={() => navigate('/')} className={styles.button}>
+                        Back to Auction List
+                    </button>
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div className={styles.container}>
             <h2>Update Auction Item</h2>
+            {message && <p className={styles.message}>{message}</p>}
             <form onSubmit={handleSubmit}>
                 <div className={styles.formGroup}>
                     <label className={styles.label}>Title:</label>
@@ -117,23 +146,18 @@ const UpdateAuction = () => {
                         className={`${styles.input}`}
                     />
                 </div>
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Status:</label>
-                    <select
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        className={`${styles.input} ${styles.select}`}
-                    >
-                        <option value="active">Active</option>
-                        <option value="closed">Closed</option>
-                        <option value="cancelled">Cancelled</option>
-                    </select>
-                </div>
+                {/* Removed Status Field */}
                 {message && <p className={styles.message}>{message}</p>}
                 <button type="submit" className={styles.button}>Update Auction</button>
             </form>
+            <p style={{ marginTop: '10px' }}>
+                <button onClick={() => navigate('/')} className={styles.button}>
+                    Back to Auction List
+                </button>
+            </p>
         </div>
     );
+
 };
 
 export default UpdateAuction;

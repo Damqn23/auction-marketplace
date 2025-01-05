@@ -29,9 +29,9 @@ export const createAuctionItem = async (formData) => {
 // Update an auction item
 export const updateAuctionItem = async (auctionItemId, formData) => {
     try {
-        const response = await axiosInstance.put(`auction-items/${auctionItemId}/`, formData, {
+        const response = await axiosInstance.patch(`auction-items/${auctionItemId}/`, formData, {
             headers: {
-                'Content-Type': 'multipart/form-data', // For file uploads
+                'Content-Type': 'multipart/form-data', // Use 'multipart/form-data' for file uploads
             },
         });
         return response.data;
