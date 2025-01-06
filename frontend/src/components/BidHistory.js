@@ -1,37 +1,54 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { getUserBids } from '../services/bidService'; // Ensure this service fetches user bids
 import { UserContext } from '../contexts/UserContext';
-import { Typography, Card, CardContent } from '@mui/material';
-import styles from './BidHistory.module.css'; // Create corresponding CSS Module
 import { toast } from 'react-toastify';
+import moment from 'moment'; // Ensure moment.js is installed
+import styles from './BidHistory.module.css'; // Import CSS Module
 
 const BidHistory = () => {
     const { user } = useContext(UserContext);
     const [bids, setBids] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        if (user && user.bids) {
-            setBids(user.bids);
+        if (user) {
+            fetchBids();
         } else {
-            toast.error('No bid history available.');
+            setLoading(false);
+            setBids([]);
         }
+        // eslint-disable-next-line
     }, [user]);
+
+    const fetchBids = async () => {
+        try {
+            const response = await getUserBids(user.id); // Adjust according to your API
+            // Sort bids by timestamp descending
+            const sortedBids = response.data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            setBids(sortedBids);
+            setLoading(false);
+        } catch (err) {
+            setError('Failed to load bid history.');
+            toast.error('Failed to load bid history.');
+            setLoading(false);
+        }
+    };
+
+    if (loading) return <p>Loading...</p>;
+    if (error) return <p>{error}</p>;
+    if (bids.length === 0) return <p>No bids placed yet.</p>;
 
     return (
         <div className={styles.container}>
-            <Typography variant="h4" gutterBottom>My Bids</Typography>
-            {bids.length === 0 ? (
-                <Typography variant="body1">You have not placed any bids yet.</Typography>
-            ) : (
-                bids.map(bid => (
-                    <Card key={bid.id} className={styles.bidCard}>
-                        <CardContent>
-                            <Typography variant="h6">Bid on Auction Item ID: {bid.auction_item}</Typography>
-                            <Typography variant="body1">Amount: ${bid.amount}</Typography>
-                            <Typography variant="body2">Time: {new Date(bid.timestamp).toLocaleString()}</Typography>
-                        </CardContent>
-                    </Card>
-                ))
-            )}
+            <h2>My Bids</h2>
+            {bids.map((bid) => (
+                <div key={bid.id} className={styles.bidCard}>
+                    <p className={styles.bidTitle}><strong>Bid on Auction Item ID:</strong> {bid.auction_item}</p>
+                    <p className={styles.bidDetails}><strong>Amount:</strong> ${bid.amount}</p>
+                    <p className={styles.bidDetails}><strong>Time:</strong> {moment(bid.timestamp).format('MMMM Do YYYY, h:mm:ss a')}</p>
+                </div>
+            ))}
         </div>
     );
 };

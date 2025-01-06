@@ -17,8 +17,10 @@
 .bidTitle {
     font-weight: bold;
     margin-bottom: 10px;
+    color: #333;
 }
 
 .bidDetails {
     margin-bottom: 5px;
+    color: #555;
 }
