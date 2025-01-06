@@ -9,6 +9,7 @@ const CreateAuction = () => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [startingBid, setStartingBid] = useState('');
+    const [buyNowPrice, setBuyNowPrice] = useState('');
     const [image, setImage] = useState(null);
     const [endTime, setEndTime] = useState('');
     const [message, setMessage] = useState('');
@@ -22,6 +23,13 @@ const CreateAuction = () => {
         setMessage('');
         setLoading(true);
 
+        // Validation: Buy Now price must be higher than starting bid
+        if (buyNowPrice && parseFloat(buyNowPrice) <= parseFloat(startingBid)) {
+            setMessage('Buy Now price must be higher than the starting bid.');
+            setLoading(false);
+            return;
+        }
+
         if (!endTime) {
             setMessage('End time is required.');
             setLoading(false);
@@ -32,6 +40,7 @@ const CreateAuction = () => {
         formData.append('title', title);
         formData.append('description', description);
         formData.append('starting_bid', startingBid);
+        formData.append('buy_now_price', buyNowPrice);
         formData.append('end_time', endTime);
         if (image) {
             formData.append('image', image);
@@ -104,6 +113,18 @@ const CreateAuction = () => {
                         accept="image/*"
                         onChange={(e) => setImage(e.target.files[0])}
                         className={`${styles.input}`}
+                    />
+                </div>
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Buy Now Price:</label>
+                    <input
+                        type="number"
+                        value={buyNowPrice}
+                        onChange={(e) => setBuyNowPrice(e.target.value)}
+                        min={parseFloat(startingBid) + 0.01}
+                        step="0.01"
+                        className={`${styles.input}`}
+                        placeholder="Optional"
                     />
                 </div>
                 <button type="submit" className={styles.button} disabled={loading}>

@@ -59,3 +59,21 @@ export const placeBid = async (auctionItemId, bidAmount) => {
         throw error;
     }
 };
+
+export const buyNow = async (auctionItemId) => {
+    try {
+        const response = await axiosInstance.post(`auction-items/${auctionItemId}/buy_now/`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const getMyPurchases = async () => {
+    try {
+        const response = await axiosInstance.get(`my-purchases/`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};

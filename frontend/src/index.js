@@ -5,6 +5,8 @@ import ReactDOM from 'react-dom';
 import App from './App';
 import { UserProvider } from './contexts/UserContext';
 import './index.css';
+import 'react-toastify/dist/ReactToastify.css'; // Import toastify CSS
+
 
 ReactDOM.render(
   <React.StrictMode>

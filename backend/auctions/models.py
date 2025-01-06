@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 class AuctionItem(models.Model):
     STATUS_CHOICES = [
@@ -18,6 +19,10 @@ class AuctionItem(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(User, related_name='auction_items', on_delete=models.CASCADE)
     end_time = models.DateTimeField()  # New field for auction end time
+    buy_now_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # New field
+    buy_now_buyer = models.ForeignKey(User, related_name='buy_now_purchases', on_delete=models.SET_NULL, null=True, blank=True)  # To track buyer
+    winner = models.ForeignKey(User, related_name='won_auctions', on_delete=models.SET_NULL, null=True, blank=True)  # New Field
+
 
 
     def __str__(self):

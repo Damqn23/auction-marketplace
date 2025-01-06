@@ -58,16 +58,44 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'bids']
 
 
-class AuctionItemSerializer(serializers.ModelSerializer):    
+class AuctionItemSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.username')
-    image = serializers.ImageField(required=False, allow_null=True)
     bids = BidSerializer(many=True, read_only=True)
+    buy_now_buyer = UserSerializer(read_only=True)  # Include buyer details if purchased via Buy Now
+    winner = UserSerializer(read_only=True)
 
     class Meta:
         model = AuctionItem
-        fields = ['id', 'title', 'description', 'starting_bid', 'current_bid', 'image', 'status', 'owner', 'bids', 'end_time']
-        read_only_fields = ['status']
+        fields = [
+            'id',
+            'title',
+            'description',
+            'starting_bid',
+            'current_bid',
+            'image',
+            'status',
+            'owner',
+            'bids',
+            'end_time',
+            'buy_now_price',
+            'buy_now_buyer',
+            'winner',  
+        ]
+        read_only_fields = ['status', 'buy_now_buyer', 'winner']  # Make these fields read-only
 
+    def validate(self, data):
+        """
+        Ensure that buy_now_price is higher than starting_bid.
+        """
+        buy_now_price = data.get('buy_now_price')
+        starting_bid = data.get('starting_bid', getattr(self.instance, 'starting_bid', None))
+
+        if buy_now_price is not None and starting_bid is not None:
+            if buy_now_price <= starting_bid:
+                raise serializers.ValidationError("Buy Now price must be higher than the starting bid.")
+
+        return data
+    
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         request = self.context.get('request')

@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { getAllAuctionItems, deleteAuctionItem, placeBid } from '../services/auctionService';
+import { getAllAuctionItems, deleteAuctionItem, placeBid, buyNow } from '../services/auctionService';
 import { Link } from 'react-router-dom'; // v6/v7
-import { Button, Card, CardContent, Typography, TextField } from '@mui/material'; // Using Material-UI
+import { Button, Card, CardContent, Typography, TextField, Tooltip } from '@mui/material'; // Using Material-UI
 import styles from './AuctionList.module.css'; // Import CSS Module
 import { UserContext } from '../contexts/UserContext'; // Import UserContext
 import { toast } from 'react-toastify';
 import moment from 'moment'; // For date formatting
+import BuyNowModal from './BuyNowModal'; // Import BuyNowModal component
 
 const AuctionList = () => {
     const [auctionItems, setAuctionItems] = useState([]);
@@ -13,6 +14,10 @@ const AuctionList = () => {
     const [error, setError] = useState(null);
     const { user } = useContext(UserContext); // Access current user
     const [bidAmounts, setBidAmounts] = useState({}); // Track bid inputs
+
+    // States for Buy Now Modal
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
 
     useEffect(() => {
         fetchAuctionItems();
@@ -22,10 +27,12 @@ const AuctionList = () => {
     const fetchAuctionItems = async () => {
         try {
             const response = await getAllAuctionItems();
-            setAuctionItems(response.data);
+            // Sort auctions by end_time ascending (earliest ending first)
+            const sortedAuctions = response.data.sort((a, b) => new Date(a.end_time) - new Date(b.end_time));
+            setAuctionItems(sortedAuctions);
             setLoading(false);
         } catch (err) {
-            setError(err);
+            setError('Failed to load auction items.');
             setLoading(false);
             toast.error('Failed to load auction items.');
         }
@@ -78,34 +85,38 @@ const AuctionList = () => {
         }
     };
 
-
-    const calculateRemainingTime = (endTime) => {
-        const now = moment();
-        const end = moment(endTime);
-        const duration = moment.duration(end.diff(now));
-
-        if (duration.asSeconds() <= 0) {
-            return 'Auction ended';
-        }
-
-        const days = Math.floor(duration.asDays());
-        const hours = Math.floor(duration.asHours() % 24);
-        const minutes = Math.floor(duration.asMinutes() % 60);
-        const seconds = Math.floor(duration.asSeconds() % 60);
-
-        return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    // Handlers for Buy Now Modal
+    const openBuyNowModal = (item) => {
+        setSelectedItem(item);
+        setModalOpen(true);
     };
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setAuctionItems([...auctionItems]); // Trigger re-render
-        }, 1000);
+    const closeBuyNowModal = () => {
+        setSelectedItem(null);
+        setModalOpen(false);
+    };
 
-        return () => clearInterval(interval);
-    }, [auctionItems]);
+    const handleConfirmBuyNow = async () => {
+        if (!selectedItem) return;
+
+        try {
+            await buyNow(selectedItem.id);
+            toast.success('Purchase successful!');
+            // Refresh auction items to update status and buyer
+            fetchAuctionItems();
+        } catch (err) {
+            console.error('Error purchasing via Buy Now:', err);
+            if (err.response && err.response.data.detail) {
+                toast.error(err.response.data.detail);
+            } else {
+                toast.error('Failed to complete purchase. Please try again.');
+            }
+        }
+        closeBuyNowModal();
+    };
 
     if (loading) return <p>Loading...</p>;
-    if (error) return <p>Error loading auction items.</p>;
+    if (error) return <p>{error}</p>;
 
     return (
         <div className={styles.container}>
@@ -118,16 +129,17 @@ const AuctionList = () => {
                 </Link>
             </div>
             <div>
-                {auctionItems.map(item => {
+                {auctionItems.map((item) => {
                     // Determine if the current user can bid
-                    const canBid = user && user.username !== item.owner && item.status === 'active';
+                    const canBid = user && user.username !== item.owner && item.status === 'active' && item.buy_now_buyer === null;
+
+                    // Determine if Buy Now is available
+                    const canBuyNow = user && user.username !== item.owner && item.status === 'active' && item.buy_now_price && item.buy_now_buyer === null;
 
                     // Calculate the minimum bid (2% increment)
                     const minBid = item.current_bid ? parseFloat(item.current_bid) : parseFloat(item.starting_bid);
                     const minIncrement = minBid * 0.02;
                     const minRequiredBid = (minBid + minIncrement).toFixed(2);
-
-                    const remainingTime = calculateRemainingTime(item.end_time);
 
                     // Format end time for display
                     const formattedEndTime = moment(item.end_time).format('MMMM Do YYYY, h:mm:ss a');
@@ -142,25 +154,46 @@ const AuctionList = () => {
                                 {item.image && <img src={item.image} alt={item.title} className={styles.auctionImage} />}
                                 <Typography variant="body2">Status: {item.status}</Typography>
                                 <Typography variant="body2">End Time: {formattedEndTime}</Typography>
-                                <Typography variant="body2">Time Remaining: {remainingTime}</Typography>
                                 <Typography variant="body2">Owner: {item.owner}</Typography>
+                                {/* Display Buy Now Price if available */}
+                                {item.buy_now_price && (
+                                    <Typography variant="body1" color="secondary">
+                                        Buy Now Price: ${item.buy_now_price}
+                                    </Typography>
+                                )}
                                 {/* Conditionally render Update and Delete buttons */}
                                 {user && user.username === item.owner && (
                                     <div className={styles.buttonGroup}>
-                                        <Button
-                                            variant="outlined"
-                                            color="secondary"
-                                            onClick={() => handleDelete(item.id)}
-                                            className={styles.button}
-                                            disabled={item.bids.length > 0} // Disable delete if bids exist
-                                        >
-                                            Delete
-                                        </Button>
-                                        <Link to={`/update/${item.id}`}>
-                                            <Button variant="outlined" color="primary">
-                                                Update
-                                            </Button>
-                                        </Link>
+                                        {item.bids.length > 0 || item.buy_now_buyer ? (
+                                            <Tooltip title="Cannot delete auction items that have received bids or been purchased via Buy Now.">
+                                                <span>
+                                                    <Button
+                                                        variant="outlined"
+                                                        color="secondary"
+                                                        className={styles.button}
+                                                        disabled
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                </span>
+                                            </Tooltip>
+                                        ) : (
+                                            <>
+                                                <Button
+                                                    variant="outlined"
+                                                    color="secondary"
+                                                    onClick={() => handleDelete(item.id)}
+                                                    className={styles.button}
+                                                >
+                                                    Delete
+                                                </Button>
+                                                <Link to={`/update/${item.id}`}>
+                                                    <Button variant="outlined" color="primary">
+                                                        Update
+                                                    </Button>
+                                                </Link>
+                                            </>
+                                        )}
                                     </div>
                                 )}
                                 {/* Conditionally render Bid form */}
@@ -189,13 +222,42 @@ const AuctionList = () => {
                                         </Button>
                                     </div>
                                 )}
+                                {/* Conditionally render Buy Now button */}
+                                {canBuyNow && (
+                                    <div className={styles.buyNowSection}>
+                                        <Button
+                                            variant="contained"
+                                            color="secondary"
+                                            onClick={() => openBuyNowModal(item)}
+                                            className={styles.buyNowButton}
+                                        >
+                                            Buy Now for ${item.buy_now_price}
+                                        </Button>
+                                    </div>
+                                )}
+                                {/* If item is bought via Buy Now, display buyer info */}
+                                {item.buy_now_buyer && (
+                                    <Typography variant="body1" color="primary">
+                                        Purchased via Buy Now by: {item.buy_now_buyer.username}
+                                    </Typography>
+                                )}
                             </CardContent>
                         </Card>
                     );
                 })}
             </div>
+            {/* Buy Now Modal */}
+            {selectedItem && (
+                <BuyNowModal
+                    open={modalOpen}
+                    handleClose={closeBuyNowModal}
+                    handleConfirm={handleConfirmBuyNow}
+                    buyNowPrice={selectedItem.buy_now_price}
+                />
+            )}
         </div>
     );
+
 };
 
 export default AuctionList;
