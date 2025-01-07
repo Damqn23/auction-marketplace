@@ -1,10 +1,9 @@
 # auctions/serializers.py
 
 from rest_framework import serializers
-from .models import AuctionItem, Bid
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-
+from .models import AuctionItem, Bid, AuctionImage
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -38,8 +37,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
-    
-
 
 
 class BidSerializer(serializers.ModelSerializer):
@@ -51,35 +48,42 @@ class BidSerializer(serializers.ModelSerializer):
         model = Bid
         fields = ['id', 'auction_item', 'bidder', 'amount', 'timestamp']
 
+
 class UserSerializer(serializers.ModelSerializer):
+    bids = BidSerializer(many=True, read_only=True)  # Moved outside Meta
+
     class Meta:
         model = User
-        bids = BidSerializer(many=True, read_only=True)
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'bids']
 
 
+class AuctionImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AuctionImage
+        fields = ['id', 'image']
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image and request:
+            return request.build_absolute_uri(obj.image.url)
+        return None
+
+
 class AuctionItemSerializer(serializers.ModelSerializer):
-    owner = serializers.ReadOnlyField(source='owner.username')
+    owner = UserSerializer(read_only=True)  # Serialize 'owner' as a nested object
     bids = BidSerializer(many=True, read_only=True)
+    images = AuctionImageSerializer(many=True, read_only=True)  # Nested Serializer for images
     buy_now_buyer = UserSerializer(read_only=True)  # Include buyer details if purchased via Buy Now
     winner = UserSerializer(read_only=True)
 
     class Meta:
         model = AuctionItem
         fields = [
-            'id',
-            'title',
-            'description',
-            'starting_bid',
-            'current_bid',
-            'image',
-            'status',
-            'owner',
-            'bids',
-            'end_time',
-            'buy_now_price',
-            'buy_now_buyer',
-            'winner',  
+            'id', 'title', 'description', 'starting_bid', 'current_bid',
+            'buy_now_price', 'buy_now_buyer', 'owner', 'image',
+            'images', 'status', 'end_time', 'winner', 'bids'
         ]
         read_only_fields = ['status', 'buy_now_buyer', 'winner']  # Make these fields read-only
 
@@ -95,7 +99,7 @@ class AuctionItemSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Buy Now price must be higher than the starting bid.")
 
         return data
-    
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         request = self.context.get('request')
@@ -104,5 +108,3 @@ class AuctionItemSerializer(serializers.ModelSerializer):
         else:
             representation['image'] = None
         return representation
-    
-    

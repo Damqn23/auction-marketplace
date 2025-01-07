@@ -1,3 +1,5 @@
+// frontend/src/components/CreateAuction.js
+
 import React, { useState, useContext } from 'react';
 import { createAuctionItem } from '../services/auctionService';
 import { useNavigate, Link } from 'react-router-dom';
@@ -10,7 +12,7 @@ const CreateAuction = () => {
     const [description, setDescription] = useState('');
     const [startingBid, setStartingBid] = useState('');
     const [buyNowPrice, setBuyNowPrice] = useState('');
-    const [image, setImage] = useState(null);
+    const [images, setImages] = useState([]); // Changed from single image to multiple
     const [endTime, setEndTime] = useState('');
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
@@ -42,9 +44,9 @@ const CreateAuction = () => {
         formData.append('starting_bid', startingBid);
         formData.append('buy_now_price', buyNowPrice);
         formData.append('end_time', endTime);
-        if (image) {
-            formData.append('image', image);
-        }
+        images.forEach((image) => {
+            formData.append('images', image); // Append multiple images with the key 'images'
+        });
 
         try {
             await createAuctionItem(formData);
@@ -59,11 +61,16 @@ const CreateAuction = () => {
         setLoading(false);
     };
 
+    const handleImageChange = (e) => {
+        const files = Array.from(e.target.files);
+        setImages(files);
+    };
+
     return (
         <div className={styles.container}>
             <h2>Create New Auction Item</h2>
             {message && <p className={styles.message}>{message}</p>}
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.formGroup}>
                     <label className={styles.label}>Title:</label>
                     <input
@@ -107,11 +114,12 @@ const CreateAuction = () => {
                     />
                 </div>
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Image:</label>
+                    <label className={styles.label}>Images:</label>
                     <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => setImage(e.target.files[0])}
+                        multiple // Allow multiple file uploads
+                        onChange={handleImageChange}
                         className={`${styles.input}`}
                     />
                 </div>
@@ -136,6 +144,7 @@ const CreateAuction = () => {
             </p>
         </div>
     );
+
 };
 
 export default CreateAuction;

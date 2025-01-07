@@ -28,6 +28,33 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+# backend/auctions/views.py
+
+from rest_framework import viewsets, status, permissions
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny, IsAuthenticated
+from rest_framework.decorators import action
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+
+from .models import AuctionItem, Bid, AuctionImage
+from .serializers import (
+    UserSerializer,
+    AuctionItemSerializer,
+    UserRegistrationSerializer,
+    BidSerializer,
+    AuctionImageSerializer
+)
+from .permissions import IsOwnerOrReadOnly, IsBidderOrReadOnly  # Custom Permissions
+
+from decimal import Decimal, InvalidOperation
+
+import logging
+
+# Initialize logger
+logger = logging.getLogger(__name__)
+
+
 class AuctionItemViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing Auction Items.
@@ -63,8 +90,13 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """
         Assign the current user as the owner when creating an auction.
+        Handle multiple images if provided.
         """
-        serializer.save(owner=self.request.user)
+        auction_item = serializer.save(owner=self.request.user)
+        images = self.request.FILES.getlist('images')  # Expecting multiple images with key 'images'
+
+        for image in images:
+            AuctionImage.objects.create(auction_item=auction_item, image=image)
 
     def destroy(self, request, *args, **kwargs):
         """
@@ -81,6 +113,7 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         """
         Prevent updating auctions that have bids, have been purchased via Buy Now, or have ended.
+        Handle updating images if provided.
         """
         auction_item = self.get_object()
 
@@ -95,6 +128,14 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
                 {'detail': 'Cannot update auction items that have already ended.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        # Handle updating images
+        images = request.FILES.getlist('images')
+        if images:
+            # Optionally, clear existing images or append new ones
+            # Here, we'll append new images
+            for image in images:
+                AuctionImage.objects.create(auction_item=auction_item, image=image)
 
         return super().update(request, *args, **kwargs)
 
@@ -203,6 +244,9 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
 
 
 class MyPurchasesView(APIView):
+    """
+    APIView to retrieve all purchases made by the authenticated user.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -249,3 +293,19 @@ class UserViewSet(viewsets.ViewSet):
     def list(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+
+# auctions/views.py
+
+from rest_framework import generics, permissions
+from .serializers import UserSerializer
+
+class CurrentUserView(generics.RetrieveAPIView):
+    """
+    Retrieve the currently authenticated user.
+    """
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user

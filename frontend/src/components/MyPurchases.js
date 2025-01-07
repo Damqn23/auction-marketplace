@@ -84,7 +84,7 @@ const MyPurchases = () => {
                             <Typography variant="body2">
                                 Bought On: {moment(item.end_time).format('MMMM Do YYYY, h:mm:ss a')}
                             </Typography>
-                            <Typography variant="body2">Seller: {item.owner}</Typography>
+                            <Typography variant="body2">Seller: {item.owner.username}</Typography>
                             {/* Display Purchase Method */}
                             {item.buy_now_buyer && item.buy_now_buyer.id === user.id ? (
                                 <Typography variant="body1" color="secondary">

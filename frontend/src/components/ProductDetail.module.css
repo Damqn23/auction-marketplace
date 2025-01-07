@@ -1,0 +1,49 @@
+/* frontend/src/components/ProductDetail.module.css */
+
+.container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.detailCard {
+    width: 80%;
+    margin-bottom: 20px;
+}
+
+.primaryImage {
+    width: 100%;
+    height: auto;
+    margin-top: 20px;
+}
+
+.biddingSection,
+.buyNowSection {
+    width: 80%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.bidInput {
+    width: 200px;
+    margin-right: 10px;
+}
+
+.bidButton,
+.buyNowButton {
+    height: 40px;
+}
+
+.link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.image {
+    width: 100%;
+    height: auto;
+    margin-top: 20px;
+}

@@ -1,6 +1,9 @@
+# auctions/models.py
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+
 
 class AuctionItem(models.Model):
     STATUS_CHOICES = [
@@ -24,7 +27,6 @@ class AuctionItem(models.Model):
     winner = models.ForeignKey(User, related_name='won_auctions', on_delete=models.SET_NULL, null=True, blank=True)  # New Field
 
 
-
     def __str__(self):
         return self.title
 
@@ -41,3 +43,11 @@ class Bid(models.Model):
 
     def __str__(self):
         return f"{self.bidder.username} bid ${self.amount} on {self.auction_item.title}"
+
+
+class AuctionImage(models.Model):
+    auction_item = models.ForeignKey(AuctionItem, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='auction_images/')
+
+    def __str__(self):
+        return f"Image for {self.auction_item.title}"
