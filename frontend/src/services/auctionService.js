@@ -22,7 +22,7 @@ export const getAllAuctionItems = async () => {
 export const getAuctionItem = async (id) => {
     try {
         const response = await axiosInstance.get(`auction-items/${id}/`);
-        return response;
+        return response.data;
     } catch (error) {
         throw error;
     }
