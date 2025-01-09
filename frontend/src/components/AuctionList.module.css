@@ -4,6 +4,8 @@
     padding: 20px;
     max-width: 1200px;
     margin: auto;
+    background-color: #fafafa;
+    /* Slightly off-white for contrast */
 }
 
 .header {
@@ -13,87 +15,83 @@
     margin-bottom: 20px;
 }
 
+/* Card styling */
 .auctionCard {
-    margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 15px;
     border-radius: 8px;
-    background-color: #ffffff;
+    /* The box shadow can be handled by MUI's default or you can add a custom one: */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.auctionImage {
-    width: 100%;
-    max-height: 200px;
-    object-fit: cover;
-    margin-top: 10px;
-    border-radius: 4px;
+/* In case there's no image, we display a fallback area */
+.noImageFallback {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #eaeaea;
 }
 
-.buttonGroup {
-    margin-top: 15px;
+/* Link styles inside a card */
+.productLink {
+    text-decoration: none;
+    color: inherit;
+    /* Inherits text color to keep it consistent */
+    transition: color 0.2s ease-in-out;
 }
 
-.button {
-    margin-right: 10px;
+.productLink:hover {
+    color: #1976d2;
+    /* MUI primary color on hover (example) */
+}
+
+/* Card actions and button group */
+.cardActions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px 16px;
+    /* override default spacing if needed */
 }
 
 .bidSection {
-    margin-top: 20px;
     display: flex;
     align-items: center;
 }
 
 .bidInput {
+    width: 90px;
     margin-right: 10px;
-    width: 150px;
-}
-
-.bidButton {
-    height: 40px;
-}
-
-.buyNowSection {
-    margin-top: 20px;
 }
 
 .buyNowButton {
     background-color: #ff5722;
     color: #ffffff;
+    text-transform: none;
+    margin-left: 16px;
 }
 
 .buyNowButton:hover {
     background-color: #e64a19;
 }
 
-.buyNowSection .MuiButton-root {
+.bidButton {
     text-transform: none;
 }
 
-.bidSection .MuiTypography-root {
-    margin-right: 10px;
-}
-
+/* Responsive adjustments */
 @media (max-width: 768px) {
-    .bidSection {
+    .cardActions {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .bidInput {
+    .bidSection {
+        margin-top: 10px;
+    }
+
+    .buyNowButton {
+        margin-left: 0;
+        margin-top: 10px;
         width: 100%;
-        margin-bottom: 10px;
-    }
-
-    .bidButton {
-        width: 100%;
-    }
-
-    .buttonGroup {
-        flex-direction: column;
-    }
-
-    .button {
-        margin-right: 0;
-        margin-bottom: 10px;
     }
 }

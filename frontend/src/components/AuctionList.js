@@ -4,7 +4,17 @@ import React, { useContext, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAllAuctionItems, deleteAuctionItem, placeBid, buyNow } from '../services/auctionService';
 import { Link } from 'react-router-dom';
-import { Button, Card, CardContent, Typography, TextField, Tooltip } from '@mui/material';
+import {
+    Button,
+    Card,
+    CardActions,
+    CardContent,
+    CardMedia,
+    Grid,
+    Typography,
+    TextField,
+    Tooltip
+} from '@mui/material';
 import styles from './AuctionList.module.css';
 import { UserContext } from '../contexts/UserContext';
 import { toast } from 'react-toastify';
@@ -16,7 +26,7 @@ const AuctionList = () => {
     const queryClient = useQueryClient();
     const [bidAmounts, setBidAmounts] = useState({}); // Track bid inputs
 
-    // React Query: Fetch Auction Items
+    // Fetch Auction Items
     const {
         data: auctionItems,
         isLoading,
@@ -29,9 +39,7 @@ const AuctionList = () => {
         },
     });
 
-    console.log('Fetched Auction Items:', auctionItems); // Debugging
-
-    // React Query: Delete Auction Item
+    // Delete Auction Item
     const deleteMutation = useMutation({
         mutationFn: deleteAuctionItem,
         onSuccess: () => {
@@ -43,7 +51,7 @@ const AuctionList = () => {
         },
     });
 
-    // React Query: Place Bid
+    // Place Bid
     const bidMutation = useMutation({
         mutationFn: placeBid,
         onSuccess: () => {
@@ -59,7 +67,7 @@ const AuctionList = () => {
         },
     });
 
-    // React Query: Buy Now
+    // Buy Now
     const buyNowMutation = useMutation({
         mutationFn: buyNow,
         onSuccess: () => {
@@ -75,6 +83,7 @@ const AuctionList = () => {
         },
     });
 
+    // Handlers
     const handleDelete = (id) => {
         if (window.confirm('Are you sure you want to delete this auction item?')) {
             deleteMutation.mutate(id);
@@ -90,7 +99,7 @@ const AuctionList = () => {
         bidMutation.mutate({ id, amount });
     };
 
-    // Handlers for Buy Now Modal
+    // Buy Now Modal
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
 
@@ -110,23 +119,28 @@ const AuctionList = () => {
         closeBuyNowModal();
     };
 
+    // Loading/Errors
     if (isLoading) return <p>Loading...</p>;
     if (isError) return <p>Failed to load auction items.</p>;
 
     return (
         <div className={styles.container}>
+            {/* Header */}
             <div className={styles.header}>
-                <Typography variant="h4">Auction Items</Typography>
+                <Typography variant="h4" component="h2" gutterBottom>
+                    Auction Items
+                </Typography>
                 <Link to="/create" style={{ textDecoration: 'none' }}>
                     <Button variant="contained" color="primary">
                         Create New Auction
                     </Button>
                 </Link>
             </div>
-            <div>
-                {Array.isArray(auctionItems) && auctionItems.length > 0 ? (
-                    auctionItems.map((item) => {
-                        // Determine if the current user can bid
+
+            {Array.isArray(auctionItems) && auctionItems.length > 0 ? (
+                <Grid container spacing={2}>
+                    {auctionItems.map((item) => {
+                        // Determine if current user can place a bid
                         const canBid =
                             user &&
                             item.owner &&
@@ -143,126 +157,171 @@ const AuctionList = () => {
                             item.buy_now_price &&
                             !item.buy_now_buyer;
 
-                        // Calculate the minimum bid (2% increment)
-                        const minBid = item.current_bid ? parseFloat(item.current_bid) : parseFloat(item.starting_bid);
+                        // Calculate the minimum required bid (2% increment)
+                        const minBid = item.current_bid
+                            ? parseFloat(item.current_bid)
+                            : parseFloat(item.starting_bid);
                         const minIncrement = minBid * 0.02;
                         const minRequiredBid = (minBid + minIncrement).toFixed(2);
 
-                        // Format end time for display
-                        const formattedEndTime = moment(item.end_time).format('MMMM Do YYYY, h:mm:ss a');
+                        // Format end time
+                        const formattedEndTime = moment(item.end_time).format(
+                            'MMMM Do YYYY, h:mm:ss a'
+                        );
 
                         return (
-                            <Card key={item.id} className={styles.auctionCard}>
-                                <CardContent>
-                                    <Link to={`/auction/${item.id}`} className={styles.productLink}>
-                                        <Typography variant="h5">{item.title}</Typography>
-                                    </Link>
-                                    <Typography variant="body2">{item.description}</Typography>
-                                    <Typography variant="body1">Starting Bid: ${item.starting_bid}</Typography>
-                                    <Typography variant="body1">Current Bid: ${item.current_bid || 'No bids yet'}</Typography>
-                                    {item.image && (
-                                        <img src={item.image} alt={item.title} className={styles.image} />
+                            <Grid item xs={12} md={6} lg={4} key={item.id}>
+                                <Card className={styles.auctionCard}>
+                                    {/* Card Image (or fallback text) */}
+                                    {item.images && item.images.length > 0 ? (
+                                        <CardMedia
+                                            component="img"
+                                            height="200"
+                                            image={item.images[0].image}
+                                            alt={item.title}
+                                        />
+                                    ) : (
+                                        <div className={styles.noImageFallback}>
+                                            <Typography variant="body2" color="textSecondary">
+                                                No image available
+                                            </Typography>
+                                        </div>
                                     )}
-                                    <Typography variant="body2">Status: {item.status}</Typography>
-                                    <Typography variant="body2">End Time: {formattedEndTime}</Typography>
-                                    {/* Accessing owner's username correctly */}
-                                    {item.owner && item.owner.username && (
-                                        <Typography variant="body2">Owner: {item.owner.username}</Typography>
-                                    )}
-                                    {/* Display Buy Now Price if available */}
-                                    {item.buy_now_price && (
-                                        <Typography variant="body1" color="secondary">
-                                            Buy Now Price: ${item.buy_now_price}
+
+                                    <CardContent>
+                                        <Link to={`/auction/${item.id}`} className={styles.productLink}>
+                                            <Typography variant="h6" component="div" gutterBottom>
+                                                {item.title}
+                                            </Typography>
+                                        </Link>
+                                        <Typography variant="body2" color="textSecondary" gutterBottom>
+                                            {item.description}
                                         </Typography>
-                                    )}
-                                    {/* Conditionally render Update and Delete buttons */}
-                                    {user && user.username === item.owner.username && (
-                                        <div className={styles.buttonGroup}>
-                                            {item.bids.length > 0 || item.buy_now_buyer ? (
-                                                <Tooltip title="Cannot delete auction items that have received bids or been purchased via Buy Now.">
-                                                    <span>
+                                        <Typography variant="body1">
+                                            <strong>Starting Bid:</strong> ${item.starting_bid}
+                                        </Typography>
+                                        <Typography variant="body1">
+                                            <strong>Current Bid:</strong>{' '}
+                                            {item.current_bid ? `$${item.current_bid}` : 'No bids yet'}
+                                        </Typography>
+                                        {item.buy_now_price && (
+                                            <Typography variant="body1" color="secondary">
+                                                <strong>Buy Now Price:</strong> ${item.buy_now_price}
+                                            </Typography>
+                                        )}
+                                        <Typography variant="body2" sx={{ mt: 1 }}>
+                                            <strong>Status:</strong> {item.status}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            <strong>End Time:</strong> {formattedEndTime}
+                                        </Typography>
+                                        {item.owner && item.owner.username && (
+                                            <Typography variant="body2">
+                                                <strong>Owner:</strong> {item.owner.username}
+                                            </Typography>
+                                        )}
+
+                                        {/* If item is purchased via Buy Now, show buyer info */}
+                                        {item.buy_now_buyer && (
+                                            <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+                                                Purchased via Buy Now by: {item.buy_now_buyer.username}
+                                            </Typography>
+                                        )}
+                                    </CardContent>
+
+                                    {/* Card Actions (bottom of the card) */}
+                                    <CardActions className={styles.cardActions}>
+                                        {/* If the current user is the owner, show Delete/Update */}
+                                        {user && user.username === item.owner.username && (
+                                            <>
+                                                {item.bids.length > 0 || item.buy_now_buyer ? (
+                                                    <Tooltip title="Cannot delete items that have bids or have been purchased.">
+                                                        <span>
+                                                            <Button
+                                                                variant="outlined"
+                                                                color="secondary"
+                                                                disabled
+                                                            >
+                                                                Delete
+                                                            </Button>
+                                                        </span>
+                                                    </Tooltip>
+                                                ) : (
+                                                    <>
                                                         <Button
                                                             variant="outlined"
                                                             color="secondary"
-                                                            className={styles.button}
-                                                            disabled
+                                                            onClick={() => handleDelete(item.id)}
                                                         >
                                                             Delete
                                                         </Button>
-                                                    </span>
-                                                </Tooltip>
-                                            ) : (
-                                                <>
-                                                    <Button
-                                                        variant="outlined"
-                                                        color="secondary"
-                                                        onClick={() => handleDelete(item.id)}
-                                                        className={styles.button}
-                                                    >
-                                                        Delete
-                                                    </Button>
-                                                    <Link to={`/update/${item.id}`} style={{ textDecoration: 'none' }}>
-                                                        <Button variant="outlined" color="primary">
-                                                            Update
-                                                        </Button>
-                                                    </Link>
-                                                </>
-                                            )}
-                                        </div>
-                                    )}
-                                    {/* Conditionally render Bid form */}
-                                    {canBid && (
-                                        <div className={styles.bidSection}>
-                                            <Typography variant="subtitle1">Place Your Bid (Min: ${minRequiredBid}):</Typography>
-                                            <TextField
-                                                type="number"
-                                                value={bidAmounts[item.id] || ''}
-                                                onChange={(e) => setBidAmounts({ ...bidAmounts, [item.id]: e.target.value })}
-                                                inputProps={{
-                                                    min: minRequiredBid,
-                                                    step: "0.01",
-                                                }}
-                                                variant="outlined"
-                                                size="small"
-                                                className={styles.bidInput}
-                                            />
-                                            <Button
-                                                variant="contained"
-                                                color="success"
-                                                onClick={() => handlePlaceBid(item.id)}
-                                                className={styles.bidButton}
-                                            >
-                                                Bid
-                                            </Button>
-                                        </div>
-                                    )}
-                                    {/* Conditionally render Buy Now button */}
-                                    {canBuyNow && (
-                                        <div className={styles.buyNowSection}>
+                                                        <Link
+                                                            to={`/update/${item.id}`}
+                                                            style={{ textDecoration: 'none' }}
+                                                        >
+                                                            <Button variant="outlined" color="primary">
+                                                                Update
+                                                            </Button>
+                                                        </Link>
+                                                    </>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {/* If the user is not the owner and item is active, show Bid + Buy Now */}
+                                        {canBid && (
+                                            <div className={styles.bidSection}>
+                                                <TextField
+                                                    label={`Min: $${minRequiredBid}`}
+                                                    type="number"
+                                                    value={bidAmounts[item.id] || ''}
+                                                    onChange={(e) =>
+                                                        setBidAmounts({
+                                                            ...bidAmounts,
+                                                            [item.id]: e.target.value,
+                                                        })
+                                                    }
+                                                    inputProps={{
+                                                        min: minRequiredBid,
+                                                        step: '0.01',
+                                                    }}
+                                                    variant="outlined"
+                                                    size="small"
+                                                    className={styles.bidInput}
+                                                />
+                                                <Button
+                                                    variant="contained"
+                                                    color="success"
+                                                    onClick={() => handlePlaceBid(item.id)}
+                                                    className={styles.bidButton}
+                                                >
+                                                    Bid
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {canBuyNow && (
                                             <Button
                                                 variant="contained"
                                                 color="secondary"
                                                 onClick={() => openBuyNowModal(item)}
                                                 className={styles.buyNowButton}
                                             >
-                                                Buy Now for ${item.buy_now_price}
+                                                Buy Now
                                             </Button>
-                                        </div>
-                                    )}
-                                    {/* If item is bought via Buy Now, display buyer info */}
-                                    {item.buy_now_buyer && (
-                                        <Typography variant="body1" color="primary">
-                                            Purchased via Buy Now by: {item.buy_now_buyer.username}
-                                        </Typography>
-                                    )}
-                                </CardContent>
-                            </Card>
+                                        )}
+                                    </CardActions>
+                                </Card>
+                            </Grid>
                         );
-                    })
-                ) : (
-                    <Typography variant="body1">No auction items available.</Typography>
-                )}
-            </div>
+                    })}
+                </Grid>
+            ) : (
+                <Typography variant="body1" sx={{ mt: 2 }}>
+                    No auction items available.
+                </Typography>
+            )}
+
             {/* Buy Now Modal */}
             {selectedItem && (
                 <BuyNowModal
@@ -274,7 +333,6 @@ const AuctionList = () => {
             )}
         </div>
     );
-
 };
 
 export default AuctionList;

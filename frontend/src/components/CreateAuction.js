@@ -6,6 +6,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import styles from './CreateAuction.module.css';
 import { UserContext } from '../contexts/UserContext';
+import {
+    Paper,
+    Typography,
+    TextField,
+    Button,
+    CircularProgress,
+    Box
+} from '@mui/material';
 
 const CreateAuction = () => {
     const [title, setTitle] = useState('');
@@ -19,6 +27,12 @@ const CreateAuction = () => {
 
     const navigate = useNavigate();
     const { user } = useContext(UserContext);
+
+    // Handle file selection
+    const handleImageChange = (e) => {
+        const filesArray = Array.from(e.target.files);
+        setImages(filesArray);
+    };
 
     // Handle form submission
     const handleSubmit = async (e) => {
@@ -39,7 +53,7 @@ const CreateAuction = () => {
             return;
         }
 
-        // Build FormData object to send to the backend
+        // Build FormData for backend
         const formData = new FormData();
         formData.append('title', title);
         formData.append('description', description);
@@ -47,125 +61,141 @@ const CreateAuction = () => {
         formData.append('buy_now_price', buyNowPrice);
         formData.append('end_time', endTime);
 
-        // Append each selected file under the key "images"
         images.forEach((imageFile) => {
             formData.append('images', imageFile);
         });
 
         try {
             await createAuctionItem(formData);
-            setMessage('Auction item created successfully');
             toast.success('Auction item created successfully!');
-            navigate('/'); // Redirect back to your main listing or wherever
+            navigate('/');
         } catch (err) {
             setMessage('Error creating auction item');
             console.error('Error:', err);
             toast.error('Failed to create auction item. Please try again.');
         }
+
         setLoading(false);
     };
 
-    // Handle file selection
-    const handleImageChange = (e) => {
-        const filesArray = Array.from(e.target.files); // convert FileList to an array
-        setImages(filesArray);
-    };
-
     return (
-        <div className={styles.container}>
-            <h2>Create New Auction Item</h2>
-            {message && <p className={styles.message}>{message}</p>}
+        <div className={styles.wrapper}>
+            <Paper elevation={3} className={styles.container}>
+                <Typography variant="h4" component="h2" gutterBottom>
+                    Create New Auction Item
+                </Typography>
 
-            <form
-                onSubmit={handleSubmit}
-                className={styles.form}
-                encType="multipart/form-data" // <-- Important for file uploads
-            >
-                {/* Title */}
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Title:</label>
-                    <input
-                        type="text"
+                {message && (
+                    <Typography variant="body1" color="error" className={styles.message}>
+                        {message}
+                    </Typography>
+                )}
+
+                <form
+                    onSubmit={handleSubmit}
+                    className={styles.form}
+                    encType="multipart/form-data"
+                >
+                    {/* Title */}
+                    <TextField
+                        label="Title"
+                        variant="outlined"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
+                        fullWidth
                         required
-                        className={styles.input}
+                        margin="normal"
                     />
-                </div>
 
-                {/* Description */}
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Description:</label>
-                    <textarea
+                    {/* Description */}
+                    <TextField
+                        label="Description"
+                        variant="outlined"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
+                        multiline
+                        rows={4}
+                        fullWidth
                         required
-                        rows="4"
-                        className={`${styles.input} ${styles.textarea}`}
+                        margin="normal"
                     />
-                </div>
 
-                {/* Starting Bid */}
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Starting Bid:</label>
-                    <input
+                    {/* Starting Bid */}
+                    <TextField
+                        label="Starting Bid"
+                        variant="outlined"
                         type="number"
                         value={startingBid}
                         onChange={(e) => setStartingBid(e.target.value)}
                         required
-                        min="0"
-                        step="0.01"
-                        className={styles.input}
+                        fullWidth
+                        margin="normal"
+                        inputProps={{ min: '0', step: '0.01' }}
                     />
-                </div>
 
-                {/* End Time */}
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>End Time:</label>
-                    <input
+                    {/* End Time */}
+                    <TextField
+                        label="End Time"
+                        variant="outlined"
                         type="datetime-local"
                         value={endTime}
                         onChange={(e) => setEndTime(e.target.value)}
                         required
-                        className={styles.input}
+                        fullWidth
+                        margin="normal"
+                        InputLabelProps={{
+                            shrink: true, // keeps label shrunk when date/time value is set
+                        }}
                     />
-                </div>
 
-                {/* Images */}
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Images:</label>
-                    <input
-                        type="file"
-                        accept="image/*"
-                        multiple                  // <-- Allows multiple file selections
-                        onChange={handleImageChange}
-                        className={styles.input}
-                    />
-                </div>
+                    {/* Images */}
+                    <Box mt={2} mb={2}>
+                        <Typography variant="body1" gutterBottom>
+                            Upload Images (optional, multiple allowed):
+                        </Typography>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleImageChange}
+                        />
+                    </Box>
 
-                {/* Buy Now Price (optional) */}
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Buy Now Price:</label>
-                    <input
+                    {/* Buy Now Price (optional) */}
+                    <TextField
+                        label="Buy Now Price (Optional)"
+                        variant="outlined"
                         type="number"
                         value={buyNowPrice}
                         onChange={(e) => setBuyNowPrice(e.target.value)}
-                        min={parseFloat(startingBid) + 0.01 || 0}
-                        step="0.01"
-                        className={styles.input}
-                        placeholder="Optional"
+                        fullWidth
+                        margin="normal"
+                        inputProps={{ min: parseFloat(startingBid) + 0.01 || 0, step: '0.01' }}
                     />
-                </div>
 
-                {/* Submit */}
-                <button type="submit" className={styles.button} disabled={loading}>
-                    {loading ? 'Creating...' : 'Create Auction'}
-                </button>
-            </form>
+                    {/* Submit */}
+                    <Box mt={3} display="flex" justifyContent="flex-end">
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            color="primary"
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <CircularProgress size={24} style={{ color: '#fff' }} />
+                            ) : (
+                                'Create Auction'
+                            )}
+                        </Button>
+                    </Box>
+                </form>
 
-            <p style={{ marginTop: '10px' }}>
-                <Link to="/">Back to Auction List</Link>
-            </p>
+                <Box mt={2}>
+                    <Link to="/" className={styles.backLink}>
+                        Back to Auction List
+                    </Link>
+                </Box>
+            </Paper>
         </div>
     );
 };

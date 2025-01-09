@@ -1,13 +1,56 @@
+/* index.css */
+
+/* Base resets & global styles */
 body {
   margin: 0;
+  padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #ffffff;
+  color: #333333;
+  box-sizing: border-box;
 }
 
+/* Let all elements inherit box-sizing from body */
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+/* Example styling for anchor tags site-wide */
+a {
+  color: inherit;
+  /* Inherits parent color to keep things consistent */
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Headings reset/improvement */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 1rem 0 0.5rem;
+  font-weight: 600;
+}
+
+/* Paragraphs or general text spacing */
+p {
+  margin: 0.5rem 0 1rem;
+  line-height: 1.6;
+}
+
+/* Code blocks (optional) */
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+  background-color: #f4f4f4;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
 }

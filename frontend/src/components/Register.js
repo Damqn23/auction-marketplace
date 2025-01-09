@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
 import { registerUser } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify'; // For toast notifications
-import styles from './Register.module.css'; // Import CSS Module
+import { toast } from 'react-toastify';
+import styles from './Register.module.css';
+
+// Material UI imports
+import {
+    Paper,
+    Typography,
+    TextField,
+    Button,
+    Box
+} from '@mui/material';
 
 const Register = () => {
     const [username, setUsername] = useState('');
@@ -27,7 +36,14 @@ const Register = () => {
         }
 
         try {
-            await registerUser({ username, email, first_name: firstName, last_name: lastName, password, password2 });
+            await registerUser({
+                username,
+                email,
+                first_name: firstName,
+                last_name: lastName,
+                password,
+                password2
+            });
             toast.success('Registration successful! You can now log in.');
             navigate('/login'); // Redirect to login page after successful registration
         } catch (err) {
@@ -42,70 +58,100 @@ const Register = () => {
     };
 
     return (
-        <div className={styles.container}>
-            <h2>Register</h2>
-            {error && <p className={styles.error}>{error}</p>}
-            <form onSubmit={handleSubmit}>
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Username:</label>
-                    <input
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                        className={styles.input}
-                    />
-                </div>
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Email:</label>
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className={styles.input}
-                    />
-                </div>
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>First Name:</label>
-                    <input
-                        type="text"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        className={styles.input}
-                    />
-                </div>
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Last Name:</label>
-                    <input
-                        type="text"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        className={styles.input}
-                    />
-                </div>
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Password:</label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className={styles.input}
-                    />
-                </div>
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Confirm Password:</label>
-                    <input
-                        type="password"
-                        value={password2}
-                        onChange={(e) => setPassword2(e.target.value)}
-                        required
-                        className={styles.input}
-                    />
-                </div>
-                <button type="submit" className={styles.button}>Register</button>
-            </form>
+        <div className={styles.wrapper}>
+            <Paper elevation={2} className={styles.container}>
+                <Typography variant="h4" component="h2" gutterBottom>
+                    Register
+                </Typography>
+
+                {error && (
+                    <Typography variant="body1" color="error" className={styles.error}>
+                        {error}
+                    </Typography>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                    <Box mb={2}>
+                        <TextField
+                            label="Username"
+                            variant="outlined"
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            fullWidth
+                            required
+                        />
+                    </Box>
+
+                    <Box mb={2}>
+                        <TextField
+                            label="Email"
+                            variant="outlined"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            fullWidth
+                            required
+                        />
+                    </Box>
+
+                    <Box mb={2}>
+                        <TextField
+                            label="First Name"
+                            variant="outlined"
+                            type="text"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            fullWidth
+                        />
+                    </Box>
+
+                    <Box mb={2}>
+                        <TextField
+                            label="Last Name"
+                            variant="outlined"
+                            type="text"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            fullWidth
+                        />
+                    </Box>
+
+                    <Box mb={2}>
+                        <TextField
+                            label="Password"
+                            variant="outlined"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            fullWidth
+                            required
+                        />
+                    </Box>
+
+                    <Box mb={3}>
+                        <TextField
+                            label="Confirm Password"
+                            variant="outlined"
+                            type="password"
+                            value={password2}
+                            onChange={(e) => setPassword2(e.target.value)}
+                            fullWidth
+                            required
+                        />
+                    </Box>
+
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        disableElevation
+                    >
+                        Register
+                    </Button>
+                </form>
+            </Paper>
         </div>
     );
 };

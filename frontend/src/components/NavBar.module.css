@@ -1,44 +1,28 @@
-/* frontend/src/components/NavBar.module.css */
-
 .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #333;
-    padding: 10px 20px;
+    width: 100%;
 }
 
+/* Logo (brand name) link styling */
 .logo {
     color: #fff;
     text-decoration: none;
-    font-size: 1.5rem;
     font-weight: bold;
 }
 
-.navLinks {
-    display: flex;
-    align-items: center;
-}
-
+/* Nav link overrides */
 .navLink {
-    color: #fff;
-    text-decoration: none;
-    margin-right: 15px;
+    text-transform: none;
     font-size: 1rem;
 }
 
-.navLink:hover {
-    text-decoration: underline;
-}
-
+/* Logout button styling (optional) */
 .logoutButton {
-    background: none;
-    border: none;
-    color: #fff;
-    cursor: pointer;
+    text-transform: none;
     font-size: 1rem;
 }
 
-.logoutButton:hover {
-    text-decoration: underline;
+/* Username styling */
+.navUsername {
+    color: orange;
+    font-weight: 600;
 }

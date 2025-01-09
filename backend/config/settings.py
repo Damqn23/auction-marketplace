@@ -20,7 +20,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',      # Content types
     'django.contrib.sessions',          # Session framework
     'django.contrib.messages',          # Messaging framework
-    'django.contrib.staticfiles',       # Static files handling
+    'django.contrib.staticfiles',       
     'auctions',
     'rest_framework',
     'corsheaders',

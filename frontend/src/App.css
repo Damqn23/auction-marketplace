@@ -1,37 +1,61 @@
+/* App.css */
+
+/* The main container for your React app */
 .App {
   text-align: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background-color: #f5f6fa;
+  /* Light grayish background */
 }
 
+/* If you're still displaying the React logo somewhere, you can keep the spin effect. */
 .App-logo {
   height: 40vmin;
   pointer-events: none;
+  margin-top: 2rem;
 }
 
+/* Slower spin animation for a calmer effect (optional) */
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+    animation: App-logo-spin infinite 15s linear;
   }
 }
 
+/* Header styling (if you use .App-header for a hero section or banner) */
 .App-header {
   background-color: #282c34;
-  min-height: 100vh;
+  min-height: 60vh;
+  /* Shorter than the default 100vh */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  color: #ffffff;
+  padding: 2rem;
 }
 
+/* Links inside the app (used by create-react-app by default) */
 .App-link {
   color: #61dafb;
+  text-decoration: none;
+  transition: color 0.2s ease-in-out;
 }
 
+.App-link:hover {
+  color: #21a1f1;
+  /* Slightly darker hover color */
+}
+
+/* The spinning keyframes (unchanged from create-react-app) */
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }

@@ -1,10 +1,13 @@
 import React, { useState, useContext } from 'react';
 import { loginUser } from '../services/authService';
 import { useNavigate, Link } from 'react-router-dom';
-import { toast } from 'react-toastify'; // For toast notifications
-import styles from './Login.module.css';   // Import CSS Module
-import { UserContext } from '../contexts/UserContext'; // Import UserContext
-import { getCurrentUser } from '../services/userService'; // Import getCurrentUser
+import { toast } from 'react-toastify';
+import styles from './Login.module.css';
+import { UserContext } from '../contexts/UserContext';
+import { getCurrentUser } from '../services/userService';
+
+// Material UI imports
+import { Paper, Typography, TextField, Button, Box } from '@mui/material';
 
 const Login = () => {
     const [username, setUsername] = useState('');
@@ -12,7 +15,7 @@ const Login = () => {
     const [error, setError] = useState('');
 
     const navigate = useNavigate();
-    const { setUser } = useContext(UserContext); // Access setUser to update context
+    const { setUser } = useContext(UserContext);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -33,35 +36,62 @@ const Login = () => {
     };
 
     return (
-        <div className={styles.container}>
-            <h2>Login</h2>
-            {error && <p className={styles.error}>{error}</p>}
-            <form onSubmit={handleSubmit}>
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Username:</label>
-                    <input
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                        className={styles.input}
-                    />
-                </div>
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Password:</label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className={styles.input}
-                    />
-                </div>
-                <button type="submit" className={styles.button}>Login</button>
-            </form>
-            <p style={{ marginTop: '10px' }}>
-                Don't have an account? <Link to="/register">Register here</Link>.
-            </p>
+        <div className={styles.wrapper}>
+            <Paper elevation={3} className={styles.container}>
+                <Typography variant="h4" component="h2" gutterBottom>
+                    Login
+                </Typography>
+
+                {error && (
+                    <Typography variant="body1" color="error" className={styles.error}>
+                        {error}
+                    </Typography>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                    <Box mb={2}>
+                        <TextField
+                            label="Username"
+                            variant="outlined"
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            fullWidth
+                            required
+                        />
+                    </Box>
+
+                    <Box mb={2}>
+                        <TextField
+                            label="Password"
+                            variant="outlined"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            fullWidth
+                            required
+                        />
+                    </Box>
+
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        disableElevation
+                    >
+                        Login
+                    </Button>
+                </form>
+
+                <Typography variant="body2" sx={{ marginTop: '10px' }}>
+                    Don't have an account?{' '}
+                    <Link to="/register" className={styles.link}>
+                        Register here
+                    </Link>
+                    .
+                </Typography>
+            </Paper>
         </div>
     );
 };
