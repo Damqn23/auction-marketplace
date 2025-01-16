@@ -21,7 +21,8 @@ export const getAllAuctionItems = async () => {
 // Get auction item by ID
 export const getAuctionItem = async (id) => {
     try {
-        const response = await axiosInstance.get(`auction-items/${id}/`);
+        console.log(`Fetching item with ID: ${id}`); // Debugging line
+        const response = await axiosInstance.get(`auction_items/${id}/`);
         return response.data;
     } catch (error) {
         throw error;

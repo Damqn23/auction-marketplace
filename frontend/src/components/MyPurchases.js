@@ -1,5 +1,3 @@
-// frontend/src/components/MyPurchases.js
-
 import React, { useState, useEffect, useContext } from 'react';
 import { getMyPurchases } from '../services/auctionService';
 import { UserContext } from '../contexts/UserContext';
@@ -10,7 +8,6 @@ import {
     Button,
     Card,
     CardContent,
-    CardMedia,
     Grid,
     Typography,
     Container,
@@ -36,16 +33,13 @@ const MyPurchases = () => {
     const fetchPurchasedItems = async () => {
         try {
             const response = await getMyPurchases();
-            // Debugging: Log the response data
             console.log('My Purchases API Response:', response);
 
             if (response && Array.isArray(response)) {
                 setPurchasedItems(response);
             } else if (response && response.data && Array.isArray(response.data)) {
-                // In case your service returns { data: [...] }
                 setPurchasedItems(response.data);
             } else {
-                // Handle unexpected data formats
                 setPurchasedItems([]);
                 console.warn('Unexpected data format:', response);
                 toast.warn('Received unexpected data format from server.');
@@ -81,27 +75,13 @@ const MyPurchases = () => {
                 {purchasedItems.map((item) => (
                     <Grid item xs={12} md={6} lg={4} key={item.id}>
                         <Card className={styles.purchaseCard}>
-                            {/* If there's an image, use CardMedia; otherwise, show a fallback */}
-                            {item.image ? (
-                                <CardMedia
-                                    component="img"
-                                    height="200"
-                                    image={item.image}
-                                    alt={item.title}
-                                    className={styles.purchaseImage}
-                                />
-                            ) : (
-                                <div className={styles.noImageFallback}>
-                                    <Typography variant="body2" color="textSecondary">
-                                        No image available
-                                    </Typography>
-                                </div>
-                            )}
-
                             <CardContent>
-                                <Typography variant="h6" gutterBottom>
-                                    {item.title}
-                                </Typography>
+                                {/* Add Link to redirect to the product details page */}
+                                <Link to={`/auction/${item.id}`} style={{ textDecoration: 'none' }}>
+                                    <Typography variant="h6" gutterBottom>
+                                        {item.title}
+                                    </Typography>
+                                </Link>
                                 <Typography variant="body2" color="textSecondary" paragraph>
                                     {item.description}
                                 </Typography>
@@ -121,7 +101,6 @@ const MyPurchases = () => {
                                         <strong>Seller:</strong> {item.owner.username}
                                     </Typography>
                                 )}
-                                {/* Display Purchase Method */}
                                 {item.buy_now_buyer && item.buy_now_buyer.id === user.id ? (
                                     <Typography variant="body1" color="secondary" sx={{ mt: 1 }}>
                                         Purchased via Buy Now

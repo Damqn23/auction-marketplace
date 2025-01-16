@@ -11,6 +11,32 @@ from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
+from .models import AuctionItem, Bid
+from .serializers import (
+    UserSerializer,
+    AuctionItemSerializer,
+    UserRegistrationSerializer,
+    BidSerializer
+)
+from .permissions import IsOwnerOrReadOnly, IsBidderOrReadOnly  # Custom Permissions
+
+from decimal import Decimal, InvalidOperation
+
+import logging
+
+# Initialize logger
+logger = logging.getLogger(__name__)
+
+
+# backend/auctions/views.py
+
+from rest_framework import viewsets, status, permissions
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny, IsAuthenticated
+from rest_framework.decorators import action
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+
 from .models import AuctionItem, Bid, AuctionImage
 from .serializers import (
     UserSerializer,
@@ -40,8 +66,7 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Override get_queryset to process ended auctions (close them if past end_time).
-        Only return active auctions that are not yet ended.
+        Override get_queryset to process ended auctions.
         """
         current_time = timezone.now()
         ended_auctions = AuctionItem.objects.filter(status='active', end_time__lte=current_time)
@@ -59,16 +84,16 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
                 auction.status = 'closed'
                 auction.save()
         
-        # Return only active auctions that haven't ended yet
+        # Return only active auctions
         return AuctionItem.objects.filter(status='active', end_time__gt=current_time)
 
     def perform_create(self, serializer):
         """
         Assign the current user as the owner when creating an auction.
-        Handle multiple images if provided (key='images').
+        Handle multiple images if provided.
         """
         auction_item = serializer.save(owner=self.request.user)
-        images = self.request.FILES.getlist('images')  # Expecting multiple images with the key 'images'
+        images = self.request.FILES.getlist('images')  # Expecting multiple images with key 'images'
 
         for image in images:
             AuctionImage.objects.create(auction_item=auction_item, image=image)
@@ -88,7 +113,7 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         """
         Prevent updating auctions that have bids, have been purchased via Buy Now, or have ended.
-        Also handle updating images if provided.
+        Handle updating images if provided.
         """
         auction_item = self.get_object()
 
@@ -104,10 +129,11 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Handle updating images if new ones are uploaded
+        # Handle updating images
         images = request.FILES.getlist('images')
         if images:
-            # Example approach: append new images without deleting old ones
+            # Optionally, clear existing images or append new ones
+            # Here, we'll append new images
             for image in images:
                 AuctionImage.objects.create(auction_item=auction_item, image=image)
 
@@ -120,12 +146,13 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         """
         auction_item = self.get_object()
 
-        # Check if auction is still active or has ended
+        # Update status if auction has ended
         if auction_item.status == 'active' and auction_item.end_time <= timezone.now():
             auction_item.status = 'closed'
             auction_item.save()
             return Response({'detail': 'Bidding is closed for this item.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Check if auction is active
         if auction_item.status != 'active':
             return Response({'detail': 'Bidding is closed for this item.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -133,7 +160,7 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         if auction_item.owner == request.user:
             return Response({'detail': 'Owners cannot bid on their own items.'}, status=status.HTTP_403_FORBIDDEN)
 
-        # Prevent bidding if Buy Now has already been used
+        # Prevent bidding if Buy Now has been used
         if auction_item.buy_now_buyer is not None:
             return Response({'detail': 'This item has been purchased via Buy Now.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -143,21 +170,20 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'Bid amount is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            # Convert amount to Decimal
             amount = Decimal(str(amount))
         except (ValueError, InvalidOperation):
             return Response({'detail': 'Invalid bid amount.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Determine the minimum required bid (2% increment)
+        # Determine minimum bid (2% increment)
         min_bid = auction_item.current_bid if auction_item.current_bid else auction_item.starting_bid
         min_increment = (min_bid * Decimal('0.02')).quantize(Decimal('0.01'))
         min_required_bid = (min_bid + min_increment).quantize(Decimal('0.01'))
 
         # If Buy Now is set, ensure bids do not exceed it
-        if auction_item.buy_now_price and amount >= auction_item.buy_now_price:
-            return Response(
-                {'detail': f'Bid must be less than Buy Now price of ${auction_item.buy_now_price}.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        if auction_item.buy_now_price:
+            if amount >= auction_item.buy_now_price:
+                return Response({'detail': f'Bid must be less than Buy Now price of ${auction_item.buy_now_price}.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if amount < min_required_bid:
             return Response({'detail': f'Bid must be at least ${min_required_bid}.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -185,10 +211,7 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
 
         # Check if auction is active
         if auction_item.status != 'active':
-            return Response(
-                {'detail': 'Cannot Buy Now on this item as the auction is not active.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'detail': 'Cannot Buy Now on this item as the auction is not active.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Prevent owner from buying their own item
         if auction_item.owner == request.user:
@@ -202,16 +225,16 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         if not auction_item.buy_now_price:
             return Response({'detail': 'Buy Now price is not set for this item.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # (Optional) Check user funds or other business logic here
+        # Optionally, check user funds or other business logic here
 
-        # Mark as purchased via Buy Now
+        # Set buyer and update auction status
         auction_item.buy_now_buyer = request.user
         auction_item.current_bid = auction_item.buy_now_price
         auction_item.status = 'closed'
         auction_item.save()
 
-        # Optionally, set winner if not already done
-        if not auction_item.winner and auction_item.bids.exists():
+        # Optionally, set winner if not already set via Buy Now
+        if not auction_item.buy_now_buyer and auction_item.bids.exists():
             highest_bid = auction_item.bids.order_by('-amount').first()
             auction_item.winner = highest_bid.bidder
             auction_item.save()
@@ -272,7 +295,10 @@ class UserViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
 
+# auctions/views.py
+
 from rest_framework import generics, permissions
+from .serializers import UserSerializer
 
 class CurrentUserView(generics.RetrieveAPIView):
     """
@@ -283,7 +309,7 @@ class CurrentUserView(generics.RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
-
+    
 
 class AuctionItemDetailView(generics.RetrieveAPIView):
     queryset = AuctionItem.objects.all()

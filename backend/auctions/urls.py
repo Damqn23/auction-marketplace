@@ -15,5 +15,6 @@ urlpatterns = [
         path('users/me/', CurrentUserView.as_view(), name='current_user'),
         path('my-purchases/', MyPurchasesView.as_view(), name='my-purchases'),  # New Endpoint
         path('auction_items/<int:pk>/', AuctionItemDetailView.as_view(), name='auction-item-detail'),
+        path('auction-items/<int:pk>/', AuctionItemDetailView.as_view(), name='auction-item-detail'),
 
     ]
