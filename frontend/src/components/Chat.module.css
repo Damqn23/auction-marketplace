@@ -1,0 +1,166 @@
+/* src/components/Chat.module.css */
+
+/* Chat Container */
+.chatContainer {
+    padding: 30px;
+    max-width: 800px;
+    margin: 50px auto;
+    background: linear-gradient(135deg, #6e7fce, #4a90e2);
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    color: #fff;
+}
+
+/* Chat Header */
+.chatHeader {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Messages Container */
+.messagesContainer {
+    height: 400px;
+    overflow-y: auto;
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Empty message */
+.noMessages {
+    font-style: italic;
+    color: #ccc;
+    text-align: center;
+}
+
+/* Message Styles */
+.message {
+    position: relative;
+    display: flex;
+    margin-bottom: 15px;
+    align-items: flex-start;
+    padding: 10px;
+    border-radius: 10px;
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+/* Sent Messages (Current User) */
+.sent {
+    background-color: #d1f8d1;
+    /* Light Green */
+    align-self: flex-start;
+    /* Sent messages on the left */
+    text-align: left;
+}
+
+/* Received Messages (Other User) */
+.received {
+    background-color: #fff9c4;
+    /* Light Yellow */
+    align-self: flex-end;
+    /* Received messages on the right */
+    text-align: right;
+}
+
+/* Message Content */
+.messageContent p {
+    margin: 5px 0;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #333;
+    /* Dark text for better readability */
+}
+
+/* Timestamp Styling */
+.timestamp {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 5px;
+    display: block;
+    text-align: right;
+}
+
+/* Input Section */
+.inputContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+/* Textarea Styling */
+textarea {
+    width: 100%;
+    height: 60px;
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 1rem;
+    resize: none;
+    border: 2px solid #ccc;
+    outline: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: 0.3s;
+}
+
+textarea:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 4px 10px rgba(74, 144, 226, 0.3);
+}
+
+/* Send Button */
+.sendButton {
+    margin-top: 15px;
+    padding: 12px 25px;
+    background-color: #4a90e2;
+    color: white;
+    font-size: 1rem;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.sendButton:hover {
+    background-color: #357ab7;
+}
+
+.sendButton:active {
+    background-color: #2b5f8f;
+}
+
+/* Loading State */
+.loadingState {
+    color: #fff;
+    font-size: 1.2rem;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .chatContainer {
+        padding: 15px;
+    }
+
+    .messagesContainer {
+        height: 350px;
+        padding: 10px;
+    }
+
+    .inputContainer textarea {
+        height: 50px;
+    }
+
+    .sendButton {
+        padding: 10px 20px;
+    }
+}

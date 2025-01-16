@@ -29,6 +29,49 @@ export const getAuctionItem = async (id) => {
     }
 };
 
+export const getUnreadMessages = async () => {
+    try {
+        const response = await axiosInstance.get('chat/unread_count/');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching unread messages count:', error);
+        throw error;
+    }
+};
+
+export const sendMessage = async (recipientUsername, message) => {
+    try {
+        const response = await axiosInstance.post('chat/send_message/', {
+            recipient_username: recipientUsername,
+            message: message,
+        });
+        return response.data; // Ensure this returns the message object with sender.username
+    } catch (error) {
+        console.error('Error sending message:', error);
+        throw error;
+    }
+};
+
+export const getMessages = async (otherUsername = null) => {
+    try {
+        const params = otherUsername ? { other_username: otherUsername } : {};
+        const response = await axiosInstance.get('chat/get_messages/', { params });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+    }
+};
+
+export const getChats = async () => {
+    try {
+        const response = await axiosInstance.get('chat/get_chats/');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching chats:', error);
+        throw error;
+    }
+};
 // Create a new auction item
 export const createAuctionItem = async (formData) => {
     try {
@@ -57,7 +100,16 @@ export const updateAuctionItem = async (auctionItemId, formData) => {
         throw error;
     }
 };
-
+export const markAsRead = async (otherUsername = null) => {
+    try {
+        const data = otherUsername ? { other_username: otherUsername } : {};
+        const response = await axiosInstance.post('chat/mark_as_read/', data);
+        return response.data;
+    } catch (error) {
+        console.error('Error marking messages as read:', error);
+        throw error;
+    }
+};
 // Delete an auction item
 export const deleteAuctionItem = async (id) => {
     try {

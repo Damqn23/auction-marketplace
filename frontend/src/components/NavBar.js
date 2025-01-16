@@ -1,7 +1,10 @@
-import React, { useContext } from 'react';
+// src/components/NavBar.js
+
+import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserContext } from '../contexts/UserContext';
 import { toast } from 'react-toastify';
+import { getUnreadMessages } from '../services/auctionService';
 import styles from './NavBar.module.css';
 
 // Material UI imports
@@ -14,13 +17,29 @@ import {
 } from '@mui/material';
 
 const NavBar = () => {
-    const { user, setUser } = useContext(UserContext);
+    const { user, setUser, unreadCount, setUnreadCount } = useContext(UserContext);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const fetchUnreadMessages = async () => {
+            try {
+                const response = await getUnreadMessages();
+                setUnreadCount(response.unread_count);
+            } catch (error) {
+                console.error("Error fetching unread message count", error);
+            }
+        };
+
+        if (user) {
+            fetchUnreadMessages();
+        }
+    }, [user, setUnreadCount]);
 
     const handleLogout = () => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         setUser(null);
+        setUnreadCount(0); // Reset unread count on logout
         toast.success('Logged out successfully!');
         navigate('/login');
     };
@@ -69,6 +88,22 @@ const NavBar = () => {
                             >
                                 My Purchases
                             </Button>
+
+                            {/* Chat button */}
+                            <Button
+                                component={Link}
+                                to="/chat"
+                                color="inherit"
+                                className={styles.navLink}
+                            >
+                                Chat
+                                {unreadCount > 0 && (
+                                    <span className="notification-badge">
+                                        {unreadCount > 9 ? "9+" : unreadCount}
+                                    </span>
+                                )}
+                            </Button>
+
                             <Button
                                 onClick={handleLogout}
                                 color="inherit"

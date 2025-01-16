@@ -2,12 +2,13 @@
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import AuctionItemViewSet, RegisterView, UserViewSet, BidViewSet, MyPurchasesView, CurrentUserView, AuctionItemDetailView
+from .views import AuctionItemViewSet, ChatMessageViewSet, RegisterView, UserViewSet, BidViewSet, MyPurchasesView, CurrentUserView, AuctionItemDetailView
 
 router = DefaultRouter()
 router.register(r'auction-items', AuctionItemViewSet, basename='auctionitem')
 router.register(r'bids', BidViewSet, basename='bid')
 router.register(r'users', UserViewSet, basename='user')
+router.register(r'chat', ChatMessageViewSet, basename='chat')
 
 urlpatterns = [
         path('', include(router.urls)),

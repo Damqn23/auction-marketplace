@@ -11,6 +11,8 @@ import NavBar from './components/NavBar';
 import ProductDetail from './components/ProductDetail'; // New Component
 import MyPurchases from './components/MyPurchases'; // New Component
 import BidHistory from './components/BidHistory'; // Import BidHistory component
+import ChatList from './components/ChatList'; // Import the new Chat List page
+import Chat from './components/Chat'; // Import Chat component
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import 'react-responsive-carousel/lib/styles/carousel.min.css'; // Carousel CSS
@@ -37,6 +39,9 @@ function App() {
           <Route path="/auction/:id" element={<ProductDetail />} /> {/* New Route */}
           <Route path="/my-bids" element={<PrivateRoute element={BidHistory} />} /> {/* Protected */}
           <Route path="/my-purchases" element={<PrivateRoute element={MyPurchases} />} /> {/* Protected */}
+          <Route path="/chat" element={<PrivateRoute element={ChatList} />} /> {/* Chat list route */}
+          <Route path="/chat/:ownerUsername" element={<PrivateRoute element={Chat} />} /> {/* New Chat Route */}
+
           {/* Add more routes as needed */}
         </Routes>
         <ToastContainer />

@@ -3,7 +3,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from .models import AuctionItem, Bid, AuctionImage
+from .models import AuctionItem, Bid, AuctionImage, ChatMessage
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -108,3 +108,9 @@ class AuctionItemSerializer(serializers.ModelSerializer):
         else:
             representation['image'] = None
         return representation
+
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatMessage
+        fields = ['id', 'sender', 'recipient', 'message', 'timestamp', 'is_read']

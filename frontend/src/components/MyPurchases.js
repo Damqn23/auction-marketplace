@@ -27,7 +27,6 @@ const MyPurchases = () => {
             setLoading(false);
             setPurchasedItems([]);
         }
-        // eslint-disable-next-line
     }, [user]);
 
     const fetchPurchasedItems = async () => {
@@ -76,7 +75,7 @@ const MyPurchases = () => {
                     <Grid item xs={12} md={6} lg={4} key={item.id}>
                         <Card className={styles.purchaseCard}>
                             <CardContent>
-                                {/* Add Link to redirect to the product details page */}
+                                {/* Link to redirect to the product details page */}
                                 <Link to={`/auction/${item.id}`} style={{ textDecoration: 'none' }}>
                                     <Typography variant="h6" gutterBottom>
                                         {item.title}
@@ -110,6 +109,15 @@ const MyPurchases = () => {
                                         Won via Bidding
                                     </Typography>
                                 )}
+
+                                {/* Add a button to chat with the owner */}
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={() => window.location.href = `/chat/${item.owner.username}`}
+                                >
+                                    Chat with Owner
+                                </Button>
                             </CardContent>
                         </Card>
                     </Grid>

@@ -3,6 +3,8 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
+from django.db.models import Q
 
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
@@ -11,8 +13,9 @@ from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
-from .models import AuctionItem, Bid
+from .models import AuctionItem, Bid, ChatMessage
 from .serializers import (
+    ChatMessageSerializer,
     UserSerializer,
     AuctionItemSerializer,
     UserRegistrationSerializer,
@@ -315,3 +318,117 @@ class AuctionItemDetailView(generics.RetrieveAPIView):
     queryset = AuctionItem.objects.all()
     serializer_class = AuctionItemSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+
+class ChatMessageViewSet(viewsets.ModelViewSet):
+    queryset = ChatMessage.objects.all()
+    serializer_class = ChatMessageSerializer
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        user = request.user
+        unread_messages = ChatMessage.objects.filter(recipient=user, is_read=False).count()
+        return Response({'unread_count': unread_messages})
+
+    @action(detail=False, methods=['get'])
+    def get_messages(self, request):
+        user = request.user
+        other_username = request.query_params.get('other_username')
+
+        if other_username:
+            try:
+                other_user = User.objects.get(username=other_username)
+            except User.DoesNotExist:
+                return Response({'detail': 'Recipient does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+
+            messages = ChatMessage.objects.filter(
+                Q(sender=user, recipient=other_user) |
+                Q(sender=other_user, recipient=user)
+            ).order_by('timestamp')
+        else:
+            # If no specific user is mentioned, return all messages where the user is sender or recipient
+            messages = ChatMessage.objects.filter(
+                Q(sender=user) | Q(recipient=user)
+            ).order_by('-timestamp')
+
+        serializer = ChatMessageSerializer(messages, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def send_message(self, request):
+        sender = request.user
+        recipient_username = request.data.get('recipient_username')
+        message = request.data.get('message')
+
+        if not recipient_username or not message:
+            return Response({'detail': 'Recipient and message are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            recipient = User.objects.get(username=recipient_username)
+        except User.DoesNotExist:
+            return Response({'detail': 'Recipient does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+
+        chat_message = ChatMessage.objects.create(sender=sender, recipient=recipient, message=message)
+        serializer = ChatMessageSerializer(chat_message)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['get'])
+    def get_chats(self, request):
+        user = request.user
+        sent_messages = ChatMessage.objects.filter(sender=user)
+        received_messages = ChatMessage.objects.filter(recipient=user)
+
+        # Get unique senders and recipients
+        unique_senders = sent_messages.values_list('recipient__username', flat=True).distinct()
+        unique_recipients = received_messages.values_list('sender__username', flat=True).distinct()
+
+        unique_users = set(unique_senders).union(set(unique_recipients))
+
+        # For each user, get the latest message
+        chats = []
+        for username in unique_users:
+            latest_message = ChatMessage.objects.filter(
+                (Q(sender=user, recipient__username=username) |
+                 Q(sender__username=username, recipient=user))
+            ).order_by('-timestamp').first()
+            if latest_message:
+                chats.append({
+                    'owner': username,
+                    'lastMessage': latest_message.message,
+                    'timestamp': latest_message.timestamp
+                })
+
+        # Sort chats by latest message timestamp
+        chats.sort(key=lambda x: x['timestamp'], reverse=True)
+
+        return Response(chats)
+    
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def mark_as_read(self, request):
+        """
+        Marks messages as read either globally or within a specific conversation.
+        """
+        user = request.user
+        other_username = request.data.get('other_username')
+
+        if other_username:
+            try:
+                other_user = User.objects.get(username=other_username)
+            except User.DoesNotExist:
+                return Response({'detail': 'User not found.'}, status=404)
+
+            # Mark messages from other_user to the current user as read
+            updated = ChatMessage.objects.filter(
+                sender=other_user,
+                recipient=user,
+                is_read=False
+            ).update(is_read=True)
+        else:
+            # Mark all unread messages for the current user as read
+            updated = ChatMessage.objects.filter(
+                recipient=user,
+                is_read=False
+            ).update(is_read=True)
+
+        return Response({'status': f'{updated} messages marked as read.'}, status=200)
