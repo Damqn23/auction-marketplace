@@ -107,6 +107,11 @@ class AuctionItemSerializer(serializers.ModelSerializer):
             representation['image'] = request.build_absolute_uri(instance.image.url)
         else:
             representation['image'] = None
+        # Ensure images are also correctly serialized
+        if 'images' in representation:
+            for img in representation['images']:
+                if 'image' in img and img['image']:
+                    img['image'] = request.build_absolute_uri(img['image'])
         return representation
 
 

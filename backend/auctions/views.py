@@ -204,6 +204,21 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
 
         serializer = BidSerializer(bid)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def search(self, request):
+        query = request.query_params.get('q', '')
+        if query:
+            items = AuctionItem.objects.filter(
+                Q(title__icontains=query) | Q(description__icontains=query),
+                status='active'
+            )
+            print("Query results:", items)  # Add this for debugging
+        else:
+            items = AuctionItem.objects.none()
+
+        serializer = self.get_serializer(items, many=True)
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticatedOrReadOnly], parser_classes=[JSONParser])
     def buy_now(self, request, pk=None):
@@ -432,3 +447,25 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
             ).update(is_read=True)
 
         return Response({'status': f'{updated} messages marked as read.'}, status=200)
+    
+class SearchAuctionItemsView(APIView):
+    """
+    API View to handle searching of Auction Items based on query parameter 'q'.
+    """
+
+    def get(self, request, format=None):
+        query = request.query_params.get('q', '').strip()
+        if not query:
+            return Response(
+                {"detail": "Please provide a search query parameter 'q'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Filter AuctionItems where 'q' is in title or description, and status is 'active'
+        auction_items = AuctionItem.objects.filter(
+            Q(title__icontains=query) | Q(description__icontains=query),
+            status='active'
+        )
+
+        serializer = AuctionItemSerializer(auction_items, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)

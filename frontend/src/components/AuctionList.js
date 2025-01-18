@@ -1,9 +1,15 @@
 // frontend/src/components/AuctionList.js
 
 import React, { useContext, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAllAuctionItems, deleteAuctionItem, placeBid, buyNow } from '../services/auctionService';
-import { Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'; // Import useMutation and useQueryClient
+import {
+    searchAuctionItems,
+    getAllAuctionItems,
+    deleteAuctionItem,
+    placeBid,
+    buyNow,
+} from '../services/auctionService';
+import { Link, useLocation } from 'react-router-dom';
 import {
     Button,
     Card,
@@ -13,7 +19,7 @@ import {
     Grid,
     Typography,
     TextField,
-    Tooltip
+    Tooltip,
 } from '@mui/material';
 import styles from './AuctionList.module.css';
 import { UserContext } from '../contexts/UserContext';
@@ -23,26 +29,41 @@ import BuyNowModal from './BuyNowModal';
 
 const AuctionList = () => {
     const { user } = useContext(UserContext);
-    const queryClient = useQueryClient();
+    const queryClient = useQueryClient(); // Initialize queryClient
     const [bidAmounts, setBidAmounts] = useState({}); // Track bid inputs
 
-    // Fetch Auction Items
+    // Get search query from URL
+    const location = useLocation();
+    const query = new URLSearchParams(location.search).get('q') || '';
+
+    console.log('Search query:', query); // Debugging line
+
+    // Fetch Auction Items based on search query
     const {
         data: auctionItems,
         isLoading,
         isError,
     } = useQuery({
-        queryKey: ['auctionItems'],
-        queryFn: getAllAuctionItems,
+        queryKey: ['searchAuctionItems', query],
+        queryFn: () => {
+            if (query) {
+                return searchAuctionItems(query);
+            } else {
+                return getAllAuctionItems();
+            }
+        },
         onError: () => {
             toast.error('Failed to load auction items.');
         },
     });
 
-    // Delete Auction Item
+    console.log('Fetched auction items:', auctionItems); // Debugging line
+
+    // Delete Auction Item Mutation
     const deleteMutation = useMutation({
         mutationFn: deleteAuctionItem,
         onSuccess: () => {
+            // Invalidate and refetch auction items
             queryClient.invalidateQueries(['auctionItems']);
             toast.success('Auction item deleted successfully.');
         },
@@ -51,10 +72,11 @@ const AuctionList = () => {
         },
     });
 
-    // Place Bid
+    // Place Bid Mutation
     const bidMutation = useMutation({
         mutationFn: placeBid,
         onSuccess: () => {
+            // Invalidate and refetch auction items
             queryClient.invalidateQueries(['auctionItems']);
             toast.success('Bid placed successfully!');
         },
@@ -67,10 +89,11 @@ const AuctionList = () => {
         },
     });
 
-    // Buy Now
+    // Buy Now Mutation
     const buyNowMutation = useMutation({
         mutationFn: buyNow,
         onSuccess: () => {
+            // Invalidate and refetch auction items
             queryClient.invalidateQueries(['auctionItems']);
             toast.success('Purchase successful!');
         },
@@ -318,7 +341,7 @@ const AuctionList = () => {
                 </Grid>
             ) : (
                 <Typography variant="body1" sx={{ mt: 2 }}>
-                    No auction items available.
+                    {query ? 'No auction items found for your search.' : 'No auction items available.'}
                 </Typography>
             )}
 

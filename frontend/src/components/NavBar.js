@@ -13,12 +13,16 @@ import {
     Toolbar,
     Typography,
     Button,
-    Stack
+    Stack,
+    TextField,
+    IconButton,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 
 const NavBar = () => {
     const { user, setUser, unreadCount, setUnreadCount } = useContext(UserContext);
     const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         const fetchUnreadMessages = async () => {
@@ -44,6 +48,18 @@ const NavBar = () => {
         navigate('/login');
     };
 
+    const handleSearch = (e) => {
+        if (e.key === 'Enter' && searchQuery.trim() !== '') {
+            navigate(`/auction-list?q=${encodeURIComponent(searchQuery)}`);
+        }
+    };
+
+    const handleSearchButtonClick = () => {
+        if (searchQuery.trim() !== '') {
+            navigate(`/auction-list?q=${encodeURIComponent(searchQuery)}`);
+        }
+    };
+
     return (
         <AppBar position="static">
             <Toolbar className={styles.navbar}>
@@ -54,9 +70,27 @@ const NavBar = () => {
                         component={Link}
                         to="/"
                         className={styles.logo}
+                        style={{ color: 'inherit', textDecoration: 'none' }}
                     >
                         Auction Marketplace
                     </Typography>
+
+                    {/* Search Bar */}
+                    <TextField
+                        placeholder="Search items..."
+                        size="small"
+                        variant="outlined"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={handleSearch}
+                        InputProps={{
+                            endAdornment: (
+                                <IconButton onClick={handleSearchButtonClick}>
+                                    <SearchIcon />
+                                </IconButton>
+                            ),
+                        }}
+                    />
 
                     {/* Navigation Links */}
                     {user ? (

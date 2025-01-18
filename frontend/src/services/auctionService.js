@@ -17,6 +17,19 @@ export const getAllAuctionItems = async () => {
         throw error;
     }
 };
+export const searchAuctionItems = async (query) => {
+    try {
+        console.log(`Searching auction items with query: ${query}`); // Debugging line
+        const response = await axiosInstance.get(
+            `auction-items/search/?q=${encodeURIComponent(query)}`
+        );
+        console.log(response.data); // Log response for debugging
+        return response.data;
+    } catch (error) {
+        console.error('Error searching auction items:', error);
+        throw error;
+    }
+};
 
 // Get auction item by ID
 export const getAuctionItem = async (id) => {
