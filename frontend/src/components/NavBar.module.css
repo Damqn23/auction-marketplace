@@ -1,34 +1,78 @@
+/* src/components/NavBar.module.css */
+
+/* Overall NavBar Container */
 .navbar {
-    width: 100%;
+    background-color: #283593;
+    /* Indigo shade for a deeper contrast */
+    padding: 10px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Logo (brand name) link styling */
+/* Logo (Brand Name) Styling */
 .logo {
-    color: #fff;
+    color: #ffeb3b;
+    /* Amber color for high contrast against indigo */
     text-decoration: none;
     font-weight: bold;
+    font-size: 1.5rem;
+    transition: color 0.3s ease;
 }
 
-/* Nav link overrides */
+.logo:hover {
+    color: #fff176;
+    /* Lighter amber on hover */
+}
+
+/* Navigation Links Styling */
 .navLink {
     text-transform: none;
     font-size: 1rem;
+    color: #ffffff;
+    /* White color for readability */
+    margin-left: 15px;
+    transition: color 0.3s ease;
+    position: relative;
 }
 
-/* Logout button styling (optional) */
+.navLink:hover {
+    color: #ffeb3b;
+    /* Amber color on hover for accent */
+}
+
+/* Active Link Styling */
+.active {
+    color: #ffeb3b;
+    /* Amber color for active link */
+    font-weight: 700;
+    border-bottom: 2px solid #ffeb3b;
+    /* Underline active link */
+}
+
+/* Logout Button Styling */
 .logoutButton {
     text-transform: none;
     font-size: 1rem;
+    color: #ffffff;
+    margin-left: 15px;
+    transition: color 0.3s ease;
 }
 
-/* Username styling */
+.logoutButton:hover {
+    color: #ffeb3b;
+}
+
+/* Username Display Styling */
 .navUsername {
-    color: orange;
+    color: #ff9800;
+    /* Orange color for username */
     font-weight: 600;
+    margin-left: 15px;
 }
 
-.notification-badge {
-    background-color: red;
+/* Notification Badge for Unread Messages */
+.notificationBadge {
+    background-color: #e53935;
+    /* Red shade for urgency */
     color: white;
     border-radius: 50%;
     padding: 2px 6px;
@@ -36,4 +80,67 @@
     margin-left: 5px;
     display: inline-block;
     vertical-align: middle;
+}
+
+/* Search Bar Styling */
+.searchBar {
+    margin-left: 20px;
+    flex-grow: 1;
+}
+
+.searchBar .MuiOutlinedInput-root {
+    background-color: #ffffff;
+    border-radius: 4px;
+}
+
+.searchBar .MuiOutlinedInput-notchedOutline {
+    border-color: #ffffff;
+}
+
+.searchBar .MuiSvgIcon-root {
+    color: #283593;
+    /* Indigo color for search icon */
+}
+
+@media (max-width: 960px) {
+    .navbar {
+        padding: 10px 20px;
+    }
+
+    .searchBar {
+        margin-left: 10px;
+    }
+
+    .navLink,
+    .logoutButton {
+        margin-left: 10px;
+        font-size: 0.9rem;
+    }
+
+    .logo {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .searchBar {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    .navLink,
+    .logoutButton,
+    .navUsername {
+        margin-left: 0;
+        margin-right: 15px;
+    }
+
+    .logo {
+        font-size: 1.2rem;
+    }
 }

@@ -1,13 +1,12 @@
 // src/components/NavBar.js
 
 import React, { useContext, useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { UserContext } from '../contexts/UserContext';
 import { toast } from 'react-toastify';
 import { getUnreadMessages } from '../services/auctionService';
 import styles from './NavBar.module.css';
 
-// Material UI imports
 import {
     AppBar,
     Toolbar,
@@ -61,36 +60,46 @@ const NavBar = () => {
     };
 
     return (
-        <AppBar position="static">
-            <Toolbar className={styles.navbar}>
-                <Stack direction="row" spacing={2} alignItems="center">
+        <AppBar position="static" className={styles.navbar}>
+            <Toolbar>
+                <Stack
+                    direction="row"
+                    spacing={2}
+                    alignItems="center"
+                    justifyContent="flex-start"
+                    sx={{ width: '100%' }}
+                >
                     {/* Brand / Logo */}
                     <Typography
                         variant="h6"
-                        component={Link}
+                        component={NavLink}
                         to="/"
                         className={styles.logo}
+                        // Active class for NavLink is handled via className prop
                         style={{ color: 'inherit', textDecoration: 'none' }}
                     >
                         Auction Marketplace
                     </Typography>
 
                     {/* Search Bar */}
-                    <TextField
-                        placeholder="Search items..."
-                        size="small"
-                        variant="outlined"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={handleSearch}
-                        InputProps={{
-                            endAdornment: (
-                                <IconButton onClick={handleSearchButtonClick}>
-                                    <SearchIcon />
-                                </IconButton>
-                            ),
-                        }}
-                    />
+                    <div className={styles.searchBar}>
+                        <TextField
+                            placeholder="Search items..."
+                            size="small"
+                            variant="outlined"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={handleSearch}
+                            fullWidth
+                            InputProps={{
+                                endAdornment: (
+                                    <IconButton onClick={handleSearchButtonClick} aria-label="search">
+                                        <SearchIcon />
+                                    </IconButton>
+                                ),
+                            }}
+                        />
+                    </div>
 
                     {/* Navigation Links */}
                     {user ? (
@@ -99,40 +108,40 @@ const NavBar = () => {
                                 Hi, {user.username}!
                             </Typography>
                             <Button
-                                component={Link}
+                                component={NavLink}
                                 to="/create"
                                 color="inherit"
-                                className={styles.navLink}
+                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
                             >
                                 Create Auction
                             </Button>
                             <Button
-                                component={Link}
+                                component={NavLink}
                                 to="/my-bids"
                                 color="inherit"
-                                className={styles.navLink}
+                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
                             >
                                 My Bids
                             </Button>
                             <Button
-                                component={Link}
+                                component={NavLink}
                                 to="/my-purchases"
                                 color="inherit"
-                                className={styles.navLink}
+                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
                             >
                                 My Purchases
                             </Button>
 
                             {/* Chat button */}
                             <Button
-                                component={Link}
+                                component={NavLink}
                                 to="/chat"
                                 color="inherit"
-                                className={styles.navLink}
+                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
                             >
                                 Chat
                                 {unreadCount > 0 && (
-                                    <span className="notification-badge">
+                                    <span className={styles.notificationBadge}>
                                         {unreadCount > 9 ? "9+" : unreadCount}
                                     </span>
                                 )}
@@ -149,18 +158,18 @@ const NavBar = () => {
                     ) : (
                         <>
                             <Button
-                                component={Link}
+                                component={NavLink}
                                 to="/login"
                                 color="inherit"
-                                className={styles.navLink}
+                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
                             >
                                 Login
                             </Button>
                             <Button
-                                component={Link}
+                                component={NavLink}
                                 to="/register"
                                 color="inherit"
-                                className={styles.navLink}
+                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
                             >
                                 Register
                             </Button>
@@ -170,6 +179,7 @@ const NavBar = () => {
             </Toolbar>
         </AppBar>
     );
+
 };
 
 export default NavBar;
