@@ -10,6 +10,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import NavBar from './components/NavBar';
 import ProductDetail from './components/ProductDetail';
+import MyAuctions from './components/MyAuctions';
 import MyPurchases from './components/MyPurchases';
 import BidHistory from './components/BidHistory';
 import ChatList from './components/ChatList';
@@ -68,6 +69,7 @@ function App() {
               <Route path="/my-bids" element={<PrivateRoute element={BidHistory} />} />
               <Route path="/my-purchases" element={<PrivateRoute element={MyPurchases} />} />
               <Route path="/chat" element={<PrivateRoute element={ChatList} />} />
+              <Route path="/my-auctions" element={<PrivateRoute element={MyAuctions} />} />
               <Route path="/chat/:ownerUsername" element={<PrivateRoute element={Chat} />} />
 
               {/* Catch-All Route for 404 Not Found */}

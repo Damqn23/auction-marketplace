@@ -75,7 +75,6 @@ const NavBar = () => {
                         component={NavLink}
                         to="/"
                         className={styles.logo}
-                        // Active class for NavLink is handled via className prop
                         style={{ color: 'inherit', textDecoration: 'none' }}
                     >
                         Auction Marketplace
@@ -132,6 +131,16 @@ const NavBar = () => {
                                 My Purchases
                             </Button>
 
+                            <Button
+                                component={NavLink}
+                                to="/my-auctions"
+                                color="inherit"
+                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+                            >
+                                My Auctions
+                            </Button>
+
+
                             {/* Chat button */}
                             <Button
                                 component={NavLink}
@@ -179,7 +188,6 @@ const NavBar = () => {
             </Toolbar>
         </AppBar>
     );
-
 };
 
 export default NavBar;

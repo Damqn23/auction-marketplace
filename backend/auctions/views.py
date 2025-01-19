@@ -89,7 +89,15 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         
         # Return only active auctions
         return AuctionItem.objects.filter(status='active', end_time__gt=current_time)
-
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def my_auctions(self, request):
+        """
+        Get all auctions created by the current user.
+        """
+        user = request.user
+        queryset = AuctionItem.objects.filter(owner=user).order_by('-created_at')
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     def perform_create(self, serializer):
         """
         Assign the current user as the owner when creating an auction.

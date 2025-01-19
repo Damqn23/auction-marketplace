@@ -52,6 +52,16 @@ export const getUnreadMessages = async () => {
     }
 };
 
+export const getMyAuctions = async () => {
+    try {
+        const response = await axiosInstance.get('auction-items/my_auctions/');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching user auctions:', error);
+        throw error;
+    }
+};
+
 export const sendMessage = async (recipientUsername, message) => {
     try {
         const response = await axiosInstance.post('chat/send_message/', {

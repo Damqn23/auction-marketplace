@@ -2,7 +2,7 @@
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import AuctionItemViewSet, ChatMessageViewSet, RegisterView, UserViewSet, BidViewSet, MyPurchasesView, CurrentUserView, AuctionItemDetailView
+from .views import AuctionItemViewSet, ChatMessageViewSet, RegisterView, SearchAuctionItemsView, UserViewSet, BidViewSet, MyPurchasesView, CurrentUserView, AuctionItemDetailView
 
 router = DefaultRouter()
 router.register(r'auction-items', AuctionItemViewSet, basename='auctionitem')
@@ -17,5 +17,6 @@ urlpatterns = [
         path('my-purchases/', MyPurchasesView.as_view(), name='my-purchases'),  # New Endpoint
         path('auction_items/<int:pk>/', AuctionItemDetailView.as_view(), name='auction-item-detail'),
         path('auction-items/<int:pk>/', AuctionItemDetailView.as_view(), name='auction-item-detail'),
+        path('auction-items/search/', SearchAuctionItemsView.as_view(), name='search-auction-items'),
 
     ]
