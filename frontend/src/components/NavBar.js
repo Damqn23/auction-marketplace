@@ -1,7 +1,5 @@
-// src/components/NavBar.js
-
 import React, { useContext, useState, useEffect } from 'react';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { UserContext } from '../contexts/UserContext';
 import { toast } from 'react-toastify';
 import { getUnreadMessages } from '../services/auctionService';
@@ -11,17 +9,23 @@ import {
     AppBar,
     Toolbar,
     Typography,
-    Button,
-    Stack,
-    TextField,
     IconButton,
+    Drawer,
+    List,
+    ListItem,
+    ListItemText,
+    Divider,
+    Box,
+    TextField,
 } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 
 const NavBar = () => {
     const { user, setUser, unreadCount, setUnreadCount } = useContext(UserContext);
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
+    const [drawerOpen, setDrawerOpen] = useState(false);
 
     useEffect(() => {
         const fetchUnreadMessages = async () => {
@@ -29,7 +33,7 @@ const NavBar = () => {
                 const response = await getUnreadMessages();
                 setUnreadCount(response.unread_count);
             } catch (error) {
-                console.error("Error fetching unread message count", error);
+                console.error('Error fetching unread message count', error);
             }
         };
 
@@ -59,132 +63,94 @@ const NavBar = () => {
         }
     };
 
+    const toggleDrawer = (open) => () => {
+        setDrawerOpen(open);
+    };
+
+    const menuItems = user
+        ? [
+            { text: 'Create Auction', link: '/create' },
+            { text: 'My Bids', link: '/my-bids' },
+            { text: 'My Purchases', link: '/my-purchases' },
+            { text: 'My Auctions', link: '/my-auctions' },
+            { text: 'Chat', link: '/chat', badge: unreadCount > 0 ? unreadCount : null },
+            { text: 'Logout', action: handleLogout },
+        ]
+        : [
+            { text: 'Login', link: '/login' },
+            { text: 'Register', link: '/register' },
+        ];
+
     return (
         <AppBar position="static" className={styles.navbar}>
             <Toolbar>
-                <Stack
-                    direction="row"
-                    spacing={2}
-                    alignItems="center"
-                    justifyContent="flex-start"
-                    sx={{ width: '100%' }}
+                {/* Hamburger Menu Icon */}
+                <IconButton
+                    edge="start"
+                    color="inherit"
+                    aria-label="menu"
+                    onClick={toggleDrawer(true)}
+                    className={styles.menuIcon}
                 >
-                    {/* Brand / Logo */}
-                    <Typography
-                        variant="h6"
-                        component={NavLink}
-                        to="/"
-                        className={styles.logo}
-                        style={{ color: 'inherit', textDecoration: 'none' }}
-                    >
-                        Auction Marketplace
-                    </Typography>
+                    <MenuIcon />
+                </IconButton>
 
-                    {/* Search Bar */}
-                    <div className={styles.searchBar}>
-                        <TextField
-                            placeholder="Search items..."
-                            size="small"
-                            variant="outlined"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyDown={handleSearch}
-                            fullWidth
-                            InputProps={{
-                                endAdornment: (
-                                    <IconButton onClick={handleSearchButtonClick} aria-label="search">
-                                        <SearchIcon />
-                                    </IconButton>
-                                ),
-                            }}
-                        />
-                    </div>
+                {/* Brand / Logo */}
+                <Typography
+                    variant="h6"
+                    component={NavLink}
+                    to="/"
+                    className={styles.logo}
+                    style={{ color: 'inherit', textDecoration: 'none' }}
+                >
+                    Auction Marketplace
+                </Typography>
 
-                    {/* Navigation Links */}
-                    {user ? (
-                        <>
-                            <Typography variant="body1" className={styles.navUsername}>
-                                Hi, {user.username}!
-                            </Typography>
-                            <Button
-                                component={NavLink}
-                                to="/create"
-                                color="inherit"
-                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
-                            >
-                                Create Auction
-                            </Button>
-                            <Button
-                                component={NavLink}
-                                to="/my-bids"
-                                color="inherit"
-                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
-                            >
-                                My Bids
-                            </Button>
-                            <Button
-                                component={NavLink}
-                                to="/my-purchases"
-                                color="inherit"
-                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
-                            >
-                                My Purchases
-                            </Button>
+                {/* Search Bar */}
+                <Box className={styles.searchBar}>
+                    <TextField
+                        placeholder="Search items..."
+                        size="small"
+                        variant="outlined"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={handleSearch}
+                        fullWidth
+                        InputProps={{
+                            endAdornment: (
+                                <IconButton onClick={handleSearchButtonClick} aria-label="search">
+                                    <SearchIcon />
+                                </IconButton>
+                            ),
+                        }}
+                    />
+                </Box>
 
-                            <Button
-                                component={NavLink}
-                                to="/my-auctions"
-                                color="inherit"
-                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
-                            >
-                                My Auctions
-                            </Button>
-
-
-                            {/* Chat button */}
-                            <Button
-                                component={NavLink}
-                                to="/chat"
-                                color="inherit"
-                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
-                            >
-                                Chat
-                                {unreadCount > 0 && (
-                                    <span className={styles.notificationBadge}>
-                                        {unreadCount > 9 ? "9+" : unreadCount}
-                                    </span>
-                                )}
-                            </Button>
-
-                            <Button
-                                onClick={handleLogout}
-                                color="inherit"
-                                className={styles.logoutButton}
-                            >
-                                Logout
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button
-                                component={NavLink}
-                                to="/login"
-                                color="inherit"
-                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
-                            >
-                                Login
-                            </Button>
-                            <Button
-                                component={NavLink}
-                                to="/register"
-                                color="inherit"
-                                className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
-                            >
-                                Register
-                            </Button>
-                        </>
-                    )}
-                </Stack>
+                {/* Drawer for Navigation Links */}
+                <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
+                    <Box role="presentation" onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)}>
+                        <List>
+                            {menuItems.map((item, index) => (
+                                <React.Fragment key={index}>
+                                    <ListItem
+                                        button
+                                        component={item.link ? NavLink : 'div'}
+                                        to={item.link || undefined}
+                                        onClick={item.action || undefined}
+                                    >
+                                        <ListItemText primary={item.text} />
+                                        {item.badge && (
+                                            <span className={styles.notificationBadge}>
+                                                {item.badge > 9 ? '9+' : item.badge}
+                                            </span>
+                                        )}
+                                    </ListItem>
+                                    {index < menuItems.length - 1 && <Divider />}
+                                </React.Fragment>
+                            ))}
+                        </List>
+                    </Box>
+                </Drawer>
             </Toolbar>
         </AppBar>
     );
