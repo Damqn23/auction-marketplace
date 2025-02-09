@@ -1,5 +1,3 @@
-// frontend/src/components/CreateAuction.js
-
 import React, { useState, useEffect, useContext } from "react";
 import { createAuctionItem } from "../services/auctionService";
 import { useNavigate, Link } from "react-router-dom";
@@ -14,24 +12,35 @@ import {
   Button,
   CircularProgress,
   Box,
+  MenuItem,
+  Divider,
 } from "@mui/material";
 
 const CreateAuction = () => {
+  // Basic fields
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startingBid, setStartingBid] = useState("");
   const [buyNowPrice, setBuyNowPrice] = useState("");
-  const [images, setImages] = useState([]); // Allow multiple image files
   const [endTime, setEndTime] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+
+  // New fields
+  const [condition, setCondition] = useState("");
+  const [location, setLocation] = useState("");
+
+  // Images (multiple allowed)
+  const [images, setImages] = useState([]);
+  
+  // Other state
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
 
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
 
-  // Handle file selection
+  // Handle file selection using a hidden input triggered by a styled button
   const handleImageChange = (e) => {
     const filesArray = Array.from(e.target.files);
     setImages(filesArray);
@@ -43,7 +52,7 @@ const CreateAuction = () => {
     setMessage("");
     setLoading(true);
 
-    // Simple validation: buyNowPrice > startingBid (if user set it)
+    // Simple validation: if buyNowPrice is set, ensure it’s higher than startingBid
     if (buyNowPrice && parseFloat(buyNowPrice) <= parseFloat(startingBid)) {
       setMessage("Buy Now price must be higher than the starting bid.");
       setLoading(false);
@@ -57,20 +66,23 @@ const CreateAuction = () => {
     }
     
     if (!selectedCategory) {
-        setMessage('Category selection is required.');
-        setLoading(false);
-        return;
+      setMessage("Category selection is required.");
+      setLoading(false);
+      return;
     }
 
-    // Build FormData for backend
+    // Build FormData to send to the backend
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
     formData.append("starting_bid", startingBid);
     formData.append("buy_now_price", buyNowPrice);
     formData.append("end_time", endTime);
-    formData.append('category', selectedCategory);
-
+    formData.append("category", selectedCategory);
+    
+    // New fields: condition and location
+    formData.append("condition", condition);
+    formData.append("location", location);
 
     images.forEach((imageFile) => {
       formData.append("images", imageFile);
@@ -98,7 +110,6 @@ const CreateAuction = () => {
         console.error("Failed to load categories:", error);
       }
     };
-
     fetchCategories();
   }, []);
 
@@ -106,7 +117,7 @@ const CreateAuction = () => {
     <div className={styles.wrapper}>
       <Paper elevation={3} className={styles.container}>
         <Typography variant="h4" component="h2" gutterBottom>
-          Create New Auction Item
+          Create New Auction Listing
         </Typography>
 
         {message && (
@@ -144,6 +155,8 @@ const CreateAuction = () => {
             margin="normal"
           />
 
+          <Divider className={styles.divider} />
+
           {/* Starting Bid */}
           <TextField
             label="Starting Bid"
@@ -167,25 +180,64 @@ const CreateAuction = () => {
             required
             fullWidth
             margin="normal"
-            InputLabelProps={{
-              shrink: true, // keeps label shrunk when date/time value is set
-            }}
+            InputLabelProps={{ shrink: true }}
           />
+
+          <Divider className={styles.divider} />
+
+          {/* Additional Details */}
+          <TextField
+            label="Condition"
+            variant="outlined"
+            select
+            value={condition}
+            onChange={(e) => setCondition(e.target.value)}
+            fullWidth
+            required
+            margin="normal"
+          >
+            <MenuItem value="">Select condition</MenuItem>
+            <MenuItem value="New">New</MenuItem>
+            <MenuItem value="Used">Used</MenuItem>
+            <MenuItem value="Refurbished">Refurbished</MenuItem>
+          </TextField>
+
+          <TextField
+            label="Location"
+            variant="outlined"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            fullWidth
+            required
+            margin="normal"
+            placeholder="City, State or Country"
+          />
+
+          <Divider className={styles.divider} />
 
           {/* Images */}
           <Box mt={2} mb={2}>
             <Typography variant="body1" gutterBottom>
               Upload Images (optional, multiple allowed):
             </Typography>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageChange}
-            />
+            <Button variant="outlined" component="label">
+              Select Images
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                hidden
+                onChange={handleImageChange}
+              />
+            </Button>
+            {images.length > 0 && (
+              <Typography variant="caption" display="block">
+                {images.length} image(s) selected
+              </Typography>
+            )}
           </Box>
 
-          {/* Buy Now Price (optional) */}
+          {/* Buy Now Price (Optional) */}
           <TextField
             label="Buy Now Price (Optional)"
             variant="outlined"
@@ -200,6 +252,7 @@ const CreateAuction = () => {
             }}
           />
 
+          {/* Category */}
           <TextField
             select
             label="Category"
@@ -211,20 +264,22 @@ const CreateAuction = () => {
             required
             margin="normal"
           >
-            <option value="">Select a category</option>
+            <option value=""></option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
               </option>
             ))}
           </TextField>
-          {/* Submit */}
+
+          {/* Submit Button */}
           <Box mt={3} display="flex" justifyContent="flex-end">
             <Button
               type="submit"
               variant="contained"
               color="primary"
               disabled={loading}
+              className={styles.submitButton}
             >
               {loading ? (
                 <CircularProgress size={24} style={{ color: "#fff" }} />

@@ -1,181 +1,115 @@
-// src/components/Home.js
-
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getAllCategories } from '../services/categoryService';
 import {
-    Button,
-    Typography,
-    Container,
-    Grid,
-    Card,
-    CardContent,
-    Box,
-    Stack,
+  Container,
+  Grid,
+  Typography,
+  Button,
+  Box,
+  Card,
+  CardContent,
 } from '@mui/material';
-import { EmojiEvents, AccountCircle, Gavel } from '@mui/icons-material'; // Example Icons
-
-import styles from './Home.module.css'; // Importing the CSS Module
+import { icons } from './CategoryIcons';
+import styles from './Home.module.css';
 
 const Home = () => {
-    // Example testimonials data
-    const testimonials = [
-        {
-            id: 1,
-            text: "Auction Marketplace made bidding effortless. I've won several items at great prices!",
-            author: "Jane Doe",
-        },
-        {
-            id: 2,
-            text: "A reliable platform with a wide range of products. Highly recommended!",
-            author: "John Smith",
-        },
-    ];
+  const [categories, setCategories] = useState([]);
+  const [showAll, setShowAll] = useState(false);
+  const navigate = useNavigate();
 
-    return (
-        <div className={styles.homeContainer}>
-            {/* Hero Section */}
-            <Box className={styles.hero}>
-                <Container maxWidth="md">
-                    <Typography variant="h3" component="h1" gutterBottom className={styles.heroTitle}>
-                        Welcome to Auction Marketplace
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getAllCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const handleCategoryClick = (categoryName) => {
+    navigate(`/auction-list?category=${encodeURIComponent(categoryName)}`);
+  };
+
+  const displayedCategories = showAll ? categories : categories.slice(0, 15);
+
+  return (
+    <div>
+      {/* HERO SECTION */}
+      <Box className={styles.hero}>
+        <Container maxWidth="md">
+          <Typography variant="h2" className={styles.heroTitle}>
+            Discover Unique Auctions
+          </Typography>
+          <Typography variant="h5" className={styles.heroSubtitle}>
+            Explore a wide range of categories and find that perfect piece.
+          </Typography>
+          <Button
+            variant="contained"
+            className={styles.heroButton}
+            onClick={() => navigate('/auction-list')}
+          >
+            Start Exploring
+          </Button>
+        </Container>
+      </Box>
+
+      {/* CATEGORIES SECTION */}
+      <Container maxWidth="lg" className={styles.homeContainer}>
+        <Typography variant="h4" align="center" gutterBottom className={styles.sectionTitle}>
+          Browse Categories
+        </Typography>
+        <Grid container spacing={4} justifyContent="center">
+          {displayedCategories.map((category) => {
+            const IconComponent = icons[category.name] || icons['Uncategorized'];
+            return (
+              <Grid
+                item
+                key={category.id}
+                xs={12}
+                sm={6}
+                md={4}
+                lg={3}
+                className={styles.categoryGridItem}
+                onClick={() => handleCategoryClick(category.name)}
+              >
+                <Card className={styles.categoryCard}>
+                  <CardContent className={styles.categoryContent}>
+                    <IconComponent className={styles.categoryIcon} />
+                    <Typography variant="subtitle1" className={styles.categoryName}>
+                      {category.name}
                     </Typography>
-                    <Typography variant="h6" component="p" gutterBottom className={styles.heroSubtitle}>
-                        Discover unique items and participate in exciting auctions.
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        color="secondary"
-                        size="large"
-                        component={Link}
-                        to="/auction-list"
-                        className={styles.heroButton}
-                    >
-                        Browse Auctions
-                    </Button>
-                </Container>
-            </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
+        <Box textAlign="center" mt={4}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setShowAll(!showAll)}
+            className={styles.toggleButton}
+          >
+            {showAll ? 'Show Less' : 'See All Categories'}
+          </Button>
+        </Box>
+      </Container>
 
-            {/* Features Section */}
-            <Container className={styles.features} maxWidth="lg">
-                <Typography variant="h4" component="h2" align="center" gutterBottom>
-                    Why Choose Us
-                </Typography>
-                <Grid container spacing={4} justifyContent="center">
-                    <Grid item xs={12} sm={6} md={4}>
-                        <Card className={styles.featureCard}>
-                            <EmojiEvents className={styles.icon} />
-                            <Typography variant="h6" gutterBottom>
-                                Trusted Platform
-                            </Typography>
-                            <Typography variant="body1">
-                                We ensure a secure and reliable environment for all your auction needs.
-                            </Typography>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                        <Card className={styles.featureCard}>
-                            <Gavel className={styles.icon} />
-                            <Typography variant="h6" gutterBottom>
-                                Wide Range of Items
-                            </Typography>
-                            <Typography variant="body1">
-                                From antiques to modern gadgets, find a diverse selection of auction items.
-                            </Typography>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                        <Card className={styles.featureCard}>
-                            <AccountCircle className={styles.icon} />
-                            <Typography variant="h6" gutterBottom>
-                                User-Friendly Interface
-                            </Typography>
-                            <Typography variant="body1">
-                                Navigate our platform with ease, making your auction experience seamless.
-                            </Typography>
-                        </Card>
-                    </Grid>
-                </Grid>
-            </Container>
-
-            {/* How It Works Section */}
-            <Box className={styles.howItWorks}>
-                <Container maxWidth="md">
-                    <Typography variant="h4" component="h2" align="center" gutterBottom>
-                        How It Works
-                    </Typography>
-                    <Grid container spacing={4}>
-                        <Grid item xs={12} sm={4}>
-                            <Typography variant="h6" gutterBottom>
-                                1. Register
-                            </Typography>
-                            <Typography variant="body1">
-                                Create an account to start bidding and listing items.
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={4}>
-                            <Typography variant="h6" gutterBottom>
-                                2. Bid or Buy Now
-                            </Typography>
-                            <Typography variant="body1">
-                                Participate in auctions by placing bids or purchase items instantly with Buy Now.
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={4}>
-                            <Typography variant="h6" gutterBottom>
-                                3. Win & Enjoy
-                            </Typography>
-                            <Typography variant="body1">
-                                If you win the auction, the item is yours! Enjoy your purchase.
-                            </Typography>
-                        </Grid>
-                    </Grid>
-                </Container>
-            </Box>
-
-            {/* Testimonials Section */}
-            <Container className={styles.testimonials} maxWidth="md">
-                <Typography variant="h4" component="h2" align="center" gutterBottom>
-                    What Our Users Say
-                </Typography>
-                <Grid container spacing={4}>
-                    {testimonials.map((testimonial) => (
-                        <Grid item xs={12} sm={6} key={testimonial.id}>
-                            <Card className={styles.testimonialCard}>
-                                <CardContent>
-                                    <Typography variant="body1" gutterBottom>
-                                        "{testimonial.text}"
-                                    </Typography>
-                                    <Typography variant="subtitle1" align="right">
-                                        - {testimonial.author}
-                                    </Typography>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    ))}
-                </Grid>
-            </Container>
-
-            {/* Footer */}
-            <Box className={styles.footer}>
-                <Container maxWidth="lg">
-                    <Typography variant="body2" color="textSecondary" gutterBottom>
-                        &copy; {new Date().getFullYear()} Auction Marketplace. All rights reserved.
-                    </Typography>
-                    <Stack direction="row" spacing={2} justifyContent="center">
-                        <Link to="/terms" className={styles.footerLink}>
-                            <Typography variant="body2">Terms of Service</Typography>
-                        </Link>
-                        <Link to="/privacy" className={styles.footerLink}>
-                            <Typography variant="body2">Privacy Policy</Typography>
-                        </Link>
-                        <Link to="/contact" className={styles.footerLink}>
-                            <Typography variant="body2">Contact Us</Typography>
-                        </Link>
-                    </Stack>
-                </Container>
-            </Box>
-        </div>
-    );
+      {/* FOOTER */}
+      <Box className={styles.footer}>
+        <Container maxWidth="lg">
+          <Typography variant="body1">
+            &copy; {new Date().getFullYear()} Auction Platform. All rights reserved.
+          </Typography>
+        </Container>
+      </Box>
+    </div>
+  );
 };
 
 export default Home;

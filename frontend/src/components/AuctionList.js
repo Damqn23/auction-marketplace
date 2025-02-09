@@ -1,7 +1,7 @@
 // frontend/src/components/AuctionList.js
 
 import React, { useContext, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; // Import useMutation and useQueryClient
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   searchAuctionItems,
   getAllAuctionItems,
@@ -9,7 +9,7 @@ import {
   placeBid,
   buyNow,
 } from "../services/auctionService";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom"; // Import useNavigate here
 import {
   Button,
   Card,
@@ -29,11 +29,14 @@ import BuyNowModal from "./BuyNowModal";
 
 const AuctionList = () => {
   const { user } = useContext(UserContext);
-  const queryClient = useQueryClient(); // Initialize queryClient
-  const [bidAmounts, setBidAmounts] = useState({}); // Track bid inputs
+  const queryClient = useQueryClient();
+  const [bidAmounts, setBidAmounts] = useState({});
+
+  // Import and initialize navigate
+  const navigate = useNavigate();
 
   // Get search query from URL
-  const location = useLocation(); // Correctly use the hook
+  const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const query = queryParams.get("q") || "";
   const category = queryParams.get("category") || "";
@@ -197,7 +200,12 @@ const AuctionList = () => {
 
             return (
               <Grid item xs={12} md={6} lg={4} key={item.id}>
-                <Card className={styles.auctionCard}>
+                {/* Make the entire card clickable */}
+                <Card
+                  className={styles.auctionCard}
+                  onClick={() => navigate(`/auction/${item.id}`)}
+                  style={{ cursor: "pointer" }}
+                >
                   {/* Card Image (or fallback text) */}
                   {item.images && item.images.length > 0 ? (
                     <CardMedia
@@ -215,19 +223,11 @@ const AuctionList = () => {
                   )}
 
                   <CardContent>
-                    <Link
-                      to={`/auction/${item.id}`}
-                      className={styles.productLink}
-                    >
-                      <Typography variant="h6" component="div" gutterBottom>
-                        {item.title}
-                      </Typography>
-                    </Link>
-                    <Typography
-                      variant="body2"
-                      color="textSecondary"
-                      gutterBottom
-                    >
+                    {/* Display some details */}
+                    <Typography variant="h6" component="div" gutterBottom>
+                      {item.title}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary" gutterBottom>
                       {item.description}
                     </Typography>
                     {item.category && (
@@ -240,9 +240,7 @@ const AuctionList = () => {
                     </Typography>
                     <Typography variant="body1">
                       <strong>Current Bid:</strong>{" "}
-                      {item.current_bid
-                        ? `$${item.current_bid}`
-                        : "No bids yet"}
+                      {item.current_bid ? `$${item.current_bid}` : "No bids yet"}
                     </Typography>
                     {item.buy_now_price && (
                       <Typography variant="body1" color="secondary">
@@ -260,32 +258,21 @@ const AuctionList = () => {
                         <strong>Owner:</strong> {item.owner.username}
                       </Typography>
                     )}
-
-                    {/* If item is purchased via Buy Now, show buyer info */}
                     {item.buy_now_buyer && (
-                      <Typography
-                        variant="body2"
-                        color="primary"
-                        sx={{ mt: 1 }}
-                      >
+                      <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
                         Purchased via Buy Now by: {item.buy_now_buyer.username}
                       </Typography>
                     )}
                   </CardContent>
 
-                  {/* Card Actions (bottom of the card) */}
-                  <CardActions className={styles.cardActions}>
-                    {/* If the current user is the owner, show Delete/Update */}
-                    {user && user.username === item.owner.username && (
+                  {/* Card Actions – stop click propagation so buttons work normally */}
+                  <CardActions onClick={(e) => e.stopPropagation()} className={styles.cardActions}>
+                    {user && user.username === item.owner.username ? (
                       <>
                         {item.bids.length > 0 || item.buy_now_buyer ? (
                           <Tooltip title="Cannot delete items that have bids or have been purchased.">
                             <span>
-                              <Button
-                                variant="outlined"
-                                color="secondary"
-                                disabled
-                              >
+                              <Button variant="outlined" color="secondary" disabled>
                                 Delete
                               </Button>
                             </span>
@@ -295,64 +282,76 @@ const AuctionList = () => {
                             <Button
                               variant="outlined"
                               color="secondary"
-                              onClick={() => handleDelete(item.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(item.id);
+                              }}
                             >
                               Delete
                             </Button>
-                            <Link
-                              to={`/update/${item.id}`}
-                              style={{ textDecoration: "none" }}
-                            >
-                              <Button variant="outlined" color="primary">
+                            <Link to={`/update/${item.id}`} style={{ textDecoration: "none" }}>
+                              <Button
+                                variant="outlined"
+                                color="primary"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 Update
                               </Button>
                             </Link>
                           </>
                         )}
                       </>
-                    )}
+                    ) : (
+                      <>
+                        {canBid && (
+                          <div className={styles.bidSection}>
+                            <TextField
+                              label={`Min: $${minRequiredBid}`}
+                              type="number"
+                              value={bidAmounts[item.id] || ""}
+                              onChange={(e) =>
+                                setBidAmounts({
+                                  ...bidAmounts,
+                                  [item.id]: e.target.value,
+                                })
+                              }
+                              inputProps={{
+                                min: minRequiredBid,
+                                step: "0.01",
+                              }}
+                              variant="outlined"
+                              size="small"
+                              className={styles.bidInput}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <Button
+                              variant="contained"
+                              color="success"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePlaceBid(item.id);
+                              }}
+                              className={styles.bidButton}
+                            >
+                              Bid
+                            </Button>
+                          </div>
+                        )}
 
-                    {/* If the user is not the owner and item is active, show Bid + Buy Now */}
-                    {canBid && (
-                      <div className={styles.bidSection}>
-                        <TextField
-                          label={`Min: $${minRequiredBid}`}
-                          type="number"
-                          value={bidAmounts[item.id] || ""}
-                          onChange={(e) =>
-                            setBidAmounts({
-                              ...bidAmounts,
-                              [item.id]: e.target.value,
-                            })
-                          }
-                          inputProps={{
-                            min: minRequiredBid,
-                            step: "0.01",
-                          }}
-                          variant="outlined"
-                          size="small"
-                          className={styles.bidInput}
-                        />
-                        <Button
-                          variant="contained"
-                          color="success"
-                          onClick={() => handlePlaceBid(item.id)}
-                          className={styles.bidButton}
-                        >
-                          Bid
-                        </Button>
-                      </div>
-                    )}
-
-                    {canBuyNow && (
-                      <Button
-                        variant="contained"
-                        color="secondary"
-                        onClick={() => openBuyNowModal(item)}
-                        className={styles.buyNowButton}
-                      >
-                        Buy Now
-                      </Button>
+                        {canBuyNow && (
+                          <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openBuyNowModal(item);
+                            }}
+                            className={styles.buyNowButton}
+                          >
+                            Buy Now
+                          </Button>
+                        )}
+                      </>
                     )}
                   </CardActions>
                 </Card>
@@ -362,9 +361,7 @@ const AuctionList = () => {
         </Grid>
       ) : (
         <Typography variant="body1" sx={{ mt: 2 }}>
-          {query
-            ? "No auction items found for your search."
-            : "No auction items available."}
+          {query ? "No auction items found for your search." : "No auction items available."}
         </Typography>
       )}
 
