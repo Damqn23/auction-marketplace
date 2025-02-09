@@ -1,9 +1,17 @@
 # auctions/models.py
+from enum import unique
 
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
+
+class Category(models.Model):
+    name = models.CharField(max_length = 100, unique = True)
+
+    def __str__(self):
+        return self.name
 
 class AuctionItem(models.Model):
     STATUS_CHOICES = [
@@ -25,6 +33,11 @@ class AuctionItem(models.Model):
     buy_now_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # New field
     buy_now_buyer = models.ForeignKey(User, related_name='buy_now_purchases', on_delete=models.SET_NULL, null=True, blank=True)  # To track buyer
     winner = models.ForeignKey(User, related_name='won_auctions', on_delete=models.SET_NULL, null=True, blank=True)  # New Field
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
+
+    def clean(self):
+        if self.end_time <= timezone.now():
+            raise ValidationError("End time must be in the future.")
 
 
     def __str__(self):
@@ -61,3 +74,4 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender.username} to {self.recipient.username} at {self.timestamp}"
+

@@ -3,8 +3,13 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from .models import AuctionItem, Bid, AuctionImage, ChatMessage
+from .models import AuctionItem, Bid, AuctionImage, ChatMessage, Category
 
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields ="__all__"
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
@@ -77,13 +82,15 @@ class AuctionItemSerializer(serializers.ModelSerializer):
     images = AuctionImageSerializer(many=True, read_only=True)  # Nested Serializer for images
     buy_now_buyer = UserSerializer(read_only=True)  # Include buyer details if purchased via Buy Now
     winner = UserSerializer(read_only=True)
+    category = CategorySerializer(read_only=True)
 
     class Meta:
         model = AuctionItem
         fields = [
             'id', 'title', 'description', 'starting_bid', 'current_bid',
             'buy_now_price', 'buy_now_buyer', 'owner', 'image',
-            'images', 'status', 'end_time', 'winner', 'bids'
+            'images', 'status', 'end_time', 'winner', 'bids',
+            'category'
         ]
         read_only_fields = ['status', 'buy_now_buyer', 'winner']  # Make these fields read-only
 

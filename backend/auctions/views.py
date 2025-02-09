@@ -30,32 +30,35 @@ import logging
 # Initialize logger
 logger = logging.getLogger(__name__)
 
-
 # backend/auctions/views.py
 
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions, generics
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
-from .models import AuctionItem, Bid, AuctionImage
+from .models import AuctionItem, Bid, AuctionImage, Category
 from .serializers import (
     UserSerializer,
     AuctionItemSerializer,
     UserRegistrationSerializer,
     BidSerializer,
-    AuctionImageSerializer
+    AuctionImageSerializer,
+    CategorySerializer
 )
 from .permissions import IsOwnerOrReadOnly, IsBidderOrReadOnly  # Custom Permissions
 
 from decimal import Decimal, InvalidOperation
 
-import logging
 
-# Initialize logger
-logger = logging.getLogger(__name__)
+# Initial
+
+
+class CategoryListView(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
 
 
 class AuctionItemViewSet(viewsets.ModelViewSet):
@@ -73,7 +76,7 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         """
         current_time = timezone.now()
         ended_auctions = AuctionItem.objects.filter(status='active', end_time__lte=current_time)
-        
+
         for auction in ended_auctions:
             if auction.buy_now_buyer:
                 # Auction closed via Buy Now
@@ -86,9 +89,10 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
                     auction.winner = highest_bid.bidder
                 auction.status = 'closed'
                 auction.save()
-        
+
         # Return only active auctions
         return AuctionItem.objects.filter(status='active', end_time__gt=current_time)
+
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_auctions(self, request):
         """
@@ -98,6 +102,7 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         queryset = AuctionItem.objects.filter(owner=user).order_by('-created_at')
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
     def perform_create(self, serializer):
         """
         Assign the current user as the owner when creating an auction.
@@ -194,10 +199,12 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         # If Buy Now is set, ensure bids do not exceed it
         if auction_item.buy_now_price:
             if amount >= auction_item.buy_now_price:
-                return Response({'detail': f'Bid must be less than Buy Now price of ${auction_item.buy_now_price}.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': f'Bid must be less than Buy Now price of ${auction_item.buy_now_price}.'},
+                                status=status.HTTP_400_BAD_REQUEST)
 
         if amount < min_required_bid:
-            return Response({'detail': f'Bid must be at least ${min_required_bid}.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': f'Bid must be at least ${min_required_bid}.'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # Create the bid
         bid = Bid.objects.create(
@@ -212,19 +219,19 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
 
         serializer = BidSerializer(bid)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def search(self, request):
         query = request.query_params.get('q', '')
-        if query:
-            items = AuctionItem.objects.filter(
-                Q(title__icontains=query) | Q(description__icontains=query),
-                status='active'
-            )
-            print("Query results:", items)  # Add this for debugging
-        else:
-            items = AuctionItem.objects.none()
+        category = request.query_params.get('category', '')  # New category filter
 
+        filters = Q(status='active')
+        if query:
+            filters &= Q(title__icontains=query) | Q(description__icontains=query)
+        if category:
+            filters &= Q(category__name__icontains=category)
+
+        items = AuctionItem.objects.filter(filters)
         serializer = self.get_serializer(items, many=True)
         return Response(serializer.data)
 
@@ -237,7 +244,8 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
 
         # Check if auction is active
         if auction_item.status != 'active':
-            return Response({'detail': 'Cannot Buy Now on this item as the auction is not active.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Cannot Buy Now on this item as the auction is not active.'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # Prevent owner from buying their own item
         if auction_item.owner == request.user:
@@ -245,7 +253,8 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
 
         # Prevent multiple Buy Now purchases
         if auction_item.buy_now_buyer is not None:
-            return Response({'detail': 'This item has already been purchased via Buy Now.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'This item has already been purchased via Buy Now.'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # Check if Buy Now price is set
         if not auction_item.buy_now_price:
@@ -326,6 +335,7 @@ class UserViewSet(viewsets.ViewSet):
 from rest_framework import generics, permissions
 from .serializers import UserSerializer
 
+
 class CurrentUserView(generics.RetrieveAPIView):
     """
     Retrieve the currently authenticated user.
@@ -335,7 +345,7 @@ class CurrentUserView(generics.RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
-    
+
 
 class AuctionItemDetailView(generics.RetrieveAPIView):
     queryset = AuctionItem.objects.all()
@@ -395,7 +405,7 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
         chat_message = ChatMessage.objects.create(sender=sender, recipient=recipient, message=message)
         serializer = ChatMessageSerializer(chat_message)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
     @action(detail=False, methods=['get'])
     def get_chats(self, request):
         user = request.user
@@ -426,7 +436,7 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
         chats.sort(key=lambda x: x['timestamp'], reverse=True)
 
         return Response(chats)
-    
+
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def mark_as_read(self, request):
         """
@@ -455,7 +465,8 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
             ).update(is_read=True)
 
         return Response({'status': f'{updated} messages marked as read.'}, status=200)
-    
+
+
 class SearchAuctionItemsView(APIView):
     """
     API View to handle searching of Auction Items based on query parameter 'q'.
