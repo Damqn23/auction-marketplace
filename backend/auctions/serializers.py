@@ -46,7 +46,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 class BidSerializer(serializers.ModelSerializer):
     bidder = serializers.ReadOnlyField(source='bidder.username')
-    auction_item = serializers.ReadOnlyField(source='auction_item.id')
+    auction_item = serializers.ReadOnlyField(source='auction_item.title')
     timestamp = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S%z")  # Ensure proper format
 
     class Meta:
