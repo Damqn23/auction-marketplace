@@ -82,7 +82,12 @@ class AuctionItemSerializer(serializers.ModelSerializer):
     images = AuctionImageSerializer(many=True, read_only=True)  # Nested Serializer for images
     buy_now_buyer = UserSerializer(read_only=True)  # Include buyer details if purchased via Buy Now
     winner = UserSerializer(read_only=True)
-    category = CategorySerializer(read_only=True)
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+    # Optionally, to return nested category data in GET responses:
+    category_data = CategorySerializer(source="category", read_only=True)
+    # New fields (if you added them in the model):
+    condition = serializers.CharField()
+    location = serializers.CharField()
 
     class Meta:
         model = AuctionItem
@@ -90,7 +95,8 @@ class AuctionItemSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'starting_bid', 'current_bid',
             'buy_now_price', 'buy_now_buyer', 'owner', 'image',
             'images', 'status', 'end_time', 'winner', 'bids',
-            'category'
+            'category', 'category_data',
+            'condition', 'location',
         ]
         read_only_fields = ['status', 'buy_now_buyer', 'winner']  # Make these fields read-only
 

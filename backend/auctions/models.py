@@ -34,6 +34,12 @@ class AuctionItem(models.Model):
     buy_now_buyer = models.ForeignKey(User, related_name='buy_now_purchases', on_delete=models.SET_NULL, null=True, blank=True)  # To track buyer
     winner = models.ForeignKey(User, related_name='won_auctions', on_delete=models.SET_NULL, null=True, blank=True)  # New Field
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
+    condition = models.CharField(
+        max_length=50,
+        choices=[('New', 'New'), ('Used', 'Used'), ('Refurbished', 'Refurbished')]
+    )
+    location = models.CharField(max_length=100)
+
 
     def clean(self):
         if self.end_time <= timezone.now():
