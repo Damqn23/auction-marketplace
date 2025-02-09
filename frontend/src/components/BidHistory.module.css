@@ -1,40 +1,71 @@
+/* Container styling */
 .container {
-    padding: 20px;
     max-width: 800px;
     margin: 0 auto;
-}
-
-.loader {
+    padding: 20px;
+  }
+  
+  /* Loader and Error */
+  .loader {
     display: flex;
     justify-content: center;
-    align-items: center;
-    margin-top: 2rem;
-}
-
-.bidCard {
-    margin-bottom: 15px;
-    background-color: #ffffff;
-    /* White background for the card */
+    padding: 40px;
+  }
+  
+  .errorText {
+    text-align: center;
+    margin-top: 20px;
+    color: #d32f2f; /* red for errors */
+  }
+  
+  .noBidsText {
+    text-align: center;
+    margin-top: 20px;
+    color: #666;
+  }
+  
+  /* Day Grouping */
+  .dayGroup {
+    margin-bottom: 30px;
+  }
+  
+  .dayHeader {
+    color: #283593;
+    margin-bottom: 12px;
+    border-bottom: 2px solid #283593;
+    padding-bottom: 4px;
+  }
+  
+  /* Bid Card Styling */
+  .bidCard {
+    margin-bottom: 16px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.bidTitle {
-    margin-bottom: 0.5rem;
-    color: #333333;
-}
-
-.bidDetails {
-    margin-bottom: 0.25rem;
-    color: #555555;
-}
-
-.errorText {
-    text-align: center;
-    margin-top: 2rem;
-}
-
-.noBidsText {
-    text-align: center;
-    margin-top: 2rem;
-}
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e0e0e0;
+  }
+  
+  .bidCard:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .bidTitle {
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  
+  .bidDetails {
+    margin-bottom: 4px;
+    color: #555;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 600px) {
+    .container {
+      padding: 10px;
+    }
+    .bidCard {
+      margin-bottom: 12px;
+    }
+  }
+  

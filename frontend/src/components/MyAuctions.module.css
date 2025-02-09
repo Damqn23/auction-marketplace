@@ -3,18 +3,18 @@
     padding: 20px;
     background-color: #f5f5f5;
     min-height: 100vh;
-}
-
-/* Header */
-.header {
+  }
+  
+  /* Header */
+  .header {
     text-align: center;
     margin-bottom: 20px;
     font-weight: bold;
     color: #333;
-}
-
-/* Loading State */
-.loadingContainer {
+  }
+  
+  /* Loading State */
+  .loadingContainer {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -22,70 +22,86 @@
     min-height: 50vh;
     text-align: center;
     color: #555;
-}
-
-/* Error Message */
-.error {
+  }
+  
+  /* Error Message */
+  .error {
     color: red;
     text-align: center;
-}
-
-/* Auction Grid */
-.auctionGrid {
     margin-top: 20px;
-}
-
-/* Auction Card */
-.auctionCard {
+  }
+  
+  /* Auction Grid */
+  .auctionGrid {
+    margin-top: 20px;
+  }
+  
+  /* Auction Card */
+  .auctionCard {
     background: #fff;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.auctionCard:hover {
+  }
+  
+  .auctionCard:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
-
-/* Card Image */
-.cardImage {
-    object-fit: cover;
+  }
+  
+  /* Creative Placeholder */
+  .creativePlaceholder {
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
     border-radius: 10px 10px 0 0;
-}
-
-/* Card Content */
-.cardTitle {
+    color: white;
+    padding: 10px;
+    text-align: center;
+  }
+  
+  /* Placeholder text styling for the entire title */
+  .placeholderText {
+    font-size: 1.75rem;
+    font-weight: bold;
+    margin: 0;
+  }
+  
+  /* Card Content */
+  .cardTitle {
     font-size: 18px;
     font-weight: bold;
     color: #333;
-}
-
-.cardDescription {
+  }
+  
+  .cardDescription {
     margin: 10px 0;
     color: #666;
-}
-
-.cardDetails {
+  }
+  
+  .cardDetails {
     margin: 5px 0;
     color: #555;
-}
-
-.cardStatus {
+  }
+  
+  .cardStatus {
     margin: 10px 0;
     font-weight: bold;
-}
-
-/* View Auction Button */
-.viewButton {
+  }
+  
+  /* View Auction Button */
+  .viewButton {
     margin-top: 15px;
     text-transform: none;
     font-size: 14px;
-}
-
-/* No Auctions */
-.noAuctions {
+  }
+  
+  /* No Auctions */
+  .noAuctions {
     text-align: center;
     color: #777;
     margin-top: 30px;
-}
+  }
+  

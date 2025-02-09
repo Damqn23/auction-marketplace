@@ -227,20 +227,27 @@ const AuctionList = () => {
                     <Typography variant="h6" component="div" gutterBottom>
                       {item.title}
                     </Typography>
-                    <Typography variant="body2" color="textSecondary" gutterBottom>
+                    <Typography
+                      variant="body2"
+                      color="textSecondary"
+                      gutterBottom
+                    >
                       {item.description}
                     </Typography>
-                    {item.category && (
+                    {item.category_data && (
                       <Typography variant="body2" color="textSecondary">
-                        <strong>Category:</strong> {item.category.name}
+                        <strong>Category:</strong> {item.category_data.name}
                       </Typography>
                     )}
+
                     <Typography variant="body1">
                       <strong>Starting Bid:</strong> ${item.starting_bid}
                     </Typography>
                     <Typography variant="body1">
                       <strong>Current Bid:</strong>{" "}
-                      {item.current_bid ? `$${item.current_bid}` : "No bids yet"}
+                      {item.current_bid
+                        ? `$${item.current_bid}`
+                        : "No bids yet"}
                     </Typography>
                     {item.buy_now_price && (
                       <Typography variant="body1" color="secondary">
@@ -259,20 +266,31 @@ const AuctionList = () => {
                       </Typography>
                     )}
                     {item.buy_now_buyer && (
-                      <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+                      <Typography
+                        variant="body2"
+                        color="primary"
+                        sx={{ mt: 1 }}
+                      >
                         Purchased via Buy Now by: {item.buy_now_buyer.username}
                       </Typography>
                     )}
                   </CardContent>
 
                   {/* Card Actions – stop click propagation so buttons work normally */}
-                  <CardActions onClick={(e) => e.stopPropagation()} className={styles.cardActions}>
+                  <CardActions
+                    onClick={(e) => e.stopPropagation()}
+                    className={styles.cardActions}
+                  >
                     {user && user.username === item.owner.username ? (
                       <>
                         {item.bids.length > 0 || item.buy_now_buyer ? (
                           <Tooltip title="Cannot delete items that have bids or have been purchased.">
                             <span>
-                              <Button variant="outlined" color="secondary" disabled>
+                              <Button
+                                variant="outlined"
+                                color="secondary"
+                                disabled
+                              >
                                 Delete
                               </Button>
                             </span>
@@ -289,7 +307,10 @@ const AuctionList = () => {
                             >
                               Delete
                             </Button>
-                            <Link to={`/update/${item.id}`} style={{ textDecoration: "none" }}>
+                            <Link
+                              to={`/update/${item.id}`}
+                              style={{ textDecoration: "none" }}
+                            >
                               <Button
                                 variant="outlined"
                                 color="primary"
@@ -361,7 +382,9 @@ const AuctionList = () => {
         </Grid>
       ) : (
         <Typography variant="body1" sx={{ mt: 2 }}>
-          {query ? "No auction items found for your search." : "No auction items available."}
+          {query
+            ? "No auction items found for your search."
+            : "No auction items available."}
         </Typography>
       )}
 

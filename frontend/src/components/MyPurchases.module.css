@@ -1,62 +1,79 @@
-/* frontend/src/components/MyPurchases.module.css */
-
 .container {
     padding: 20px;
     max-width: 1200px;
     margin: auto;
     background-color: #fafafa;
-}
-
-.header {
+  }
+  
+  .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-}
-
-/* Card styling */
-.purchaseCard {
+  }
+  
+  .backLink {
+    text-decoration: none;
+  }
+  
+  /* Loader styling */
+  .loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 60vh;
+  }
+  
+  /* Error / No Purchase Text */
+  .errorText,
+  .noPurchasesText {
+    margin-top: 20px;
+  }
+  
+  /* Card styling */
+  .purchaseCard {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     height: 100%;
-    /* Ensure cards are of equal height */
-}
-
-/* Image styling */
-.purchaseImage {
-    width: 100%;
-    height: 200px;
-    /* Consistent height */
-    object-fit: cover;
-    /* Ensures image covers the area without distortion */
-    border-bottom: 1px solid #ddd;
-}
-
-/* Fallback styling */
-.noImageFallback {
-    height: 200px;
+  }
+  
+  /* Link styling for card items */
+  .itemLink {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  /* Creative Placeholder for product title */
+  .creativePlaceholder {
+    height: 140px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #eaeaea;
-    border-bottom: 1px solid #ddd;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    border-radius: 8px 8px 0 0;
+    color: white;
+    padding: 10px;
+    text-align: center;
+  }
+  
+  .placeholderText {
+    font-size: 1.75rem;
+    font-weight: bold;
+    margin: 0;
+  }
+  
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
     .header {
-        flex-direction: column;
-        align-items: flex-start;
+      flex-direction: column;
+      align-items: flex-start;
     }
-
-    .header>a {
-        margin-top: 10px;
+  
+    .header > a {
+      margin-top: 10px;
     }
-
-    .purchaseCard {
-        margin-bottom: 20px;
-    }
-}
+  }
+  

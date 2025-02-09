@@ -1,104 +1,127 @@
 import React, { useEffect, useState } from 'react';
 import { getMyAuctions } from '../services/auctionService';
 import { Link } from 'react-router-dom';
+import {
+  CircularProgress,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Grid,
+  Container,
+} from '@mui/material';
 import styles from './MyAuctions.module.css';
-import { CircularProgress, Card, CardContent, CardMedia, Typography, Button, Grid } from '@mui/material';
 
 const MyAuctions = () => {
-    const [auctions, setAuctions] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const [auctions, setAuctions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchMyAuctions = async () => {
-            try {
-                const data = await getMyAuctions();
-                setAuctions(data);
-            } catch (err) {
-                setError('Failed to load auctions.');
-            } finally {
-                setLoading(false);
-            }
-        };
+  useEffect(() => {
+    const fetchMyAuctions = async () => {
+      try {
+        const data = await getMyAuctions();
+        if (Array.isArray(data)) {
+          // Sort auctions by creation date (assumes each auction has a 'created_at' property)
+          const sortedData = data.sort(
+            (a, b) => new Date(b.created_at) - new Date(a.created_at)
+          );
+          setAuctions(sortedData);
+        } else {
+          setError('Unexpected data format received.');
+        }
+      } catch (err) {
+        setError('Failed to load auctions.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        fetchMyAuctions();
-    }, []);
+    fetchMyAuctions();
+  }, []);
 
-    if (loading) {
-        return (
-            <div className={styles.loadingContainer}>
-                <CircularProgress />
-                <p>Loading your auctions...</p>
-            </div>
-        );
-    }
-
-    if (error) {
-        return <p className={styles.error}>{error}</p>;
-    }
-
+  if (loading) {
     return (
-        <div className={styles.container}>
-            <Typography variant="h4" className={styles.header}>
-                My Auctions
-            </Typography>
-            {auctions.length > 0 ? (
-                <Grid container spacing={3} className={styles.auctionGrid}>
-                    {auctions.map((auction) => (
-                        <Grid item xs={12} sm={6} md={4} key={auction.id}>
-                            <Card className={styles.auctionCard}>
-                                {auction.image && (
-                                    <CardMedia
-                                        component="img"
-                                        height="140"
-                                        image={auction.image}
-                                        alt={auction.title}
-                                        className={styles.cardImage}
-                                    />
-                                )}
-                                <CardContent>
-                                    <Typography variant="h6" className={styles.cardTitle}>
-                                        {auction.title}
-                                    </Typography>
-                                    <Typography variant="body2" color="textSecondary" className={styles.cardDescription}>
-                                        {auction.description.length > 100
-                                            ? `${auction.description.substring(0, 100)}...`
-                                            : auction.description}
-                                    </Typography>
-                                    <Typography variant="body2" className={styles.cardDetails}>
-                                        <strong>Starting Bid:</strong> ${auction.starting_bid}
-                                    </Typography>
-                                    <Typography variant="body2" className={styles.cardDetails}>
-                                        <strong>Current Bid:</strong> ${auction.current_bid || 'N/A'}
-                                    </Typography>
-                                    <Typography
-                                        variant="body2"
-                                        color={auction.status === 'active' ? 'primary' : 'error'}
-                                        className={styles.cardStatus}
-                                    >
-                                        <strong>Status:</strong> {auction.status}
-                                    </Typography>
-                                    <Button
-                                        variant="outlined"
-                                        color="primary"
-                                        component={Link}
-                                        to={`/auction/${auction.id}`}
-                                        className={styles.viewButton}
-                                    >
-                                        View Auction
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    ))}
-                </Grid>
-            ) : (
-                <Typography variant="body1" className={styles.noAuctions}>
-                    You have not posted any auctions yet.
-                </Typography>
-            )}
-        </div>
+      <div className={styles.loadingContainer}>
+        <CircularProgress />
+        <Typography variant="body1" color="textSecondary">
+          Loading your auctions...
+        </Typography>
+      </div>
     );
+  }
+
+  if (error) {
+    return (
+      <Typography variant="body1" color="error" className={styles.error}>
+        {error}
+      </Typography>
+    );
+  }
+
+  return (
+    <Container className={styles.container}>
+      <Typography variant="h4" className={styles.header}>
+        My Auctions
+      </Typography>
+      {auctions.length > 0 ? (
+        <Grid container spacing={3} className={styles.auctionGrid}>
+          {auctions.map((auction) => (
+            <Grid item xs={12} sm={6} md={4} key={auction.id}>
+              <Card className={styles.auctionCard}>
+                {/* Creative Placeholder displaying the entire auction title */}
+                <div className={styles.creativePlaceholder}>
+                  <Typography variant="h4" className={styles.placeholderText}>
+                    {auction.title}
+                  </Typography>
+                </div>
+                <CardContent>
+                  <Typography variant="h6" className={styles.cardTitle}>
+                    {auction.title}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                    className={styles.cardDescription}
+                  >
+                    {auction.description.length > 100
+                      ? `${auction.description.substring(0, 100)}...`
+                      : auction.description}
+                  </Typography>
+                  <Typography variant="body2" className={styles.cardDetails}>
+                    <strong>Starting Bid:</strong> ${auction.starting_bid}
+                  </Typography>
+                  <Typography variant="body2" className={styles.cardDetails}>
+                    <strong>Current Bid:</strong> ${auction.current_bid || 'N/A'}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color={auction.status === 'active' ? 'primary' : 'error'}
+                    className={styles.cardStatus}
+                  >
+                    <strong>Status:</strong> {auction.status}
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    component={Link}
+                    to={`/auction/${auction.id}`}
+                    className={styles.viewButton}
+                  >
+                    View Auction
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <Typography variant="body1" className={styles.noAuctions}>
+          You have not posted any auctions yet.
+        </Typography>
+      )}
+    </Container>
+  );
 };
 
 export default MyAuctions;
