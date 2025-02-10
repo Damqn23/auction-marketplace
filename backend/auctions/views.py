@@ -27,18 +27,14 @@ from decimal import Decimal, InvalidOperation
 
 import logging
 
-# Initialize logger
+
 logger = logging.getLogger(__name__)
-
-# backend/auctions/views.py
-
 from rest_framework import viewsets, status, permissions, generics
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-
 from .models import AuctionItem, Bid, AuctionImage, Category
 from .serializers import (
     UserSerializer,
@@ -49,17 +45,48 @@ from .serializers import (
     CategorySerializer
 )
 from .permissions import IsOwnerOrReadOnly, IsBidderOrReadOnly  # Custom Permissions
-
 from decimal import Decimal, InvalidOperation
-
-
-# Initial
 
 
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
+class UserBidsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        user_bids = Bid.objects.filter(bidder=user).values_list('auction_item', flat=True).distinct()
+        auctions = AuctionItem.objects.filter(id__in=user_bids)
+
+        winning_now = []
+        won = []
+        losing_now = []
+        lost = []
+
+        for auction in auctions:
+            highest_bid = auction.bids.order_by('-amount').first()
+
+            if auction.status == 'active':
+                if highest_bid.bidder == user:
+                    winning_now.append(auction)
+                else:
+                    losing_now.append(auction)
+            elif auction.status == 'closed':
+                if auction.winner == user:
+                    won.append(auction)
+                else:
+                    lost.append(auction)
+
+        data = {
+            "winning_now": AuctionItemSerializer(winning_now, many=True, context={'request': request}).data,
+            "won": AuctionItemSerializer(won, many=True, context={'request': request}).data,
+            "losing_now": AuctionItemSerializer(losing_now, many=True, context={'request': request}).data,
+            "lost": AuctionItemSerializer(lost, many=True, context={'request': request}).data,
+        }
+
+        return Response(data)
 
 class AuctionItemViewSet(viewsets.ModelViewSet):
     """
