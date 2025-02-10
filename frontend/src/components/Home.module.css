@@ -1,112 +1,126 @@
+/* Home.module.css with theme variables */
+
 /* Overall page container for the categories section */
 .homeContainer {
-    background-color: #ffffff;
-    padding: 60px 0;
-  }
-  
-  /* HERO SECTION STYLES */
-  .hero {
-    /* Blue gradient to match the navbar and overall theme */
-    background: linear-gradient(135deg, #3f51b5, #5c6bc0);
-    color: #ffffff;
-    padding: 100px 20px;
-    text-align: center;
-  }
-  
-  .heroTitle {
-    font-size: 3rem;
-    font-weight: bold;
-    margin-bottom: 20px;
-  }
-  
-  .heroSubtitle {
-    font-size: 1.5rem;
-    margin-bottom: 30px;
-  }
-  
-  .heroButton {
-    background-color: #ffeb3b; /* Accent yellow */
-    color: #283593;            /* Dark blue for contrast */
-    font-size: 1.1rem;
-    padding: 12px 30px;
-    border-radius: 30px;
-    text-transform: none;
-    transition: background-color 0.3s ease;
-  }
-  
-  .heroButton:hover {
-    background-color: #fdd835; /* A slightly darker yellow */
-  }
-  
-  /* SECTION TITLE */
-  .sectionTitle {
-    margin-top: 40px;
-    margin-bottom: 20px;
-    font-weight: bold;
-    color: #283593; /* Dark blue for a strong visual anchor */
-  }
-  
-  /* GRID ITEM FOR EACH CATEGORY */
-  .categoryGridItem {
-    cursor: pointer;
-  }
-  
-  /* CATEGORY CARD STYLES */
-  .categoryCard {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    padding: 20px;
-    background-color: #fff;
-  }
-  
-  .categoryCard:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-  }
-  
-  /* INSIDE THE CARD */
-  .categoryContent {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .categoryIcon {
-    font-size: 50px;
-    color: #3f51b5; /* A blue tone that complements the gradient */
-    margin-bottom: 15px;
-  }
-  
-  .categoryName {
-    font-size: 1.2rem;
-    font-weight: 500;
-    color: #283593;
-  }
-  
-  /* TOGGLE BUTTON FOR SHOWING MORE CATEGORIES */
-  .toggleButton {
-    margin-top: 20px;
-    padding: 10px 20px;
-    border-radius: 25px;
-    text-transform: none;
-    font-size: 1rem;
-    background-color: #3f51b5;
-    color: #ffffff;
-    transition: background-color 0.3s ease;
-  }
-  
-  .toggleButton:hover {
-    background-color: #5c6bc0;
-  }
-  
-  /* FOOTER STYLES */
-  .footer {
-    background-color: #283593;
-    color: #ffffff;
-    padding: 20px 0;
-    text-align: center;
-    margin-top: 60px;
-  }
-  
+  /* Fallback to #ffffff if --surface-color is not defined */
+  background-color: var(--surface-color, #ffffff);
+  padding: 60px 0;
+}
+
+/* HERO SECTION STYLES */
+.hero {
+  /* Example: fallback to #3f51b5 -> #5c6bc0 gradient if not overridden */
+  background: linear-gradient(
+    135deg,
+    var(--hero-bg-start, #3f51b5),
+    var(--hero-bg-end, #5c6bc0)
+  );
+  color: var(--hero-text-color, #ffffff);
+  padding: 100px 20px;
+  text-align: center;
+}
+
+.heroTitle {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.heroSubtitle {
+  font-size: 1.5rem;
+  margin-bottom: 30px;
+}
+
+.heroButton {
+  /* Fallback to #ffeb3b for background, #283593 for text */
+  background-color: var(--hero-button-bg, #ffeb3b);
+  color: var(--hero-button-text, #283593);
+  font-size: 1.1rem;
+  padding: 12px 30px;
+  border-radius: 30px;
+  text-transform: none;
+  transition: background-color 0.3s ease;
+}
+
+.heroButton:hover {
+  background-color: var(--hero-button-hover-bg, #fdd835);
+}
+
+/* SECTION TITLE */
+.sectionTitle {
+  margin-top: 40px;
+  margin-bottom: 20px;
+  font-weight: bold;
+  /* Fallback to #283593 */
+  color: var(--section-title-color, #283593);
+}
+
+/* GRID ITEM FOR EACH CATEGORY */
+.categoryGridItem {
+  cursor: pointer;
+}
+
+/* CATEGORY CARD STYLES */
+.categoryCard {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 12px;
+  box-shadow: var(--card-shadow, 0 4px 10px rgba(0, 0, 0, 0.1));
+  text-align: center;
+  padding: 20px;
+  /* Fallback to #fff if --surface-color is not defined */
+  background-color: var(--card-surface-color, #ffffff);
+}
+
+.categoryCard:hover {
+  transform: translateY(-5px);
+  /* Fallback to a slightly heavier shadow */
+  box-shadow: var(--card-hover-shadow, 0 8px 20px rgba(0, 0, 0, 0.2));
+}
+
+/* INSIDE THE CARD */
+.categoryContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.categoryIcon {
+  font-size: 50px;
+  /* Fallback to #3f51b5 */
+  color: var(--category-icon-color, #3f51b5);
+  margin-bottom: 15px;
+}
+
+.categoryName {
+  font-size: 1.2rem;
+  font-weight: 500;
+  /* Fallback to #283593 */
+  color: var(--category-name-color, #283593);
+}
+
+/* TOGGLE BUTTON FOR SHOWING MORE CATEGORIES */
+.toggleButton {
+  margin-top: 20px;
+  padding: 10px 20px;
+  border-radius: 25px;
+  text-transform: none;
+  font-size: 1rem;
+  /* Fallback to #3f51b5 for background, #ffffff for text */
+  background-color: var(--toggle-button-bg, #3f51b5);
+  color: var(--toggle-button-text, #ffffff);
+  transition: background-color 0.3s ease;
+}
+
+.toggleButton:hover {
+  background-color: var(--toggle-button-hover-bg, #5c6bc0);
+}
+
+/* FOOTER STYLES */
+.footer {
+  /* Fallback to #283593 */
+  background-color: var(--footer-bg, #283593);
+  color: var(--footer-text-color, #ffffff);
+  padding: 20px 0;
+  text-align: center;
+  margin-top: 60px;
+}

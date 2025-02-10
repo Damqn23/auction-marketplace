@@ -2,6 +2,9 @@ import React, { useContext, useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
+import { useThemeContext } from "../contexts/ThemeContext";
+import Brightness4Icon from "@mui/icons-material/Brightness4"; // Dark mode icon
+import Brightness7Icon from "@mui/icons-material/Brightness7"; // Light mode icon
 import { getUnreadMessages } from "../services/auctionService";
 import { getAllCategories } from "../services/categoryService";
 import styles from "./NavBar.module.css";
@@ -28,12 +31,14 @@ import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
 const NavBar = () => {
-  const { user, setUser, unreadCount, setUnreadCount } = useContext(UserContext);
+  const { user, setUser, unreadCount, setUnreadCount } =
+    useContext(UserContext);
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const { mode, toggleTheme } = useThemeContext();
 
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
@@ -76,10 +81,7 @@ const NavBar = () => {
   };
 
   const handleSearch = (e) => {
-    if (
-      e.key === "Enter" &&
-      (searchQuery.trim() !== "" || selectedCategory)
-    ) {
+    if (e.key === "Enter" && (searchQuery.trim() !== "" || selectedCategory)) {
       navigate(
         `/auction-list?q=${encodeURIComponent(
           searchQuery
@@ -102,7 +104,7 @@ const NavBar = () => {
     setDrawerOpen(open);
   };
 
-  /** 
+  /**
    * Define action groups:
    * - For logged-in users on desktop, show primary actions (Create Auction and Chat) inline.
    * - The remaining (secondary) actions will be available in the drop‑down.
@@ -111,7 +113,12 @@ const NavBar = () => {
   const primaryActions = user
     ? [
         { text: "Create Auction", link: "/create", type: "button" },
-        { text: "Chat", link: "/chat", icon: <ChatIcon />, badge: unreadCount > 0 ? unreadCount : null },
+        {
+          text: "Chat",
+          link: "/chat",
+          icon: <ChatIcon />,
+          badge: unreadCount > 0 ? unreadCount : null,
+        },
       ]
     : [];
 
@@ -128,10 +135,13 @@ const NavBar = () => {
       ];
 
   // For mobile view, combine primary and secondary actions.
-  const mobileMenuItems = user ? [...primaryActions, ...secondaryActions] : secondaryActions;
+  const mobileMenuItems = user
+    ? [...primaryActions, ...secondaryActions]
+    : secondaryActions;
 
   // For desktop logged-in users, show only secondary actions in the drop‑down.
-  const drawerMenuItems = isDesktop && user ? secondaryActions : mobileMenuItems;
+  const drawerMenuItems =
+    isDesktop && user ? secondaryActions : mobileMenuItems;
 
   // Set drawer anchor: right for desktop logged-in users, left otherwise.
   const drawerAnchor = user && isDesktop ? "right" : "left";
@@ -174,7 +184,10 @@ const NavBar = () => {
             fullWidth
             InputProps={{
               endAdornment: (
-                <IconButton onClick={handleSearchButtonClick} aria-label="search">
+                <IconButton
+                  onClick={handleSearchButtonClick}
+                  aria-label="search"
+                >
                   <SearchIcon />
                 </IconButton>
               ),
@@ -202,31 +215,32 @@ const NavBar = () => {
         {/* Right Section (Desktop Only) */}
         {isDesktop && user && (
           <Box className={styles.primaryActions}>
-            {/* Create Auction as a prominent button */}
+            {/* Create Auction Button */}
             <Button
               variant="contained"
               color="secondary"
               onClick={() => navigate("/create")}
-              className={styles.createAuctionButton}
             >
               Create Auction
             </Button>
-            {/* Chat icon with badge */}
-            <IconButton
-              color="inherit"
-              onClick={() => navigate("/chat")}
-              className={styles.chatIconButton}
-            >
-              <Badge badgeContent={unreadCount > 9 ? "9+" : unreadCount} color="error">
+
+            {/* Chat Icon with Badge */}
+            <IconButton color="inherit" onClick={() => navigate("/chat")}>
+              <Badge
+                badgeContent={unreadCount > 9 ? "9+" : unreadCount}
+                color="error"
+              >
                 <ChatIcon />
               </Badge>
             </IconButton>
-            {/* Burger menu for secondary actions */}
-            <IconButton
-              color="inherit"
-              onClick={toggleDrawer(true)}
-              className={styles.secondaryMenuButton}
-            >
+
+            {/* Theme Toggle Button */}
+            <IconButton color="inherit" onClick={toggleTheme}>
+              {mode === "light" ? <Brightness4Icon /> : <Brightness7Icon />}
+            </IconButton>
+
+            {/* Burger Menu Icon */}
+            <IconButton color="inherit" onClick={toggleDrawer(true)}>
               <MenuIcon />
             </IconButton>
           </Box>
@@ -247,7 +261,11 @@ const NavBar = () => {
       </Toolbar>
 
       {/* Drawer for Navigation */}
-      <Drawer anchor={drawerAnchor} open={drawerOpen} onClose={toggleDrawer(false)}>
+      <Drawer
+        anchor={drawerAnchor}
+        open={drawerOpen}
+        onClose={toggleDrawer(false)}
+      >
         <Box
           role="presentation"
           onClick={toggleDrawer(false)}

@@ -1,107 +1,123 @@
+/* MyAuctions.module.css (Theme-Friendly) */
+
 /* Container */
 .container {
-    padding: 20px;
-    background-color: #f5f5f5;
-    min-height: 100vh;
-  }
-  
-  /* Header */
-  .header {
-    text-align: center;
-    margin-bottom: 20px;
-    font-weight: bold;
-    color: #333;
-  }
-  
-  /* Loading State */
-  .loadingContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 50vh;
-    text-align: center;
-    color: #555;
-  }
-  
-  /* Error Message */
-  .error {
-    color: red;
-    text-align: center;
-    margin-top: 20px;
-  }
-  
-  /* Auction Grid */
-  .auctionGrid {
-    margin-top: 20px;
-  }
-  
-  /* Auction Card */
-  .auctionCard {
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  
-  .auctionCard:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  }
-  
-  /* Creative Placeholder */
-  .creativePlaceholder {
-    height: 140px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-    border-radius: 10px 10px 0 0;
-    color: white;
-    padding: 10px;
-    text-align: center;
-  }
-  
-  /* Placeholder text styling for the entire title */
-  .placeholderText {
-    font-size: 1.75rem;
-    font-weight: bold;
-    margin: 0;
-  }
-  
-  /* Card Content */
-  .cardTitle {
-    font-size: 18px;
-    font-weight: bold;
-    color: #333;
-  }
-  
-  .cardDescription {
-    margin: 10px 0;
-    color: #666;
-  }
-  
-  .cardDetails {
-    margin: 5px 0;
-    color: #555;
-  }
-  
-  .cardStatus {
-    margin: 10px 0;
-    font-weight: bold;
-  }
-  
-  /* View Auction Button */
-  .viewButton {
-    margin-top: 15px;
-    text-transform: none;
-    font-size: 14px;
-  }
-  
-  /* No Auctions */
-  .noAuctions {
-    text-align: center;
-    color: #777;
-    margin-top: 30px;
-  }
-  
+  padding: 20px;
+  /* fallback to #f5f5f5 if --surface-color is not defined */
+  background-color: var(--surface-color, #f5f5f5);
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: bold;
+  /* fallback #333 for text color */
+  color: var(--text-color, #333);
+}
+
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  text-align: center;
+  /* fallback #555 for text color */
+  color: var(--muted-text-color, #555);
+}
+
+/* Error Message */
+.error {
+  /* fallback #e53935 or #d32f2f for 'error' color if you prefer */
+  color: var(--accent-color, red);
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Auction Grid */
+.auctionGrid {
+  margin-top: 20px;
+}
+
+/* Auction Card */
+.auctionCard {
+  /* fallback #fff for the card surface */
+  background: var(--card-surface-color, #fff);
+  border-radius: 10px;
+  /* fallback shadow */
+  box-shadow: var(--card-shadow, 0 4px 8px rgba(0, 0, 0, 0.1));
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auctionCard:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-hover-shadow, 0 8px 16px rgba(0, 0, 0, 0.2));
+}
+
+/* Creative Placeholder */
+.creativePlaceholder {
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* fallback gradient for the placeholder area */
+  background: linear-gradient(
+    135deg,
+    var(--placeholder-start, #6a11cb),
+    var(--placeholder-end, #2575fc)
+  );
+  border-radius: 10px 10px 0 0;
+  color: var(--placeholder-text-color, #fff);
+  padding: 10px;
+  text-align: center;
+}
+
+/* Placeholder text styling for the entire title */
+.placeholderText {
+  font-size: 1.75rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+/* Card Content */
+.cardTitle {
+  font-size: 18px;
+  font-weight: bold;
+  /* fallback #333 text */
+  color: var(--text-color, #333);
+}
+
+.cardDescription {
+  margin: 10px 0;
+  /* fallback #666 for muted text */
+  color: var(--muted-text-color, #666);
+}
+
+.cardDetails {
+  margin: 5px 0;
+  /* fallback #555 for even more muted text */
+  color: var(--muted-text-color, #555);
+}
+
+.cardStatus {
+  margin: 10px 0;
+  font-weight: bold;
+}
+
+/* View Auction Button */
+.viewButton {
+  margin-top: 15px;
+  text-transform: none;
+  font-size: 14px;
+}
+
+/* No Auctions */
+.noAuctions {
+  text-align: center;
+  /* fallback #777 for text */
+  color: var(--muted-text-color, #777);
+  margin-top: 30px;
+}

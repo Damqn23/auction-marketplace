@@ -1,97 +1,105 @@
-/* frontend/src/components/AuctionList.module.css */
+/* ============================= */
+/* AuctionList Module (Themed)   */
+/* ============================= */
 
+/* Container */
 .container {
     padding: 20px;
     max-width: 1200px;
     margin: auto;
-    background-color: #fafafa;
-    /* Slightly off-white for contrast */
-}
-
-.header {
+    /* If --auction-list-container-bg is set, use it;
+       otherwise fallback to var(--surface-color). */
+    background-color: var(--auction-list-container-bg, var(--surface-color));
+  }
+  
+  /* Header */
+  .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-}
-
-/* Card styling */
-.auctionCard {
+  }
+  
+  /* Auction Card */
+  .auctionCard {
     border-radius: 8px;
-    /* The box shadow can be handled by MUI's default or you can add a custom one: */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* In case there's no image, we display a fallback area */
-.noImageFallback {
+    /* Falls back to a subtle box-shadow if not overridden */
+    box-shadow: var(--auction-card-box-shadow, 0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+  
+  /* No Image Fallback */
+  .noImageFallback {
     height: 200px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #eaeaea;
-}
-
-/* Link styles inside a card */
-.productLink {
+    /* Falls back to #eaeaea if --no-image-bg is not set */
+    background-color: var(--no-image-bg, #eaeaea);
+  }
+  
+  /* Product Link inside a Card */
+  .productLink {
     text-decoration: none;
+    /* Inherits var(--text-color) from global CSS */
     color: inherit;
-    /* Inherits text color to keep it consistent */
     transition: color 0.2s ease-in-out;
-}
-
-.productLink:hover {
-    color: #1976d2;
-    /* MUI primary color on hover (example) */
-}
-
-/* Card actions and button group */
-.cardActions {
+  }
+  
+  .productLink:hover {
+    /* Hover color uses the current --primary-color */
+    color: var(--primary-color);
+  }
+  
+  /* Card Actions & Button Group */
+  .cardActions {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 16px 16px;
-    /* override default spacing if needed */
-}
-
-.bidSection {
+  }
+  
+  .bidSection {
     display: flex;
     align-items: center;
-}
-
-.bidInput {
+  }
+  
+  .bidInput {
     width: 90px;
     margin-right: 10px;
-}
-
-.buyNowButton {
-    background-color: #ff5722;
-    color: #ffffff;
+  }
+  
+  /* Buy Now Button — uses extra custom variables with fallbacks */
+  .buyNowButton {
+    background-color: var(--buy-now-bg, #ff5722);
+    color: var(--buy-now-text, #ffffff);
     text-transform: none;
     margin-left: 16px;
-}
-
-.buyNowButton:hover {
-    background-color: #e64a19;
-}
-
-.bidButton {
+  }
+  
+  .buyNowButton:hover {
+    background-color: var(--buy-now-hover-bg, #e64a19);
+  }
+  
+  /* Bid Button */
+  .bidButton {
     text-transform: none;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
+  }
+  
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
     .cardActions {
-        flex-direction: column;
-        align-items: flex-start;
+      flex-direction: column;
+      align-items: flex-start;
     }
-
+  
     .bidSection {
-        margin-top: 10px;
+      margin-top: 10px;
     }
-
+  
     .buyNowButton {
-        margin-left: 0;
-        margin-top: 10px;
-        width: 100%;
+      margin-left: 0;
+      margin-top: 10px;
+      width: 100%;
     }
-}
+  }
+  

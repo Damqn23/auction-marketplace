@@ -1,127 +1,121 @@
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  .title {
-    text-align: center;
-    font-size: 2.5rem;
-    margin-bottom: 20px;
-    color: #333;
-  }
-  
-  .historyButton {
-    display: block;
-    margin: 0 auto 30px;
-    padding: 10px 20px;
-    font-size: 1rem;
-    background-color: #1976d2;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  .historyButton:hover {
-    background-color: #125ea2;
-  }
-  
-  .section {
-    margin-bottom: 40px;
-  }
-  
-  .sectionTitle {
-    font-size: 1.8rem;
-    color: #444;
-    margin-bottom: 15px;
-    border-bottom: 2px solid #1976d2;
-    padding-bottom: 5px;
-  }
-  
-  .bidList {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
-  }
-  
-  .bidCard {
-    background-color: white;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .bidCard:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
-  
-  .bidCard h3 {
-    margin: 0 0 10px;
-    font-size: 1.2rem;
-    color: #333;
-  }
-  
-  .bidCard p {
-    font-size: 1rem;
-    color: #555;
-  }
-  
-  .emptyMessage {
-    color: #888;
-    font-style: italic;
-    text-align: center;
-    margin-top: 10px;
-  }
+/* MyBids.module.css (Theme-Friendly) */
 
-  .productImage {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    border-radius: 8px 8px 0 0;
-  }
-  
-  .noImage {
-    width: 100%;
-    height: 200px;
-    background-color: #e0e0e0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #666;
-    border-radius: 8px 8px 0 0;
-    font-size: 0.9rem;
-  }
-  
-  .bidCard {
-    background-color: white;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    cursor: pointer;
-  }
-  
-  .bidCard:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
-  
-  .bidCard h3 {
-    margin: 10px 0 5px;
-    font-size: 1.2rem;
-    color: #333;
-  }
-  
-  .bidCard p {
-    font-size: 1rem;
-    color: #555;
-  }
-  
-  
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  /* Fallback to #f9f9f9 if --surface-color not defined */
+  background-color: var(--surface-color, #f9f9f9);
+  border-radius: 8px;
+  box-shadow: var(--box-shadow, 0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+/* Title */
+.title {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  /* fallback to #333 for text color */
+  color: var(--text-color, #333);
+}
+
+/* History Button */
+.historyButton {
+  display: block;
+  margin: 0 auto 30px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  /* fallback to #1976d2 for bg, #fff for text */
+  background-color: var(--primary-color, #1976d2);
+  color: var(--text-color-reverse, #ffffff);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.historyButton:hover {
+  /* fallback to #125ea2 */
+  background-color: var(--primary-hover-color, #125ea2);
+}
+
+/* Section */
+.section {
+  margin-bottom: 40px;
+}
+
+/* Section Title */
+.sectionTitle {
+  font-size: 1.8rem;
+  /* fallback to #444 for text color */
+  color: var(--section-title-color, #444);
+  margin-bottom: 15px;
+  border-bottom: 2px solid var(--primary-color, #1976d2);
+  padding-bottom: 5px;
+}
+
+/* Bid List (grid layout) */
+.bidList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+/* Bid Card */
+.bidCard {
+  /* fallback white background */
+  background-color: var(--card-surface-color, #ffffff);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: var(--card-shadow, 0 2px 6px rgba(0, 0, 0, 0.1));
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.bidCard:hover {
+  transform: translateY(-5px);
+  /* fallback to a slightly heavier shadow */
+  box-shadow: var(--card-hover-shadow, 0 4px 12px rgba(0, 0, 0, 0.2));
+}
+
+.bidCard h3 {
+  margin: 10px 0 5px;
+  font-size: 1.2rem;
+  color: var(--text-color);
+}
+
+.bidCard p {
+  font-size: 1rem;
+  color: var(--muted-text-color);
+}
+
+/* Empty Message */
+.emptyMessage {
+  color: var(--muted-text-color, #888);
+  font-style: italic;
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Product Image */
+.productImage {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px 8px 0 0;
+}
+
+/* No Image Fallback */
+.noImage {
+  width: 100%;
+  height: 200px;
+  /* fallback to #e0e0e0 */
+  background-color: var(--no-image-bg, #e0e0e0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-text-color, #666);
+  border-radius: 8px 8px 0 0;
+  font-size: 0.9rem;
+}

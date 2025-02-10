@@ -1,79 +1,97 @@
+/* MyPurchases.module.css */
+
 .container {
-    padding: 20px;
-    max-width: 1200px;
-    margin: auto;
-    background-color: #fafafa;
-  }
-  
+  /* same as before */
+  padding: 20px;
+  max-width: 1200px;
+  margin: auto;
+  background-color: var(--surface-color, #fafafa);
+}
+
+.header {
+  /* same as before */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.backLink {
+  /* same as before */
+  text-decoration: none;
+}
+
+.loader {
+  /* same as before */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+}
+
+.errorText,
+.noPurchasesText {
+  /* same as before */
+  margin-top: 20px;
+}
+
+/* The big change: let the entire card inherit var(--text-color) */
+.purchaseCard {
+  background-color: var(--card-surface-color, #fff);
+  color: var(--text-color);
+  border-radius: 8px;
+
+  /* Add a thin border around each card */
+  border: 1px solid var(--card-border-color, #444);
+
+  box-shadow: var(--box-shadow, 0 2px 4px rgba(0, 0, 0, 0.1));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* This makes the card text automatically use var(--text-color),
+   so you don't have #333 on black anymore. */
+
+/* Link inherits the parent's color */
+.itemLink {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Gradient placeholder at the top */
+.creativePlaceholder {
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* fallback gradient; you can override in dark mode if you like */
+  background: linear-gradient(
+    135deg,
+    var(--placeholder-start, #6a11cb),
+    var(--placeholder-end, #2575fc)
+  );
+  border-radius: 8px 8px 0 0;
+  /* Keep text clearly visible on bright gradient */
+  color: var(--placeholder-text-color, #fff);
+  padding: 10px;
+  text-align: center;
+}
+
+.placeholderText {
+  font-size: 1.75rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
   .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-  
-  .backLink {
-    text-decoration: none;
-  }
-  
-  /* Loader styling */
-  .loader {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 60vh;
-  }
-  
-  /* Error / No Purchase Text */
-  .errorText,
-  .noPurchasesText {
-    margin-top: 20px;
-  }
-  
-  /* Card styling */
-  .purchaseCard {
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    display: flex;
     flex-direction: column;
-    height: 100%;
+    align-items: flex-start;
   }
-  
-  /* Link styling for card items */
-  .itemLink {
-    text-decoration: none;
-    color: inherit;
+  .header > a {
+    margin-top: 10px;
   }
-  
-  /* Creative Placeholder for product title */
-  .creativePlaceholder {
-    height: 140px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-    border-radius: 8px 8px 0 0;
-    color: white;
-    padding: 10px;
-    text-align: center;
-  }
-  
-  .placeholderText {
-    font-size: 1.75rem;
-    font-weight: bold;
-    margin: 0;
-  }
-  
-  /* Responsive Adjustments */
-  @media (max-width: 768px) {
-    .header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-  
-    .header > a {
-      margin-top: 10px;
-    }
-  }
-  
+}

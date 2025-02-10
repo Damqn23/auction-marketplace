@@ -1,26 +1,60 @@
-/* src/App.css */
+/* ====================== */
+/*      App.css           */
+/* ====================== */
 
-/* Root Variables for Easy Theme Management */
+/* Default (Dark Mode) Theme Variables */
 :root {
-  --primary-color: #283593;
-  /* Indigo */
-  --secondary-color: #ffeb3b;
-  /* Amber */
-  --background-color: #1e1e1e;
-  /* Dark Slate */
-  --surface-color: #2c2c2c;
-  /* Dark Gray */
-  --accent-color: #e53935;
-  /* Red */
-  --text-color: #f5f5f5;
-  /* Light Gray */
-  --muted-text-color: #bdbdbd;
-  /* Medium Gray */
-  --link-color: #ffeb3b;
-  /* Amber for links */
-  --link-hover-color: #ffc107;
-  /* Lighter Amber on hover */
+  --primary-color: #283593;       /* Indigo */
+  --secondary-color: #ffeb3b;     /* Amber */
+  --background-color: #1e1e1e;    /* Dark Slate */
+  --surface-color: #2c2c2c;       /* Dark Gray */
+  --accent-color: #e53935;        /* Red */
+  --text-color: #f5f5f5;          /* Light Gray */
+  --muted-text-color: #bdbdbd;    /* Medium Gray */
+  --link-color: #ffeb3b;          /* Amber for links */
+  --link-hover-color: #ffc107;    /* Lighter Amber on hover */
   --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+
+  --hero-bg-start: #303030;
+  --hero-bg-end: #424242;
+  --hero-text-color: #f5f5f5;
+  --hero-button-bg: #ffeb3b;
+  --hero-button-text: #212121;
+  --primary-hover-color: #9f64e5;
+  --card-surface-color: #2c2c2c;
+  --surface-color: #1e1e1e; /* repeated, but keep if you need it */
+  --no-image-bg: #333333;
+  --buy-now-bg: #f44336;
+
+  --chat-surface-bg: #2c2c2c;
+  --chat-sent-bg: #444444;
+  --chat-received-bg: #555555;
+  --chat-bubble-text-color: #f5f5f5;
+}
+
+/* Light Mode Theme Variables */
+.light-theme {
+  --primary-color: #1976d2;       /* Light Indigo */
+  --secondary-color: #ff9800;     /* Orange */
+  --background-color: #ffffff;    /* White */
+  --surface-color: #f5f5f5;       /* Light Gray */
+  --accent-color: #d32f2f;        /* Dark Red */
+  --text-color: #212121;          /* Dark Text */
+  --muted-text-color: #757575;    /* Muted Dark Gray */
+  --link-color: #1976d2;          /* Indigo for links */
+  --link-hover-color: #0d47a1;    /* Darker Indigo on hover */
+  --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+  --hero-bg-start: #3f51b5;
+  --hero-bg-end: #5c6bc0;
+  --hero-text-color: #ffffff;
+  --hero-button-bg: #ffeb3b;
+  --hero-button-text: #283593;
+  --primary-hover-color: #125ea2;
+  --card-surface-color: #ffffff;
+
+  --no-image-bg: #eaeaea;
+  --buy-now-bg: #ff5722;
 }
 
 /* The main container for your React app */
@@ -42,18 +76,16 @@
   margin-top: 2rem;
 }
 
-/* Slower spin animation for a calmer effect (optional) */
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 15s linear;
   }
 }
 
-/* Header styling (if you use .App-header for a hero section or banner) */
+/* Header styling (for hero sections or banners) */
 .App-header {
   background-color: var(--primary-color);
   min-height: 60vh;
-  /* Shorter than the default 100vh */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -62,7 +94,7 @@
   padding: 2rem;
 }
 
-/* Links inside the app (used by create-react-app by default) */
+/* Links Styling */
 .App-link {
   color: var(--link-color);
   text-decoration: none;
@@ -71,21 +103,17 @@
 
 .App-link:hover {
   color: var(--link-hover-color);
-  /* Slightly lighter hover color */
 }
 
-/* The spinning keyframes (unchanged from create-react-app) */
+/* Spinning Keyframes for the Logo */
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
   }
-
   to {
     transform: rotate(360deg);
   }
 }
-
-/* Additional Global Styles */
 
 /* Button Styling */
 button {

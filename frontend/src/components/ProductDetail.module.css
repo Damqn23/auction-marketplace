@@ -1,125 +1,133 @@
+/* ProductDetail.module.css */
+
 /* Container & Card */
 .container {
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    background-color: #f9f9f9;
-  }
-  
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  background-color: var(--surface-color, #f9f9f9); /* fallback if var not set */
+}
+
+.card {
+  max-width: 1200px;
+  width: 100%;
+  background-color: var(--card-surface-color, #ffffff);
+  color: var(--text-color); /* all text inside is light/dark based on theme */
+  border-radius: 8px;
+  box-shadow: var(--box-shadow, 0 4px 8px rgba(0, 0, 0, 0.1));
+  overflow: hidden;
+  margin: 20px;
+}
+
+/* Images */
+.image {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+/* Image Slider */
+.imageSlider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prevButton,
+.nextButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(255, 255, 255, 0.7);
+  color: #333;
+  border-radius: 50%;
+}
+
+.prevButton {
+  left: 10px;
+}
+
+.nextButton {
+  right: 10px;
+}
+
+.prevButton:hover,
+.nextButton:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Details Container */
+.detailsContainer {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Price Section */
+.priceSection {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--muted-text-color, #e0e0e0);
+}
+
+.buyNowPrice {
+  /* If you want a highlight color for buy-now lines, override or remove */
+  color: var(--accent-color, #f50057);
+}
+
+/* Bidding & Buying Sections */
+.bidSection,
+.buyNowSection {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bidInput {
+  width: 120px;
+}
+
+.bidButton,
+.buyNowButton {
+  height: 40px;
+  text-transform: none;
+}
+
+/* Owner Button Group (Delete & Update) */
+.buttonGroup {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+/* Bid History */
+.bidHistory {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: var(--card-surface-color, #fafafa);
+  border-radius: 8px;
+}
+
+/* Additional Typography Styling */
+/* Remove the forced #333. Let the parent card color apply: */
+.description {
+  margin-bottom: 10px;
+}
+
+.purchaseInfo {
+  margin-top: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
   .card {
-    max-width: 1200px;
-    width: 100%;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    margin: 20px;
+    margin: 10px;
   }
-  
-  /* Images */
-  .image {
-    width: 100%;
-    height: auto;
-    border-radius: 8px;
-    margin-bottom: 10px;
-  }
-  
-  /* Image Slider */
-  .imageSlider {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .prevButton,
-  .nextButton {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background-color: rgba(255, 255, 255, 0.7);
-    color: #333;
-    border-radius: 50%;
-  }
-  
-  .prevButton {
-    left: 10px;
-  }
-  
-  .nextButton {
-    right: 10px;
-  }
-  
-  .prevButton:hover,
-  .nextButton:hover {
-    background-color: rgba(255, 255, 255, 0.9);
-  }
-  
-  /* Details Container */
-  .detailsContainer {
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-  
-  /* Price Section */
-  .priceSection {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #e0e0e0;
-  }
-  
-  /* Bidding & Buying Sections */
-  .bidSection,
-  .buyNowSection {
-    margin-top: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
   .bidInput {
-    width: 120px;
+    width: 100px;
   }
-  
-  .bidButton,
-  .buyNowButton {
-    height: 40px;
-  }
-  
-  /* Owner Button Group (Delete & Update) */
-  .buttonGroup {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
-  }
-  
-  /* Bid History */
-  .bidHistory {
-    margin-top: 30px;
-    padding: 20px;
-    background-color: #fafafa;
-    border-radius: 8px;
-  }
-  
-  /* Additional Typography Styling */
-  h4, h6, p, span, strong {
-    color: #333;
-  }
-  
-  /* Purchase Info */
-  .purchaseInfo {
-    margin-top: 10px;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 600px) {
-    .card {
-      margin: 10px;
-    }
-    .bidInput {
-      width: 100px;
-    }
-  }
-  
+}
