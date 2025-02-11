@@ -98,27 +98,49 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
-        """
-        Override get_queryset to process ended auctions.
-        """
         current_time = timezone.now()
-        ended_auctions = AuctionItem.objects.filter(status='active', end_time__lte=current_time)
 
-        for auction in ended_auctions:
-            if auction.buy_now_buyer:
-                # Auction closed via Buy Now
-                auction.status = 'closed'
-                auction.save()
-            else:
-                # Determine winner based on highest bid
-                highest_bid = auction.bids.order_by('-amount').first()
-                if highest_bid:
-                    auction.winner = highest_bid.bidder
-                auction.status = 'closed'
-                auction.save()
+        # Automatically close ended auctions...
+        # (your existing code here)
 
-        # Return only active auctions
-        return AuctionItem.objects.filter(status='active', end_time__gt=current_time)
+        # Get active auctions
+        queryset = AuctionItem.objects.filter(status='active', end_time__gt=current_time)
+
+        # --- Filtering ---
+        min_price = self.request.query_params.get('min_price')
+        max_price = self.request.query_params.get('max_price')
+        condition = self.request.query_params.get('condition')
+        location = self.request.query_params.get('location')
+        category = self.request.query_params.get('category')
+        q = self.request.query_params.get('q')
+
+        if q:
+            queryset = queryset.filter(
+                Q(title__icontains=q) | Q(description__icontains=q)
+            )
+        if min_price:
+            queryset = queryset.filter(starting_bid__gte=Decimal(min_price))
+        if max_price:
+            queryset = queryset.filter(starting_bid__lte=Decimal(max_price))
+        if condition:
+            queryset = queryset.filter(condition__iexact=condition)
+        if location:
+            queryset = queryset.filter(location__icontains=location)
+        if category:
+            queryset = queryset.filter(category__name__icontains=category)
+
+        # --- Sorting ---
+        sort_by = self.request.query_params.get('sort_by', 'newest')  # Default to 'newest'
+        if sort_by == 'newest':
+            queryset = queryset.order_by('-created_at')
+        elif sort_by == 'ending_soon':
+            queryset = queryset.order_by('end_time')
+        elif sort_by == 'highest_bid':
+            queryset = queryset.order_by('-current_bid')
+        elif sort_by == 'lowest_price':
+            queryset = queryset.order_by('starting_bid')
+
+        return queryset
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_auctions(self, request):
