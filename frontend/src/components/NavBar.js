@@ -1,3 +1,5 @@
+// frontend/src/components/NavBar.js
+
 import React, { useContext, useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
@@ -6,7 +8,6 @@ import { useThemeContext } from "../contexts/ThemeContext";
 import Brightness4Icon from "@mui/icons-material/Brightness4"; // Dark mode icon
 import Brightness7Icon from "@mui/icons-material/Brightness7"; // Light mode icon
 import { getUnreadMessages } from "../services/auctionService";
-import { getAllCategories } from "../services/categoryService";
 import styles from "./NavBar.module.css";
 
 import {
@@ -31,13 +32,10 @@ import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
 const NavBar = () => {
-  const { user, setUser, unreadCount, setUnreadCount } =
-    useContext(UserContext);
+  const { user, setUser, unreadCount, setUnreadCount } = useContext(UserContext);
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
   const { mode, toggleTheme } = useThemeContext();
 
   const theme = useTheme();
@@ -58,19 +56,6 @@ const NavBar = () => {
     }
   }, [user, setUnreadCount]);
 
-  // Fetch categories for the select dropdown
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const categoryData = await getAllCategories();
-        setCategories(categoryData);
-      } catch (error) {
-        console.error("Failed to load categories", error);
-      }
-    };
-    fetchCategories();
-  }, []);
-
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
@@ -81,22 +66,14 @@ const NavBar = () => {
   };
 
   const handleSearch = (e) => {
-    if (e.key === "Enter" && (searchQuery.trim() !== "" || selectedCategory)) {
-      navigate(
-        `/auction-list?q=${encodeURIComponent(
-          searchQuery
-        )}&category=${encodeURIComponent(selectedCategory)}`
-      );
+    if (e.key === "Enter" && searchQuery.trim() !== "") {
+      navigate(`/auction-list?q=${encodeURIComponent(searchQuery)}`);
     }
   };
 
   const handleSearchButtonClick = () => {
-    if (searchQuery.trim() !== "" || selectedCategory) {
-      navigate(
-        `/auction-list?q=${encodeURIComponent(
-          searchQuery
-        )}&category=${encodeURIComponent(selectedCategory)}`
-      );
+    if (searchQuery.trim() !== "") {
+      navigate(`/auction-list?q=${encodeURIComponent(searchQuery)}`);
     }
   };
 
@@ -135,13 +112,10 @@ const NavBar = () => {
       ];
 
   // For mobile view, combine primary and secondary actions.
-  const mobileMenuItems = user
-    ? [...primaryActions, ...secondaryActions]
-    : secondaryActions;
+  const mobileMenuItems = user ? [...primaryActions, ...secondaryActions] : secondaryActions;
 
   // For desktop logged-in users, show only secondary actions in the drop‑down.
-  const drawerMenuItems =
-    isDesktop && user ? secondaryActions : mobileMenuItems;
+  const drawerMenuItems = isDesktop && user ? secondaryActions : mobileMenuItems;
 
   // Set drawer anchor: right for desktop logged-in users, left otherwise.
   const drawerAnchor = user && isDesktop ? "right" : "left";
@@ -172,7 +146,7 @@ const NavBar = () => {
           </Typography>
         </Box>
 
-        {/* Center Section: Search Bar and Category Select */}
+        {/* Center Section: Only Search Bar (dropdown removed) */}
         <Box className={styles.searchContainer}>
           <TextField
             placeholder="Search items..."
@@ -184,38 +158,17 @@ const NavBar = () => {
             fullWidth
             InputProps={{
               endAdornment: (
-                <IconButton
-                  onClick={handleSearchButtonClick}
-                  aria-label="search"
-                >
+                <IconButton onClick={handleSearchButtonClick} aria-label="search">
                   <SearchIcon />
                 </IconButton>
               ),
             }}
           />
-          <TextField
-            select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            variant="outlined"
-            size="small"
-            style={{ marginTop: "10px" }}
-            fullWidth
-            SelectProps={{ native: true }}
-          >
-            <option value="">All Categories</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.name}>
-                {category.name}
-              </option>
-            ))}
-          </TextField>
         </Box>
 
         {/* Right Section (Desktop Only) */}
         {isDesktop && user && (
           <Box className={styles.primaryActions}>
-            {/* Create Auction Button */}
             <Button
               variant="contained"
               color="secondary"
@@ -224,7 +177,6 @@ const NavBar = () => {
               Create Auction
             </Button>
 
-            {/* Chat Icon with Badge */}
             <IconButton color="inherit" onClick={() => navigate("/chat")}>
               <Badge
                 badgeContent={unreadCount > 9 ? "9+" : unreadCount}
@@ -234,12 +186,10 @@ const NavBar = () => {
               </Badge>
             </IconButton>
 
-            {/* Theme Toggle Button */}
             <IconButton color="inherit" onClick={toggleTheme}>
               {mode === "light" ? <Brightness4Icon /> : <Brightness7Icon />}
             </IconButton>
 
-            {/* Burger Menu Icon */}
             <IconButton color="inherit" onClick={toggleDrawer(true)}>
               <MenuIcon />
             </IconButton>

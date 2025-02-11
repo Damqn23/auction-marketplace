@@ -7,16 +7,17 @@ import axiosInstance from './axiosConfig';
 
 
 
-export const getAllAuctionItems = async () => {
+export const getAllAuctionItems = async (filters = {}) => {
     try {
-        const response = await axiosInstance.get('auction-items/');
-        // If paginated, return response.data.results
+        const params = new URLSearchParams(filters).toString();
+        const response = await axiosInstance.get(`auction-items/?${params}`);
         return response.data.results || response.data;
     } catch (error) {
         console.error('Error fetching auction items:', error);
         throw error;
     }
 };
+
 export const searchAuctionItems = async (query, category) => {
     try {
         const response = await axiosInstance.get(

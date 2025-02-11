@@ -3,13 +3,13 @@
 import React, { useContext, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  searchAuctionItems,
   getAllAuctionItems,
   deleteAuctionItem,
   placeBid,
   buyNow,
 } from "../services/auctionService";
-import { Link, useLocation, useNavigate } from "react-router-dom"; // Import useNavigate here
+import { getAllCategories } from "../services/categoryService";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Button,
   Card,
@@ -20,7 +20,15 @@ import {
   Typography,
   TextField,
   Tooltip,
+  Menu,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  IconButton,
+  Box,
 } from "@mui/material";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import styles from "./AuctionList.module.css";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
@@ -31,45 +39,83 @@ const AuctionList = () => {
   const { user } = useContext(UserContext);
   const queryClient = useQueryClient();
   const [bidAmounts, setBidAmounts] = useState({});
-
-  // Import and initialize navigate
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  const [sortBy, setSortBy] = useState("newest");
   const navigate = useNavigate();
 
-  // Get search query from URL
+  // Get search query and category from URL parameters
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const query = queryParams.get("q") || "";
-  const category = queryParams.get("category") || "";
+  const categoryFromUrl = queryParams.get("category") || "";
 
-  console.log("Search query:", query); // Debugging line
+  // Initialize filter states (using separate states for pending and applied filters)
+  const initialFilterValues = {
+    min_price: "",
+    max_price: "",
+    condition: "",
+    location: "",
+    category: categoryFromUrl,
+  };
+  const [pendingFilters, setPendingFilters] = useState(initialFilterValues);
+  const [appliedFilters, setAppliedFilters] = useState(initialFilterValues);
 
-  // Fetch Auction Items based on search query
-  const {
-    data: auctionItems,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["searchAuctionItems", query, category],
+  console.log("Search query:", query);
+
+  // Fetch categories for the filter dropdown in the filter menu
+  const { data: categoriesData } = useQuery({
+    queryKey: ["categories"],
+    queryFn: getAllCategories,
+  });
+
+  // Fetch auction items using applied filters (only updated when Apply is clicked)
+  const { data: auctionItems, isLoading, isError } = useQuery({
+    queryKey: ["auctionItems", query, appliedFilters, sortBy],
     queryFn: () => {
-      if (query || category) {
-        return searchAuctionItems(query, category);
-      } else {
-        return getAllAuctionItems();
+      const params = { ...appliedFilters, sort_by: sortBy };
+      if (query) {
+        params.q = query;
       }
+      return getAllAuctionItems(params);
     },
-
     onError: () => {
       toast.error("Failed to load auction items.");
     },
   });
 
-  console.log("Fetched auction items:", auctionItems); // Debugging line
+  console.log("Fetched auction items:", auctionItems);
+
+  const handleFilterClick = (event) => {
+    setFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterClose = () => {
+    setFilterAnchorEl(null);
+  };
+
+  // Update pending filters on input change (so typing doesn't trigger a refetch)
+  const handleFilterChange = (e) => {
+    setPendingFilters({
+      ...pendingFilters,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
+  };
+
+  // When "Apply Filters" is clicked, update the applied filters and close the menu
+  const applyFilters = () => {
+    setAppliedFilters(pendingFilters);
+    handleFilterClose();
+    queryClient.invalidateQueries(["auctionItems"]);
+  };
 
   // Delete Auction Item Mutation
   const deleteMutation = useMutation({
     mutationFn: deleteAuctionItem,
     onSuccess: () => {
-      // Invalidate and refetch auction items
       queryClient.invalidateQueries(["auctionItems"]);
       toast.success("Auction item deleted successfully.");
     },
@@ -82,7 +128,6 @@ const AuctionList = () => {
   const bidMutation = useMutation({
     mutationFn: placeBid,
     onSuccess: () => {
-      // Invalidate and refetch auction items
       queryClient.invalidateQueries(["auctionItems"]);
       toast.success("Bid placed successfully!");
     },
@@ -99,7 +144,6 @@ const AuctionList = () => {
   const buyNowMutation = useMutation({
     mutationFn: buyNow,
     onSuccess: () => {
-      // Invalidate and refetch auction items
       queryClient.invalidateQueries(["auctionItems"]);
       toast.success("Purchase successful!");
     },
@@ -128,7 +172,7 @@ const AuctionList = () => {
     bidMutation.mutate({ id, amount });
   };
 
-  // Buy Now Modal
+  // Buy Now Modal state and handlers
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -164,6 +208,31 @@ const AuctionList = () => {
             Create New Auction
           </Button>
         </Link>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
+        }}
+      >
+        <IconButton color="primary" onClick={handleFilterClick}>
+          <FilterListIcon />
+          <Typography variant="body1" style={{ marginLeft: "8px" }}>
+            Filters
+          </Typography>
+        </IconButton>
+
+        <FormControl variant="outlined" size="small" style={{ minWidth: 150 }}>
+          <InputLabel>Sort By</InputLabel>
+          <Select value={sortBy} onChange={handleSortChange} label="Sort By">
+            <MenuItem value="newest">Newest</MenuItem>
+            <MenuItem value="ending_soon">Ending Soon</MenuItem>
+            <MenuItem value="highest_bid">Highest Bid</MenuItem>
+            <MenuItem value="lowest_price">Lowest Price</MenuItem>
+          </Select>
+        </FormControl>
       </div>
 
       {Array.isArray(auctionItems) && auctionItems.length > 0 ? (
@@ -227,11 +296,7 @@ const AuctionList = () => {
                     <Typography variant="h6" component="div" gutterBottom>
                       {item.title}
                     </Typography>
-                    <Typography
-                      variant="body2"
-                      color="textSecondary"
-                      gutterBottom
-                    >
+                    <Typography variant="body2" color="textSecondary" gutterBottom>
                       {item.description}
                     </Typography>
                     {item.category_data && (
@@ -239,15 +304,12 @@ const AuctionList = () => {
                         <strong>Category:</strong> {item.category_data.name}
                       </Typography>
                     )}
-
                     <Typography variant="body1">
                       <strong>Starting Bid:</strong> ${item.starting_bid}
                     </Typography>
                     <Typography variant="body1">
                       <strong>Current Bid:</strong>{" "}
-                      {item.current_bid
-                        ? `$${item.current_bid}`
-                        : "No bids yet"}
+                      {item.current_bid ? `$${item.current_bid}` : "No bids yet"}
                     </Typography>
                     {item.buy_now_price && (
                       <Typography variant="body1" color="secondary">
@@ -266,11 +328,7 @@ const AuctionList = () => {
                       </Typography>
                     )}
                     {item.buy_now_buyer && (
-                      <Typography
-                        variant="body2"
-                        color="primary"
-                        sx={{ mt: 1 }}
-                      >
+                      <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
                         Purchased via Buy Now by: {item.buy_now_buyer.username}
                       </Typography>
                     )}
@@ -286,11 +344,7 @@ const AuctionList = () => {
                         {item.bids.length > 0 || item.buy_now_buyer ? (
                           <Tooltip title="Cannot delete items that have bids or have been purchased.">
                             <span>
-                              <Button
-                                variant="outlined"
-                                color="secondary"
-                                disabled
-                              >
+                              <Button variant="outlined" color="secondary" disabled>
                                 Delete
                               </Button>
                             </span>
@@ -307,10 +361,7 @@ const AuctionList = () => {
                             >
                               Delete
                             </Button>
-                            <Link
-                              to={`/update/${item.id}`}
-                              style={{ textDecoration: "none" }}
-                            >
+                            <Link to={`/update/${item.id}`} style={{ textDecoration: "none" }}>
                               <Button
                                 variant="outlined"
                                 color="primary"
@@ -358,7 +409,7 @@ const AuctionList = () => {
                             </Button>
                           </div>
                         )}
-
+  
                         {canBuyNow && (
                           <Button
                             variant="contained"
@@ -397,6 +448,94 @@ const AuctionList = () => {
           buyNowPrice={selectedItem.buy_now_price}
         />
       )}
+
+      <Menu
+        anchorEl={filterAnchorEl}
+        open={Boolean(filterAnchorEl)}
+        onClose={handleFilterClose}
+      >
+        <Box padding={2}>
+          <Typography variant="h6" gutterBottom>
+            Filters
+          </Typography>
+
+          {/* Price Range */}
+          <TextField
+            label="Min Price"
+            name="min_price"
+            value={pendingFilters.min_price}
+            onChange={handleFilterChange}
+            fullWidth
+            margin="dense"
+            type="number"
+          />
+          <TextField
+            label="Max Price"
+            name="max_price"
+            value={pendingFilters.max_price}
+            onChange={handleFilterChange}
+            fullWidth
+            margin="dense"
+            type="number"
+          />
+
+          {/* Condition */}
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Condition</InputLabel>
+            <Select
+              name="condition"
+              value={pendingFilters.condition}
+              onChange={handleFilterChange}
+              label="Condition"
+            >
+              <MenuItem value="">Any</MenuItem>
+              <MenuItem value="New">New</MenuItem>
+              <MenuItem value="Used">Used</MenuItem>
+              <MenuItem value="Refurbished">Refurbished</MenuItem>
+            </Select>
+          </FormControl>
+
+          {/* Location */}
+          <TextField
+            label="Location"
+            name="location"
+            value={pendingFilters.location}
+            onChange={handleFilterChange}
+            fullWidth
+            margin="dense"
+          />
+
+          {/* Category */}
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Category</InputLabel>
+            <Select
+              name="category"
+              value={pendingFilters.category}
+              onChange={handleFilterChange}
+              label="Category"
+            >
+              <MenuItem value="">All Categories</MenuItem>
+              {categoriesData &&
+                categoriesData.map((cat) => (
+                  <MenuItem key={cat.id} value={cat.name}>
+                    {cat.name}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+
+          {/* Apply Filters Button */}
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={applyFilters}
+            style={{ marginTop: "10px" }}
+          >
+            Apply Filters
+          </Button>
+        </Box>
+      </Menu>
     </div>
   );
 };
