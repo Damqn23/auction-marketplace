@@ -1,4 +1,6 @@
-import React, { useContext, useState } from 'react';
+// frontend/src/components/ProductDetail.js
+
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -28,6 +30,47 @@ import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import styles from './ProductDetail.module.css';
 
+//
+// CountdownTimer Component (refactored with useCallback)
+//
+const CountdownTimer = ({ endTime }) => {
+  const calculateTimeLeft = useCallback(() => {
+    const difference = new Date(endTime) - new Date();
+    if (difference > 0) {
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / (1000 * 60)) % 60),
+        seconds: Math.floor((difference / 1000) % 60)
+      };
+    }
+    return null;
+  }, [endTime]);
+
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [calculateTimeLeft]);
+
+  if (!timeLeft) {
+    return <span>Auction ended</span>;
+  }
+
+  return (
+    <span>
+      {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+    </span>
+  );
+};
+
+//
+// ProductDetails Component
+//
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -86,7 +129,6 @@ const ProductDetails = () => {
   const deleteMutation = useMutation({
     mutationFn: deleteAuctionItem,
     onSuccess: () => {
-      // Invalidate the list of auction items
       queryClient.invalidateQueries(['auctionItems']);
       toast.success('Auction item deleted successfully.');
       navigate('/');
@@ -121,11 +163,6 @@ const ProductDetails = () => {
     : parseFloat(auctionItem.starting_bid);
   const minIncrement = minBid * 0.02;
   const minRequiredBid = (minBid + minIncrement).toFixed(2);
-
-  // Format end time
-  const formattedEndTime = moment(auctionItem.end_time).format(
-    'MMMM Do YYYY, h:mm:ss a'
-  );
 
   // ImageSlider for multiple images
   const ImageSlider = ({ images }) => {
@@ -163,7 +200,7 @@ const ProductDetails = () => {
   const handlePlaceBid = () => {
     const amount = parseFloat(bidAmount);
     if (isNaN(amount)) {
-      toast.error(`Please enter a valid bid amount.`);
+      toast.error('Please enter a valid bid amount.');
       return;
     }
     if (amount < minRequiredBid) {
@@ -249,7 +286,8 @@ const ProductDetails = () => {
                       <strong>Status:</strong> {auctionItem.status}
                     </Typography>
                     <Typography variant="body2">
-                      <strong>End Time:</strong> {formattedEndTime}
+                      <strong>Time Remaining:</strong>{' '}
+                      <CountdownTimer endTime={auctionItem.end_time} />
                     </Typography>
                     {auctionItem.owner?.username && (
                       <Typography variant="body2">
@@ -327,10 +365,7 @@ const ProductDetails = () => {
                     {auctionItem.bids?.length > 0 || auctionItem.buy_now_buyer ? (
                       <Tooltip title="Cannot delete auction items that have received bids or been purchased via Buy Now.">
                         <span>
-                          <Button
-                            variant="outlined"
-                            disabled
-                          >
+                          <Button variant="outlined" disabled>
                             Delete
                           </Button>
                         </span>

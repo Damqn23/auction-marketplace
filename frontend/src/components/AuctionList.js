@@ -1,10 +1,9 @@
 // frontend/src/components/AuctionList.js
 
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getAllAuctionItems,
-  deleteAuctionItem,
   placeBid,
   buyNow,
 } from "../services/auctionService";
@@ -19,7 +18,6 @@ import {
   Grid,
   Typography,
   TextField,
-  Tooltip,
   Menu,
   MenuItem,
   FormControl,
@@ -32,9 +30,50 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import styles from "./AuctionList.module.css";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
-import moment from "moment";
 import BuyNowModal from "./BuyNowModal";
 
+// ---------------------
+// CountdownTimer Component
+// ---------------------
+const CountdownTimer = ({ endTime }) => {
+  // Wrap calculateTimeLeft in useCallback so it can be safely used in useEffect
+  const calculateTimeLeft = useCallback(() => {
+    const difference = new Date(endTime) - new Date();
+    if (difference > 0) {
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / (1000 * 60)) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+      };
+    }
+    return null;
+  }, [endTime]);
+
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [calculateTimeLeft]);
+
+  if (!timeLeft) {
+    return <span>Auction ended</span>;
+  }
+
+  return (
+    <span>
+      {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+    </span>
+  );
+};
+
+// ---------------------
+// AuctionList Component
+// ---------------------
 const AuctionList = () => {
   const { user } = useContext(UserContext);
   const queryClient = useQueryClient();
@@ -60,8 +99,6 @@ const AuctionList = () => {
   const [pendingFilters, setPendingFilters] = useState(initialFilterValues);
   const [appliedFilters, setAppliedFilters] = useState(initialFilterValues);
 
-  console.log("Search query:", query);
-
   // Fetch categories for the filter dropdown in the filter menu
   const { data: categoriesData } = useQuery({
     queryKey: ["categories"],
@@ -82,8 +119,6 @@ const AuctionList = () => {
       toast.error("Failed to load auction items.");
     },
   });
-
-  console.log("Fetched auction items:", auctionItems);
 
   const handleFilterClick = (event) => {
     setFilterAnchorEl(event.currentTarget);
@@ -112,17 +147,7 @@ const AuctionList = () => {
     queryClient.invalidateQueries(["auctionItems"]);
   };
 
-  // Delete Auction Item Mutation
-  const deleteMutation = useMutation({
-    mutationFn: deleteAuctionItem,
-    onSuccess: () => {
-      queryClient.invalidateQueries(["auctionItems"]);
-      toast.success("Auction item deleted successfully.");
-    },
-    onError: () => {
-      toast.error("Failed to delete auction item.");
-    },
-  });
+  // (Removed deleteMutation and handleDelete because they're not used)
 
   // Place Bid Mutation
   const bidMutation = useMutation({
@@ -156,13 +181,7 @@ const AuctionList = () => {
     },
   });
 
-  // Handlers
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this auction item?")) {
-      deleteMutation.mutate(id);
-    }
-  };
-
+  // Handler for placing a bid
   const handlePlaceBid = (id) => {
     const amount = parseFloat(bidAmounts[id]);
     if (isNaN(amount)) {
@@ -238,34 +257,29 @@ const AuctionList = () => {
       {Array.isArray(auctionItems) && auctionItems.length > 0 ? (
         <Grid container spacing={2}>
           {auctionItems.map((item) => {
+            // Only non-owners see bidding/buy now actions.
+            const isNotOwner =
+              user && item.owner && user.username !== item.owner.username;
+
             // Determine if current user can place a bid
             const canBid =
-              user &&
-              item.owner &&
-              user.username !== item.owner.username &&
+              isNotOwner &&
               item.status === "active" &&
               !item.buy_now_buyer;
 
             // Determine if Buy Now is available
             const canBuyNow =
-              user &&
-              item.owner &&
-              user.username !== item.owner.username &&
+              isNotOwner &&
               item.status === "active" &&
               item.buy_now_price &&
               !item.buy_now_buyer;
 
             // Calculate the minimum required bid (2% increment)
-            const minBid = item.current_bid
+            const minBidValue = item.current_bid
               ? parseFloat(item.current_bid)
               : parseFloat(item.starting_bid);
-            const minIncrement = minBid * 0.02;
-            const minRequiredBid = (minBid + minIncrement).toFixed(2);
-
-            // Format end time
-            const formattedEndTime = moment(item.end_time).format(
-              "MMMM Do YYYY, h:mm:ss a"
-            );
+            const minIncrement = minBidValue * 0.02;
+            const minRequiredBid = (minBidValue + minIncrement).toFixed(2);
 
             return (
               <Grid item xs={12} md={6} lg={4} key={item.id}>
@@ -279,7 +293,7 @@ const AuctionList = () => {
                   {item.images && item.images.length > 0 ? (
                     <CardMedia
                       component="img"
-                      height="200"
+                      height="250"
                       image={item.images[0].image}
                       alt={item.title}
                     />
@@ -291,13 +305,10 @@ const AuctionList = () => {
                     </div>
                   )}
 
-                  <CardContent>
-                    {/* Display some details */}
+                  <CardContent style={{ marginTop: "10px" }}>
+                    {/* Display basic details */}
                     <Typography variant="h6" component="div" gutterBottom>
                       {item.title}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" gutterBottom>
-                      {item.description}
                     </Typography>
                     {item.category_data && (
                       <Typography variant="body2" color="textSecondary">
@@ -316,11 +327,9 @@ const AuctionList = () => {
                         <strong>Buy Now Price:</strong> ${item.buy_now_price}
                       </Typography>
                     )}
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      <strong>Status:</strong> {item.status}
-                    </Typography>
                     <Typography variant="body2">
-                      <strong>End Time:</strong> {formattedEndTime}
+                      <strong>Time Remaining:</strong>{" "}
+                      <CountdownTimer endTime={item.end_time} />
                     </Typography>
                     {item.owner && item.owner.username && (
                       <Typography variant="body2">
@@ -334,98 +343,62 @@ const AuctionList = () => {
                     )}
                   </CardContent>
 
-                  {/* Card Actions – stop click propagation so buttons work normally */}
-                  <CardActions
-                    onClick={(e) => e.stopPropagation()}
-                    className={styles.cardActions}
-                  >
-                    {user && user.username === item.owner.username ? (
-                      <>
-                        {item.bids.length > 0 || item.buy_now_buyer ? (
-                          <Tooltip title="Cannot delete items that have bids or have been purchased.">
-                            <span>
-                              <Button variant="outlined" color="secondary" disabled>
-                                Delete
-                              </Button>
-                            </span>
-                          </Tooltip>
-                        ) : (
-                          <>
-                            <Button
-                              variant="outlined"
-                              color="secondary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(item.id);
-                              }}
-                            >
-                              Delete
-                            </Button>
-                            <Link to={`/update/${item.id}`} style={{ textDecoration: "none" }}>
-                              <Button
-                                variant="outlined"
-                                color="primary"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                Update
-                              </Button>
-                            </Link>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {canBid && (
-                          <div className={styles.bidSection}>
-                            <TextField
-                              label={`Min: $${minRequiredBid}`}
-                              type="number"
-                              value={bidAmounts[item.id] || ""}
-                              onChange={(e) =>
-                                setBidAmounts({
-                                  ...bidAmounts,
-                                  [item.id]: e.target.value,
-                                })
-                              }
-                              inputProps={{
-                                min: minRequiredBid,
-                                step: "0.01",
-                              }}
-                              variant="outlined"
-                              size="small"
-                              className={styles.bidInput}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <Button
-                              variant="contained"
-                              color="success"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePlaceBid(item.id);
-                              }}
-                              className={styles.bidButton}
-                            >
-                              Bid
-                            </Button>
-                          </div>
-                        )}
-  
-                        {canBuyNow && (
+                  {/* Card Actions – only render actions if the current user is not the owner */}
+                  {isNotOwner && (
+                    <CardActions
+                      onClick={(e) => e.stopPropagation()}
+                      className={styles.cardActions}
+                    >
+                      {canBid && (
+                        <div className={styles.bidSection}>
+                          <TextField
+                            label={`Min: $${minRequiredBid}`}
+                            type="number"
+                            value={bidAmounts[item.id] || ""}
+                            onChange={(e) =>
+                              setBidAmounts({
+                                ...bidAmounts,
+                                [item.id]: e.target.value,
+                              })
+                            }
+                            inputProps={{
+                              min: minRequiredBid,
+                              step: "0.01",
+                            }}
+                            variant="outlined"
+                            size="small"
+                            className={styles.bidInput}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                           <Button
                             variant="contained"
-                            color="secondary"
+                            color="success"
                             onClick={(e) => {
                               e.stopPropagation();
-                              openBuyNowModal(item);
+                              handlePlaceBid(item.id);
                             }}
-                            className={styles.buyNowButton}
+                            className={styles.bidButton}
                           >
-                            Buy Now
+                            Bid
                           </Button>
-                        )}
-                      </>
-                    )}
-                  </CardActions>
+                        </div>
+                      )}
+
+                      {canBuyNow && (
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openBuyNowModal(item);
+                          }}
+                          className={styles.buyNowButton}
+                        >
+                          Buy Now
+                        </Button>
+                      )}
+                    </CardActions>
+                  )}
                 </Card>
               </Grid>
             );
