@@ -104,6 +104,7 @@ const NavBar = () => {
         { text: "My Bids", link: "/my-bids" },
         { text: "My Purchases", link: "/my-purchases" },
         { text: "My Auctions", link: "/my-auctions" },
+        { text: "Favorites", link: "/favorites" }, // <-- Added Favorites link
         { text: "Logout", action: handleLogout },
       ]
     : [
@@ -146,7 +147,7 @@ const NavBar = () => {
           </Typography>
         </Box>
 
-        {/* Center Section: Only Search Bar (dropdown removed) */}
+        {/* Center Section: Only Search Bar */}
         <Box className={styles.searchContainer}>
           <TextField
             placeholder="Search items..."

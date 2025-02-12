@@ -31,12 +31,12 @@ import styles from "./AuctionList.module.css";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
 import BuyNowModal from "./BuyNowModal";
+import FavoriteButton from "./FavoriteButton"; // <-- Import the FavoriteButton component
 
 // ---------------------
 // CountdownTimer Component
 // ---------------------
 const CountdownTimer = ({ endTime }) => {
-  // Wrap calculateTimeLeft in useCallback so it can be safely used in useEffect
   const calculateTimeLeft = useCallback(() => {
     const difference = new Date(endTime) - new Date();
     if (difference > 0) {
@@ -88,7 +88,7 @@ const AuctionList = () => {
   const query = queryParams.get("q") || "";
   const categoryFromUrl = queryParams.get("category") || "";
 
-  // Initialize filter states (using separate states for pending and applied filters)
+  // Initialize filter states
   const initialFilterValues = {
     min_price: "",
     max_price: "",
@@ -99,13 +99,13 @@ const AuctionList = () => {
   const [pendingFilters, setPendingFilters] = useState(initialFilterValues);
   const [appliedFilters, setAppliedFilters] = useState(initialFilterValues);
 
-  // Fetch categories for the filter dropdown in the filter menu
+  // Fetch categories for the filter dropdown
   const { data: categoriesData } = useQuery({
     queryKey: ["categories"],
     queryFn: getAllCategories,
   });
 
-  // Fetch auction items using applied filters (only updated when Apply is clicked)
+  // Fetch auction items using applied filters
   const { data: auctionItems, isLoading, isError } = useQuery({
     queryKey: ["auctionItems", query, appliedFilters, sortBy],
     queryFn: () => {
@@ -128,7 +128,7 @@ const AuctionList = () => {
     setFilterAnchorEl(null);
   };
 
-  // Update pending filters on input change (so typing doesn't trigger a refetch)
+  // Update pending filters on input change
   const handleFilterChange = (e) => {
     setPendingFilters({
       ...pendingFilters,
@@ -140,14 +140,12 @@ const AuctionList = () => {
     setSortBy(e.target.value);
   };
 
-  // When "Apply Filters" is clicked, update the applied filters and close the menu
+  // When "Apply Filters" is clicked, update filters and refetch
   const applyFilters = () => {
     setAppliedFilters(pendingFilters);
     handleFilterClose();
     queryClient.invalidateQueries(["auctionItems"]);
   };
-
-  // (Removed deleteMutation and handleDelete because they're not used)
 
   // Place Bid Mutation
   const bidMutation = useMutation({
@@ -257,7 +255,7 @@ const AuctionList = () => {
       {Array.isArray(auctionItems) && auctionItems.length > 0 ? (
         <Grid container spacing={2}>
           {auctionItems.map((item) => {
-            // Only non-owners see bidding/buy now actions.
+            // Only non-owners see bidding/Buy Now actions.
             const isNotOwner =
               user && item.owner && user.username !== item.owner.username;
 
@@ -343,62 +341,73 @@ const AuctionList = () => {
                     )}
                   </CardContent>
 
-                  {/* Card Actions – only render actions if the current user is not the owner */}
-                  {isNotOwner && (
-                    <CardActions
-                      onClick={(e) => e.stopPropagation()}
-                      className={styles.cardActions}
-                    >
-                      {canBid && (
-                        <div className={styles.bidSection}>
-                          <TextField
-                            label={`Min: $${minRequiredBid}`}
-                            type="number"
-                            value={bidAmounts[item.id] || ""}
-                            onChange={(e) =>
-                              setBidAmounts({
-                                ...bidAmounts,
-                                [item.id]: e.target.value,
-                              })
-                            }
-                            inputProps={{
-                              min: minRequiredBid,
-                              step: "0.01",
-                            }}
-                            variant="outlined"
-                            size="small"
-                            className={styles.bidInput}
-                            onClick={(e) => e.stopPropagation()}
-                          />
+                  {/* Card Actions */}
+                  <CardActions
+                    onClick={(e) => e.stopPropagation()}
+                    className={styles.cardActions}
+                  >
+                    {/* Left: Favorite Button */}
+                    <FavoriteButton auctionItemId={item.id} />
+                    {/* Right: Bid/Buy Now actions for non-owners */}
+                    {isNotOwner && (
+                      <Box
+                        sx={{
+                          marginLeft: "auto",
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        {canBid && (
+                          <div className={styles.bidSection}>
+                            <TextField
+                              label={`Min: $${minRequiredBid}`}
+                              type="number"
+                              value={bidAmounts[item.id] || ""}
+                              onChange={(e) =>
+                                setBidAmounts({
+                                  ...bidAmounts,
+                                  [item.id]: e.target.value,
+                                })
+                              }
+                              inputProps={{
+                                min: minRequiredBid,
+                                step: "0.01",
+                              }}
+                              variant="outlined"
+                              size="small"
+                              className={styles.bidInput}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <Button
+                              variant="contained"
+                              color="success"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePlaceBid(item.id);
+                              }}
+                              className={styles.bidButton}
+                            >
+                              Bid
+                            </Button>
+                          </div>
+                        )}
+
+                        {canBuyNow && (
                           <Button
                             variant="contained"
-                            color="success"
+                            color="secondary"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handlePlaceBid(item.id);
+                              openBuyNowModal(item);
                             }}
-                            className={styles.bidButton}
+                            className={styles.buyNowButton}
                           >
-                            Bid
+                            Buy Now
                           </Button>
-                        </div>
-                      )}
-
-                      {canBuyNow && (
-                        <Button
-                          variant="contained"
-                          color="secondary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openBuyNowModal(item);
-                          }}
-                          className={styles.buyNowButton}
-                        >
-                          Buy Now
-                        </Button>
-                      )}
-                    </CardActions>
-                  )}
+                        )}
+                      </Box>
+                    )}
+                  </CardActions>
                 </Card>
               </Grid>
             );

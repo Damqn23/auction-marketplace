@@ -8,6 +8,7 @@ import UpdateAuction from './components/UpdateAuction';
 import Login from './components/Login';
 import Register from './components/Register';
 import NavBar from './components/NavBar';
+import Favorites from './components/Favorites';
 import ProductDetail from './components/ProductDetail';
 import MyAuctions from './components/MyAuctions';
 import MyPurchases from './components/MyPurchases';
@@ -52,6 +53,7 @@ function App() {
               <Route path="/chat" element={<PrivateRoute element={ChatList} />} />
               <Route path="/my-auctions" element={<PrivateRoute element={MyAuctions} />} />
               <Route path="/chat/:ownerUsername" element={<PrivateRoute element={Chat} />} />
+              <Route path="/favorites" element={<PrivateRoute element={Favorites} />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <ToastContainer />

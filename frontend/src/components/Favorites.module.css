@@ -1,0 +1,54 @@
+/* Container for the Favorites page */
+.container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  /* Header style */
+  .header {
+    margin-bottom: 20px;
+  }
+  
+  /* Style for the "No favorites" message */
+  .noFavorites {
+    margin-top: 20px;
+  }
+  
+  /* Card styling */
+  .card {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  
+  .card:hover {
+    transform: scale(1.02);
+  }
+  
+  /* Media (image) styling */
+  .media {
+    height: 200px;
+    object-fit: cover;
+  }
+  
+  /* Fallback when no image is available */
+  .noImageFallback {
+    height: 200px;
+    background-color: #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* CardContent: position relative so that the delete button can be absolutely positioned */
+  .cardContent {
+    position: relative;
+  }
+  
+  /* Delete button positioned in the top-right corner */
+  .deleteButton {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+  
