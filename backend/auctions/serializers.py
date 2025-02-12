@@ -3,13 +3,15 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from .models import AuctionItem, Bid, AuctionImage, ChatMessage, Category
+from .models import AuctionItem, Bid, AuctionImage, ChatMessage, Category, Favorite
 
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields ="__all__"
+
+
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
@@ -127,6 +129,20 @@ class AuctionItemSerializer(serializers.ModelSerializer):
                     img['image'] = request.build_absolute_uri(img['image'])
         return representation
 
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    # Return full auction item details for GET requests
+    auction_item = AuctionItemSerializer(read_only=True)
+    # Allow posting using auction_item_id
+    auction_item_id = serializers.PrimaryKeyRelatedField(
+        source='auction_item',
+        queryset=AuctionItem.objects.all(),
+        write_only=True
+    )
+
+    class Meta:
+        model = Favorite
+        fields = ['id', 'auction_item', 'auction_item_id', 'created_at']
 
 class ChatMessageSerializer(serializers.ModelSerializer):
     class Meta:

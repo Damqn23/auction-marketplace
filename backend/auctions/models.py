@@ -5,6 +5,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.conf import settings
 
 
 class Category(models.Model):
@@ -48,6 +49,17 @@ class AuctionItem(models.Model):
 
     def __str__(self):
         return self.title
+
+class Favorite(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorites')
+    auction_item = models.ForeignKey(AuctionItem, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'auction_item')
+
+    def __str__(self):
+        return f"{self.user.username} favorited {self.auction_item.title}"
 
 
 class Bid(models.Model):

@@ -3,7 +3,8 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import AuctionItemViewSet, ChatMessageViewSet, RegisterView, SearchAuctionItemsView, UserViewSet, \
-    BidViewSet, MyPurchasesView, CurrentUserView, AuctionItemDetailView, CategoryListView, UserBidsView
+    BidViewSet, MyPurchasesView, CurrentUserView, AuctionItemDetailView, CategoryListView, UserBidsView, \
+    FavoriteListCreateAPIView, FavoriteDeleteAPIView
 
 router = DefaultRouter()
 router.register(r'auction-items', AuctionItemViewSet, basename='auctionitem')
@@ -21,4 +22,6 @@ urlpatterns = [
     path('auction-items/search/', SearchAuctionItemsView.as_view(), name='search-auction-items'),
     path('categories/', CategoryListView.as_view(), name='category-list'),
     path('my-bids/', UserBidsView.as_view(), name='my-bids'),
+    path('favorites/', FavoriteListCreateAPIView.as_view(), name='favorite-list'),
+    path('favorites/<int:id>/', FavoriteDeleteAPIView.as_view(), name='favorite-delete'),
 ]

@@ -6,20 +6,20 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions, generics
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
-from .models import AuctionItem, Bid, ChatMessage
+from .models import AuctionItem, Bid, ChatMessage, Favorite
 from .serializers import (
     ChatMessageSerializer,
     UserSerializer,
     AuctionItemSerializer,
     UserRegistrationSerializer,
-    BidSerializer
+    BidSerializer, FavoriteSerializer
 )
 from .permissions import IsOwnerOrReadOnly, IsBidderOrReadOnly  # Custom Permissions
 
@@ -325,6 +325,25 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
 
         serializer = AuctionItemSerializer(auction_item)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class FavoriteListCreateAPIView(generics.ListCreateAPIView):
+    serializer_class = FavoriteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Favorite.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+# API view to remove a favorite
+class FavoriteDeleteAPIView(generics.DestroyAPIView):
+    serializer_class = FavoriteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'id'
+
+    def get_queryset(self):
+        return Favorite.objects.filter(user=self.request.user)
 
 
 class MyPurchasesView(APIView):
