@@ -311,14 +311,16 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
 
         # Optionally, check user funds or other business logic here
 
-        # Set buyer and update auction status
+        # Set buyer, update current bid, mark auction as closed,
+        # and update the end_time to the current time (as if the auction has ended)
         auction_item.buy_now_buyer = request.user
         auction_item.current_bid = auction_item.buy_now_price
         auction_item.status = 'closed'
+        auction_item.end_time = timezone.now()
         auction_item.save()
 
-        # Optionally, set winner if not already set via Buy Now
-        if not auction_item.buy_now_buyer and auction_item.bids.exists():
+        # Optionally, set winner if not already set via Buy Now (this block may be unnecessary since we've just set buy_now_buyer)
+        if not auction_item.winner and auction_item.bids.exists():
             highest_bid = auction_item.bids.order_by('-amount').first()
             auction_item.winner = highest_bid.bidder
             auction_item.save()
