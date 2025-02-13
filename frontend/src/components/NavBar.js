@@ -4,9 +4,6 @@ import React, { useContext, useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
-import { useThemeContext } from "../contexts/ThemeContext";
-import Brightness4Icon from "@mui/icons-material/Brightness4"; // Dark mode icon
-import Brightness7Icon from "@mui/icons-material/Brightness7"; // Light mode icon
 import { getUnreadMessages } from "../services/auctionService";
 import styles from "./NavBar.module.css";
 
@@ -36,7 +33,6 @@ const NavBar = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { mode, toggleTheme } = useThemeContext();
 
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
@@ -104,7 +100,7 @@ const NavBar = () => {
         { text: "My Bids", link: "/my-bids" },
         { text: "My Purchases", link: "/my-purchases" },
         { text: "My Auctions", link: "/my-auctions" },
-        { text: "Favorites", link: "/favorites" }, // <-- Added Favorites link
+        { text: "Favorites", link: "/favorites" },
         { text: "Logout", action: handleLogout },
       ]
     : [
@@ -185,10 +181,6 @@ const NavBar = () => {
               >
                 <ChatIcon />
               </Badge>
-            </IconButton>
-
-            <IconButton color="inherit" onClick={toggleTheme}>
-              {mode === "light" ? <Brightness4Icon /> : <Brightness7Icon />}
             </IconButton>
 
             <IconButton color="inherit" onClick={toggleDrawer(true)}>

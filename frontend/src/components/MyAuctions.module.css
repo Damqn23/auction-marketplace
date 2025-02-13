@@ -1,11 +1,11 @@
-/* MyAuctions.module.css (Theme-Friendly) */
+/* MyAuctions.module.css (Updated with Extra Effects) */
 
 /* Container */
 .container {
   padding: 20px;
-  /* fallback to #f5f5f5 if --surface-color is not defined */
   background-color: var(--surface-color, #f5f5f5);
   min-height: 100vh;
+  animation: fadeIn 1s ease-in-out;
 }
 
 /* Header */
@@ -13,8 +13,8 @@
   text-align: center;
   margin-bottom: 20px;
   font-weight: bold;
-  /* fallback #333 for text color */
   color: var(--text-color, #333);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Loading State */
@@ -25,13 +25,11 @@
   justify-content: center;
   min-height: 50vh;
   text-align: center;
-  /* fallback #555 for text color */
   color: var(--muted-text-color, #555);
 }
 
 /* Error Message */
 .error {
-  /* fallback #e53935 or #d32f2f for 'error' color if you prefer */
   color: var(--accent-color, red);
   text-align: center;
   margin-top: 20px;
@@ -44,62 +42,68 @@
 
 /* Auction Card */
 .auctionCard {
-  /* fallback #fff for the card surface */
   background: var(--card-surface-color, #fff);
   border-radius: 10px;
-  /* fallback shadow */
   box-shadow: var(--card-shadow, 0 4px 8px rgba(0, 0, 0, 0.1));
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+  position: relative;
 }
 
 .auctionCard:hover {
-  transform: translateY(-5px);
+  transform: translateY(-5px) scale(1.02);
   box-shadow: var(--card-hover-shadow, 0 8px 16px rgba(0, 0, 0, 0.2));
 }
 
-/* Creative Placeholder */
-.creativePlaceholder {
-  height: 140px;
+/* Card Media (Image) */
+.cardMedia {
+  transition: transform 0.3s ease;
+}
+
+.auctionCard:hover .cardMedia {
+  transform: scale(1.05);
+}
+
+/* Fallback Image Container */
+.noImageFallback {
+  height: 250px;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* fallback gradient for the placeholder area */
   background: linear-gradient(
     135deg,
     var(--placeholder-start, #6a11cb),
     var(--placeholder-end, #2575fc)
   );
-  border-radius: 10px 10px 0 0;
   color: var(--placeholder-text-color, #fff);
-  padding: 10px;
+  font-weight: bold;
+  font-size: 1.25rem;
   text-align: center;
 }
 
-/* Placeholder text styling for the entire title */
-.placeholderText {
-  font-size: 1.75rem;
-  font-weight: bold;
-  margin: 0;
+/* Card Content */
+.cardContent {
+  padding: 15px;
+  animation: slideUp 0.5s ease-out;
 }
 
-/* Card Content */
 .cardTitle {
   font-size: 18px;
   font-weight: bold;
-  /* fallback #333 text */
   color: var(--text-color, #333);
+  margin-bottom: 5px;
 }
 
 .cardDescription {
   margin: 10px 0;
-  /* fallback #666 for muted text */
   color: var(--muted-text-color, #666);
+  font-size: 0.9rem;
 }
 
 .cardDetails {
   margin: 5px 0;
-  /* fallback #555 for even more muted text */
   color: var(--muted-text-color, #555);
+  font-size: 0.9rem;
 }
 
 .cardStatus {
@@ -107,17 +111,42 @@
   font-weight: bold;
 }
 
-/* View Auction Button */
 .viewButton {
   margin-top: 15px;
   text-transform: none;
   font-size: 14px;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.viewButton:hover {
+  background-color: var(--link-hover-color, #0d47a1);
+  transform: scale(1.02);
 }
 
 /* No Auctions */
 .noAuctions {
   text-align: center;
-  /* fallback #777 for text */
   color: var(--muted-text-color, #777);
   margin-top: 30px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

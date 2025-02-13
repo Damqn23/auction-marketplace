@@ -2,38 +2,8 @@
 /*      App.css           */
 /* ====================== */
 
-/* Default (Dark Mode) Theme Variables */
+/* Apply Light Theme Variables as Default */
 :root {
-  --primary-color: #283593;       /* Indigo */
-  --secondary-color: #ffeb3b;     /* Amber */
-  --background-color: #1e1e1e;    /* Dark Slate */
-  --surface-color: #2c2c2c;       /* Dark Gray */
-  --accent-color: #e53935;        /* Red */
-  --text-color: #f5f5f5;          /* Light Gray */
-  --muted-text-color: #bdbdbd;    /* Medium Gray */
-  --link-color: #ffeb3b;          /* Amber for links */
-  --link-hover-color: #ffc107;    /* Lighter Amber on hover */
-  --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-
-  --hero-bg-start: #303030;
-  --hero-bg-end: #424242;
-  --hero-text-color: #f5f5f5;
-  --hero-button-bg: #ffeb3b;
-  --hero-button-text: #212121;
-  --primary-hover-color: #9f64e5;
-  --card-surface-color: #2c2c2c;
-  --surface-color: #1e1e1e; /* repeated, but keep if you need it */
-  --no-image-bg: #333333;
-  --buy-now-bg: #f44336;
-
-  --chat-surface-bg: #2c2c2c;
-  --chat-sent-bg: #444444;
-  --chat-received-bg: #555555;
-  --chat-bubble-text-color: #f5f5f5;
-}
-
-/* Light Mode Theme Variables */
-.light-theme {
   --primary-color: #1976d2;       /* Light Indigo */
   --secondary-color: #ff9800;     /* Orange */
   --background-color: #ffffff;    /* White */
@@ -55,6 +25,11 @@
 
   --no-image-bg: #eaeaea;
   --buy-now-bg: #ff5722;
+
+  --chat-surface-bg: #ffffff;
+  --chat-sent-bg: #eeeeee;
+  --chat-received-bg: #f5f5f5;
+  --chat-bubble-text-color: #212121;
 }
 
 /* The main container for your React app */

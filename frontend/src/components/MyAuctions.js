@@ -1,3 +1,5 @@
+// frontend/src/components/MyAuctions.js
+
 import React, { useEffect, useState } from 'react';
 import { getMyAuctions } from '../services/auctionService';
 import { Link } from 'react-router-dom';
@@ -5,6 +7,7 @@ import {
   CircularProgress,
   Card,
   CardContent,
+  CardMedia,
   Typography,
   Button,
   Grid,
@@ -69,13 +72,24 @@ const MyAuctions = () => {
           {auctions.map((auction) => (
             <Grid item xs={12} sm={6} md={4} key={auction.id}>
               <Card className={styles.auctionCard}>
-                {/* Creative Placeholder displaying the entire auction title */}
-                <div className={styles.creativePlaceholder}>
-                  <Typography variant="h4" className={styles.placeholderText}>
-                    {auction.title}
-                  </Typography>
-                </div>
-                <CardContent>
+                {/* Image Section: If auction has images, display the first image; otherwise, show a fallback */}
+                {auction.images && auction.images.length > 0 ? (
+                  <CardMedia
+                    component="img"
+                    height="250"
+                    image={auction.images[0].image}
+                    alt={auction.title}
+                    className={styles.cardMedia}
+                  />
+                ) : (
+                  <div className={styles.noImageFallback}>
+                    <Typography variant="body2" color="textSecondary">
+                      No image available
+                    </Typography>
+                  </div>
+                )}
+
+                <CardContent className={styles.cardContent}>
                   <Typography variant="h6" className={styles.cardTitle}>
                     {auction.title}
                   </Typography>

@@ -1,3 +1,5 @@
+// frontend/src/components/MyPurchases.js
+
 import React, { useState, useEffect, useContext } from "react";
 import { getMyPurchases } from "../services/auctionService";
 import { UserContext } from "../contexts/UserContext";
@@ -8,6 +10,7 @@ import {
   Button,
   Card,
   CardContent,
+  CardMedia,
   Grid,
   Typography,
   Container,
@@ -22,6 +25,19 @@ const MyPurchases = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // Helper function to get the image URL:
+  const getImageUrl = (item) => {
+    // Check if the item itself has an images array
+    if (item.images && item.images.length > 0) {
+      return item.images[0].image;
+    }
+    // Otherwise, check if the item has an auction object with images
+    if (item.auction && item.auction.images && item.auction.images.length > 0) {
+      return item.auction.images[0].image;
+    }
+    return null;
+  };
+
   useEffect(() => {
     if (user) {
       fetchPurchasedItems();
@@ -35,13 +51,10 @@ const MyPurchases = () => {
     try {
       const response = await getMyPurchases();
       console.log("My Purchases API Response:", response);
-
-      // Standardize the data extraction (supporting either response.data or the response itself)
       const items =
         (response?.data && Array.isArray(response.data) && response.data) ||
         (Array.isArray(response) && response) ||
         [];
-
       if (items.length === 0) {
         toast.warn("No purchases found.");
       }
@@ -115,67 +128,77 @@ const MyPurchases = () => {
       </div>
 
       <Grid container spacing={3}>
-        {purchasedItems.map((item) => (
-          <Grid item xs={12} md={6} lg={4} key={item.id}>
-            <Card className={styles.purchaseCard}>
-              {/* Creative Placeholder displaying the full product title */}
-              <div className={styles.creativePlaceholder}>
-                <Typography variant="h4" className={styles.placeholderText}>
-                  {item.title}
-                </Typography>
-              </div>
-              <CardContent>
-                {/* Link to the product details page */}
-                <Link to={`/auction/${item.id}`} className={styles.itemLink}>
-                  <Typography variant="h6" gutterBottom>
-                    {item.title}
-                  </Typography>
-                </Link>
-                <Typography variant="body2" color="textSecondary" paragraph>
-                  {item.description}
-                </Typography>
-                <Typography variant="body1">
-                  <strong>Bought Price:</strong>{" "}
-                  {item.current_bid
-                    ? `$${item.current_bid}`
-                    : `$${item.buy_now_price}`}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Status:</strong> {item.status}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Bought On:</strong>{" "}
-                  {moment(item.end_time).format("MMMM Do YYYY, h:mm:ss a")}
-                </Typography>
-                {item.owner?.username && (
-                  <Typography variant="body2">
-                    <strong>Seller:</strong> {item.owner.username}
-                  </Typography>
-                )}
-                {item.buy_now_buyer && item.buy_now_buyer.id === user.id ? (
-                  <Typography variant="body1" color="secondary" sx={{ mt: 1 }}>
-                    Purchased via Buy Now
-                  </Typography>
+        {purchasedItems.map((item) => {
+          const imageUrl = getImageUrl(item);
+          return (
+            <Grid item xs={12} md={6} lg={4} key={item.id}>
+              <Card className={styles.purchaseCard}>
+                {imageUrl ? (
+                  <CardMedia
+                    component="img"
+                    height="250"
+                    image={imageUrl}
+                    alt={item.title}
+                    className={styles.cardMedia}
+                  />
                 ) : (
-                  <Typography variant="body1" color="primary" sx={{ mt: 1 }}>
-                    Won via Bidding
+                  <div className={styles.creativePlaceholder}>
+                    <Typography variant="h4" className={styles.placeholderText}>
+                      {item.title}
+                    </Typography>
+                  </div>
+                )}
+                <CardContent className={styles.cardContent}>
+                  <Link to={`/auction/${item.id}`} className={styles.itemLink}>
+                    <Typography variant="h6" gutterBottom>
+                      {item.title}
+                    </Typography>
+                  </Link>
+                  <Typography variant="body2" color="textSecondary" paragraph>
+                    {item.description}
                   </Typography>
-                )}
-                {/* Chat button (if seller info is available) */}
-                {item.owner?.username && (
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    sx={{ mt: 2 }}
-                    onClick={() => navigate(`/chat/${item.owner.username}`)}
-                  >
-                    Chat with Owner
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+                  <Typography variant="body1">
+                    <strong>Bought Price:</strong>{" "}
+                    {item.current_bid
+                      ? `$${item.current_bid}`
+                      : `$${item.buy_now_price}`}
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Status:</strong> {item.status}
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Bought On:</strong>{" "}
+                    {moment(item.end_time).format("MMMM Do YYYY, h:mm:ss a")}
+                  </Typography>
+                  {item.owner?.username && (
+                    <Typography variant="body2">
+                      <strong>Seller:</strong> {item.owner.username}
+                    </Typography>
+                  )}
+                  {item.buy_now_buyer && item.buy_now_buyer.id === user.id ? (
+                    <Typography variant="body1" color="secondary" sx={{ mt: 1 }}>
+                      Purchased via Buy Now
+                    </Typography>
+                  ) : (
+                    <Typography variant="body1" color="primary" sx={{ mt: 1 }}>
+                      Won via Bidding
+                    </Typography>
+                  )}
+                  {item.owner?.username && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      sx={{ mt: 2 }}
+                      onClick={() => navigate(`/chat/${item.owner.username}`)}
+                    >
+                      Chat with Seller
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          );
+        })}
       </Grid>
     </Container>
   );
