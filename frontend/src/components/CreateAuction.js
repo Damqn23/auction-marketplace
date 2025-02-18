@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from "react";
 import { createAuctionItem } from "../services/auctionService";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import styles from "./CreateAuction.module.css";
 import { UserContext } from "../contexts/UserContext";
 import { getAllCategories } from "../services/categoryService";
 import {
@@ -15,6 +14,18 @@ import {
   MenuItem,
   Divider,
 } from "@mui/material";
+import { keyframes } from "@emotion/react";
+
+const fadeInScale = keyframes`
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+`;
 
 const CreateAuction = () => {
   // Basic fields
@@ -22,20 +33,18 @@ const CreateAuction = () => {
   const [description, setDescription] = useState("");
   const [startingBid, setStartingBid] = useState("");
   const [buyNowPrice, setBuyNowPrice] = useState("");
-  // Remove the endTime state because we’ll compute it from duration
-  // const [endTime, setEndTime] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
 
-  // New fields
+  // Additional details
   const [condition, setCondition] = useState("");
   const [location, setLocation] = useState("");
 
-  // New auction duration state (in hours)
+  // Auction duration (in hours)
   const [duration, setDuration] = useState("1");
 
-  // Images (multiple allowed)
+  // Images
   const [images, setImages] = useState([]);
-  
+
   // Other state
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,37 +53,34 @@ const CreateAuction = () => {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
 
-  // Handle file selection using a hidden input triggered by a styled button
   const handleImageChange = (e) => {
     const filesArray = Array.from(e.target.files);
     setImages(filesArray);
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
     setLoading(true);
 
-    // Simple validation: if buyNowPrice is set, ensure it’s higher than startingBid
+    // Validate: if buyNowPrice is set, it must be higher than startingBid
     if (buyNowPrice && parseFloat(buyNowPrice) <= parseFloat(startingBid)) {
       setMessage("Buy Now price must be higher than the starting bid.");
       setLoading(false);
       return;
     }
-
     if (!selectedCategory) {
       setMessage("Category selection is required.");
       setLoading(false);
       return;
     }
 
-    // Compute the end time based on the current time plus selected duration
+    // Compute end time based on current time plus selected duration (in hours)
     const now = new Date();
     now.setHours(now.getHours() + parseInt(duration, 10));
-    const computedEndTime = now.toISOString(); // Format as ISO string
+    const computedEndTime = now.toISOString();
 
-    // Build FormData to send to the backend
+    // Build FormData
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
@@ -82,8 +88,6 @@ const CreateAuction = () => {
     formData.append("buy_now_price", buyNowPrice);
     formData.append("end_time", computedEndTime);
     formData.append("category", selectedCategory);
-    
-    // New fields: condition and location
     formData.append("condition", condition);
     formData.append("location", location);
 
@@ -117,22 +121,46 @@ const CreateAuction = () => {
   }, []);
 
   return (
-    <div className={styles.wrapper}>
-      <Paper elevation={3} className={styles.container}>
-        <Typography variant="h4" component="h2" gutterBottom>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        p: 3,
+        background: "linear-gradient(135deg, #dfe9f3, #ffffff)",
+        minHeight: "100vh",
+      }}
+    >
+      <Paper
+        elevation={4}
+        sx={{
+          width: "100%",
+          maxWidth: "650px",
+          p: 4,
+          borderRadius: 2,
+          animation: `${fadeInScale} 0.6s ease-in-out`,
+          backgroundColor: "rgba(255,255,255,0.98)",
+        }}
+      >
+        <Typography
+          variant="h4"
+          component="h2"
+          gutterBottom
+          sx={{ textAlign: "center", mb: 3, fontWeight: "bold", color: "#333" }}
+        >
           Create New Auction Listing
         </Typography>
 
         {message && (
-          <Typography variant="body1" color="error" className={styles.message}>
+          <Typography variant="body1" color="error" sx={{ mb: 2 }}>
             {message}
           </Typography>
         )}
 
-        <form
+        <Box
+          component="form"
           onSubmit={handleSubmit}
-          className={styles.form}
           encType="multipart/form-data"
+          sx={{ display: "flex", flexDirection: "column", gap: 2 }}
         >
           {/* Title */}
           <TextField
@@ -142,7 +170,6 @@ const CreateAuction = () => {
             onChange={(e) => setTitle(e.target.value)}
             fullWidth
             required
-            margin="normal"
           />
 
           {/* Description */}
@@ -155,10 +182,9 @@ const CreateAuction = () => {
             rows={4}
             fullWidth
             required
-            margin="normal"
           />
 
-          <Divider className={styles.divider} />
+          <Divider sx={{ my: 2 }} />
 
           {/* Starting Bid */}
           <TextField
@@ -169,11 +195,10 @@ const CreateAuction = () => {
             onChange={(e) => setStartingBid(e.target.value)}
             required
             fullWidth
-            margin="normal"
             inputProps={{ min: "0", step: "0.01" }}
           />
 
-          {/* Auction Duration Dropdown */}
+          {/* Auction Duration */}
           <TextField
             select
             label="Auction Duration (hours)"
@@ -182,7 +207,6 @@ const CreateAuction = () => {
             onChange={(e) => setDuration(e.target.value)}
             required
             fullWidth
-            margin="normal"
           >
             <MenuItem value="1">1 Hour</MenuItem>
             <MenuItem value="3">3 Hours</MenuItem>
@@ -190,7 +214,7 @@ const CreateAuction = () => {
             <MenuItem value="12">12 Hours</MenuItem>
           </TextField>
 
-          <Divider className={styles.divider} />
+          <Divider sx={{ my: 2 }} />
 
           {/* Additional Details */}
           <TextField
@@ -201,7 +225,6 @@ const CreateAuction = () => {
             onChange={(e) => setCondition(e.target.value)}
             fullWidth
             required
-            margin="normal"
           >
             <MenuItem value="">Select condition</MenuItem>
             <MenuItem value="New">New</MenuItem>
@@ -216,14 +239,13 @@ const CreateAuction = () => {
             onChange={(e) => setLocation(e.target.value)}
             fullWidth
             required
-            margin="normal"
             placeholder="City, State or Country"
           />
 
-          <Divider className={styles.divider} />
+          <Divider sx={{ my: 2 }} />
 
           {/* Images */}
-          <Box mt={2} mb={2}>
+          <Box>
             <Typography variant="body1" gutterBottom>
               Upload Images (optional, multiple allowed):
             </Typography>
@@ -238,7 +260,7 @@ const CreateAuction = () => {
               />
             </Button>
             {images.length > 0 && (
-              <Typography variant="caption" display="block">
+              <Typography variant="caption" display="block" sx={{ mt: 1 }}>
                 {images.length} image(s) selected
               </Typography>
             )}
@@ -252,7 +274,6 @@ const CreateAuction = () => {
             value={buyNowPrice}
             onChange={(e) => setBuyNowPrice(e.target.value)}
             fullWidth
-            margin="normal"
             inputProps={{
               min: parseFloat(startingBid) + 0.01 || 0,
               step: "0.01",
@@ -269,7 +290,6 @@ const CreateAuction = () => {
             SelectProps={{ native: true }}
             fullWidth
             required
-            margin="normal"
           >
             <option value=""></option>
             {categories.map((category) => (
@@ -280,30 +300,34 @@ const CreateAuction = () => {
           </TextField>
 
           {/* Submit Button */}
-          <Box mt={3} display="flex" justifyContent="flex-end">
+          <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
             <Button
               type="submit"
               variant="contained"
               color="primary"
               disabled={loading}
-              className={styles.submitButton}
+              sx={{
+                textTransform: "none",
+                fontSize: "1rem",
+                py: 1.5,
+              }}
             >
               {loading ? (
-                <CircularProgress size={24} style={{ color: "#fff" }} />
+                <CircularProgress size={24} sx={{ color: "#fff" }} />
               ) : (
                 "Create Auction"
               )}
             </Button>
           </Box>
-        </form>
+        </Box>
 
-        <Box mt={2}>
-          <Link to="/" className={styles.backLink}>
+        <Box sx={{ mt: 2, textAlign: "center" }}>
+          <Link to="/" style={{ textDecoration: "none", color: "#1976d2", fontWeight: 500 }}>
             Back to Auction List
           </Link>
         </Box>
       </Paper>
-    </div>
+    </Box>
   );
 };
 

@@ -1,4 +1,9 @@
-import React, { useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getAllAuctionItems,
@@ -6,7 +11,7 @@ import {
   buyNow,
 } from "../services/auctionService";
 import { getAllCategories } from "../services/categoryService";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Button,
   Card,
@@ -25,11 +30,23 @@ import {
   Box,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import styles from "./AuctionList.module.css";
+import { keyframes } from "@emotion/react";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
 import BuyNowModal from "./BuyNowModal";
 import FavoriteButton from "./FavoriteButton";
+
+// ----- Keyframe Animations -----
+const borderShift = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+`;
+
+const pulseBackground = keyframes`
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+`;
 
 // ---------------------
 // CountdownTimer Component
@@ -58,13 +75,14 @@ const CountdownTimer = ({ endTime }) => {
   }, [calculateTimeLeft]);
 
   if (!timeLeft) {
-    return <span>Auction ended</span>;
+    return <Typography component="span">Auction ended</Typography>;
   }
 
   return (
-    <span>
-      {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
-    </span>
+    <Typography component="span">
+      {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m{" "}
+      {timeLeft.seconds}s
+    </Typography>
   );
 };
 
@@ -202,49 +220,104 @@ const AuctionList = () => {
     closeBuyNowModal();
   };
 
-  if (isLoading) return <p>Loading...</p>;
-  if (isError) return <p>Failed to load auction items.</p>;
+  if (isLoading)
+    return (
+      <Typography variant="body1" sx={{ p: 2 }}>
+        Loading...
+      </Typography>
+    );
+  if (isError)
+    return (
+      <Typography variant="body1" sx={{ p: 2 }}>
+        Failed to load auction items.
+      </Typography>
+    );
 
   return (
-    <div className={styles.container}>
-      {/* New Header: Only Filter and Sort Controls with a stylish background */}
-      <div className={styles.header}>
-        <div className={styles.headerControls}>
+    <Box
+      sx={{
+        position: "relative",
+        p: "20px",
+        width: "100%",
+        m: 0,
+        background: "linear-gradient(135deg, #a6c0fe, #f68084)",
+        overflow: "hidden",
+        fontFamily: "'Roboto', sans-serif",
+      }}
+    >
+      {/* Header with Filter & Sort Controls */}
+      <Box
+        sx={{
+          position: "sticky",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          background: "rgba(255, 255, 255, 0.95)",
+          py: "12px",
+          px: "24px",
+          borderBottom: "1px solid #ddd",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: "20px",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: "20px" }}>
           <IconButton
-            className={styles.filterButton}
             onClick={handleFilterClick}
+            sx={{
+              backgroundColor: "#ff8a80",
+              color: "#ffffff",
+              borderRadius: "8px",
+              py: "8px",
+              px: "16px",
+              display: "flex",
+              alignItems: "center",
+              transition: "background-color 0.3s ease, transform 0.2s ease",
+              "&:hover": {
+                backgroundColor: "#ff5252",
+                transform: "scale(1.05)",
+              },
+            }}
           >
             <FilterListIcon />
-            <Typography variant="body1" className={styles.filterText}>
+            <Typography variant="body1" sx={{ ml: 1 }}>
               Filters
             </Typography>
           </IconButton>
           <FormControl
             variant="outlined"
             size="small"
-            className={styles.sortControl}
+            sx={{
+              backgroundColor: "#e0f7fa",
+              borderRadius: "8px",
+              p: "4px 8px",
+              "& .MuiInputBase-root, & .MuiInputLabel-root": {
+                color: "#333",
+              },
+            }}
           >
             <InputLabel>Sort By</InputLabel>
-            <Select
-              value={sortBy}
-              onChange={handleSortChange}
-              label="Sort By"
-            >
+            <Select value={sortBy} onChange={handleSortChange} label="Sort By">
               <MenuItem value="newest">Newest</MenuItem>
               <MenuItem value="ending_soon">Ending Soon</MenuItem>
               <MenuItem value="highest_bid">Highest Bid</MenuItem>
               <MenuItem value="lowest_price">Lowest Price</MenuItem>
             </Select>
           </FormControl>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* Auction Items Grid */}
       {Array.isArray(auctionItems) && auctionItems.length > 0 ? (
         <Grid container spacing={2}>
           {auctionItems.map((item) => {
             const isNotOwner =
-              user && item.owner && user.username !== item.owner.username;
+              user &&
+              item.owner &&
+              user.username !== item.owner.username;
             const canBid =
               isNotOwner &&
               item.status === "active" &&
@@ -263,9 +336,37 @@ const AuctionList = () => {
             return (
               <Grid item xs={12} md={6} lg={4} key={item.id}>
                 <Card
-                  className={styles.auctionCard}
                   onClick={() => navigate(`/auction/${item.id}`)}
-                  style={{ cursor: "pointer" }}
+                  sx={{
+                    borderRadius: "16px",
+                    position: "relative",
+                    background: "#ffffff",
+                    overflow: "hidden",
+                    transition:
+                      "transform 0.3s ease, box-shadow 0.3s ease",
+                    zIndex: 0,
+                    cursor: "pointer",
+                    "&:hover": {
+                      transform: "translateY(-4px)",
+                      boxShadow: "0 12px 20px rgba(0, 0, 0, 0.15)",
+                    },
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      top: "-2px",
+                      left: "-2px",
+                      right: "-2px",
+                      bottom: "-2px",
+                      background:
+                        "linear-gradient(45deg, #ff8a80, #81d4fa, #4fc3f7, #ff5252)",
+                      backgroundSize: "400% 400%",
+                      zIndex: -1,
+                      filter: "blur(8px)",
+                      animation: `${borderShift} 10s ease infinite`,
+                      borderRadius: "18px",
+                      opacity: 0.8,
+                    },
+                  }}
                 >
                   {item.images && item.images.length > 0 ? (
                     <CardMedia
@@ -275,13 +376,23 @@ const AuctionList = () => {
                       alt={item.title}
                     />
                   ) : (
-                    <div className={styles.noImageFallback}>
+                    <Box
+                      sx={{
+                        height: "250px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background:
+                          "linear-gradient(135deg, #f5f7fa, #c3cfe2)",
+                        animation: `${pulseBackground} 4s ease-in-out infinite`,
+                      }}
+                    >
                       <Typography variant="body2" color="textSecondary">
                         No image available
                       </Typography>
-                    </div>
+                    </Box>
                   )}
-                  <CardContent style={{ marginTop: "10px" }}>
+                  <CardContent sx={{ mt: 1 }}>
                     <Typography variant="h6" component="div" gutterBottom>
                       {item.title}
                     </Typography>
@@ -326,19 +437,31 @@ const AuctionList = () => {
                   </CardContent>
                   <CardActions
                     onClick={(e) => e.stopPropagation()}
-                    className={styles.cardActions}
+                    sx={{
+                      display: "flex",
+                      flexDirection: { xs: "column", md: "row" },
+                      alignItems: { xs: "flex-start", md: "center" },
+                      justifyContent: "space-between",
+                      p: "16px",
+                    }}
                   >
                     <FavoriteButton auctionItemId={item.id} />
                     {isNotOwner && (
                       <Box
                         sx={{
-                          marginLeft: "auto",
+                          ml: "auto",
                           display: "flex",
                           alignItems: "center",
                         }}
                       >
                         {canBid && (
-                          <div className={styles.bidSection}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
                             <TextField
                               label={`Min: $${minRequiredBid}`}
                               type="number"
@@ -355,7 +478,7 @@ const AuctionList = () => {
                               }}
                               variant="outlined"
                               size="small"
-                              className={styles.bidInput}
+                              sx={{ width: "100px" }}
                               onClick={(e) => e.stopPropagation()}
                             />
                             <Button
@@ -365,11 +488,17 @@ const AuctionList = () => {
                                 e.stopPropagation();
                                 handlePlaceBid(item.id);
                               }}
-                              className={styles.bidButton}
+                              sx={{
+                                textTransform: "none",
+                                transition: "background-color 0.3s ease",
+                                "&:hover": {
+                                  backgroundColor: "#66bb6a",
+                                },
+                              }}
                             >
                               Bid
                             </Button>
-                          </div>
+                          </Box>
                         )}
                         {canBuyNow && (
                           <Button
@@ -379,7 +508,20 @@ const AuctionList = () => {
                               e.stopPropagation();
                               openBuyNowModal(item);
                             }}
-                            className={styles.buyNowButton}
+                            sx={{
+                              backgroundColor: "#ff5722",
+                              color: "#ffffff",
+                              textTransform: "none",
+                              ml: { xs: 0, md: "16px" },
+                              mt: { xs: "10px", md: 0 },
+                              transition:
+                                "background-color 0.3s ease, transform 0.3s ease",
+                              "&:hover": {
+                                backgroundColor: "#e64a19",
+                                transform: "scale(1.05)",
+                              },
+                              width: { xs: "100%", md: "auto" },
+                            }}
                           >
                             Buy Now
                           </Button>
@@ -414,7 +556,7 @@ const AuctionList = () => {
         open={Boolean(filterAnchorEl)}
         onClose={handleFilterClose}
       >
-        <Box padding={2}>
+        <Box sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Filters
           </Typography>
@@ -480,13 +622,13 @@ const AuctionList = () => {
             color="primary"
             fullWidth
             onClick={applyFilters}
-            style={{ marginTop: "10px" }}
+            sx={{ mt: "10px" }}
           >
             Apply Filters
           </Button>
         </Box>
       </Menu>
-    </div>
+    </Box>
   );
 };
 

@@ -1,8 +1,6 @@
-// frontend/src/components/MyAuctions.js
-
-import React, { useEffect, useState } from 'react';
-import { getMyAuctions } from '../services/auctionService';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { getMyAuctions } from "../services/auctionService";
+import { Link } from "react-router-dom";
 import {
   CircularProgress,
   Card,
@@ -12,8 +10,20 @@ import {
   Button,
   Grid,
   Container,
-} from '@mui/material';
-import styles from './MyAuctions.module.css';
+  Box,
+} from "@mui/material";
+import { keyframes } from "@emotion/react";
+
+// Animation keyframes
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const slideUp = keyframes`
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+`;
 
 const MyAuctions = () => {
   const [auctions, setAuctions] = useState([]);
@@ -31,10 +41,10 @@ const MyAuctions = () => {
           );
           setAuctions(sortedData);
         } else {
-          setError('Unexpected data format received.');
+          setError("Unexpected data format received.");
         }
       } catch (err) {
-        setError('Failed to load auctions.');
+        setError("Failed to load auctions.");
       } finally {
         setLoading(false);
       }
@@ -45,73 +55,151 @@ const MyAuctions = () => {
 
   if (loading) {
     return (
-      <div className={styles.loadingContainer}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "50vh",
+          textAlign: "center",
+          color: "#555",
+        }}
+      >
         <CircularProgress />
-        <Typography variant="body1" color="textSecondary">
+        <Typography variant="body1" color="textSecondary" sx={{ mt: 2 }}>
           Loading your auctions...
         </Typography>
-      </div>
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <Typography variant="body1" color="error" className={styles.error}>
+      <Typography
+        variant="body1"
+        color="error"
+        sx={{ mt: 2, textAlign: "center" }}
+      >
         {error}
       </Typography>
     );
   }
 
   return (
-    <Container className={styles.container}>
-      <Typography variant="h4" className={styles.header}>
+    <Container
+      maxWidth="lg"
+      sx={{
+        p: 2,
+        backgroundColor: "#f5f5f5",
+        minHeight: "100vh",
+        animation: `${fadeIn} 1s ease-in-out`,
+      }}
+    >
+      <Typography
+        variant="h4"
+        sx={{
+          textAlign: "center",
+          mb: 2,
+          fontWeight: "bold",
+          color: "#333",
+          textShadow: "1px 1px 3px rgba(0, 0, 0, 0.1)",
+        }}
+      >
         My Auctions
       </Typography>
       {auctions.length > 0 ? (
-        <Grid container spacing={3} className={styles.auctionGrid}>
+        <Grid container spacing={3} sx={{ mt: 2 }}>
           {auctions.map((auction) => (
             <Grid item xs={12} sm={6} md={4} key={auction.id}>
-              <Card className={styles.auctionCard}>
-                {/* Image Section: If auction has images, display the first image; otherwise, show a fallback */}
+              <Card
+                sx={{
+                  background: "#fff",
+                  borderRadius: "10px",
+                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  overflow: "hidden",
+                  position: "relative",
+                  "&:hover": {
+                    transform: "translateY(-5px) scale(1.02)",
+                    boxShadow: "0 8px 16px rgba(0, 0, 0, 0.2)",
+                  },
+                }}
+              >
+                {/* Image Section */}
                 {auction.images && auction.images.length > 0 ? (
                   <CardMedia
                     component="img"
                     height="250"
                     image={auction.images[0].image}
                     alt={auction.title}
-                    className={styles.cardMedia}
+                    sx={{
+                      transition: "transform 0.3s ease",
+                      "&:hover": { transform: "scale(1.05)" },
+                    }}
                   />
                 ) : (
-                  <div className={styles.noImageFallback}>
+                  <Box
+                    sx={{
+                      height: "250px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background:
+                        "linear-gradient(135deg, #6a11cb, #2575fc)",
+                      color: "#fff",
+                      fontWeight: "bold",
+                      fontSize: "1.25rem",
+                      textAlign: "center",
+                    }}
+                  >
                     <Typography variant="body2" color="textSecondary">
                       No image available
                     </Typography>
-                  </div>
+                  </Box>
                 )}
 
-                <CardContent className={styles.cardContent}>
-                  <Typography variant="h6" className={styles.cardTitle}>
+                <CardContent sx={{ p: 2, animation: `${slideUp} 0.5s ease-out` }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontSize: "18px",
+                      fontWeight: "bold",
+                      color: "#333",
+                      mb: 1,
+                    }}
+                  >
                     {auction.title}
                   </Typography>
                   <Typography
                     variant="body2"
                     color="textSecondary"
-                    className={styles.cardDescription}
+                    sx={{ mb: 1, fontSize: "0.9rem" }}
                   >
                     {auction.description.length > 100
                       ? `${auction.description.substring(0, 100)}...`
                       : auction.description}
                   </Typography>
-                  <Typography variant="body2" className={styles.cardDetails}>
+                  <Typography
+                    variant="body2"
+                    sx={{ mb: 0.5, fontSize: "0.9rem", color: "#555" }}
+                  >
                     <strong>Starting Bid:</strong> ${auction.starting_bid}
-                  </Typography>
-                  <Typography variant="body2" className={styles.cardDetails}>
-                    <strong>Current Bid:</strong> ${auction.current_bid || 'N/A'}
                   </Typography>
                   <Typography
                     variant="body2"
-                    color={auction.status === 'active' ? 'primary' : 'error'}
-                    className={styles.cardStatus}
+                    sx={{ mb: 0.5, fontSize: "0.9rem", color: "#555" }}
+                  >
+                    <strong>Current Bid:</strong> ${auction.current_bid || "N/A"}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mb: 1,
+                      fontSize: "0.9rem",
+                      fontWeight: "bold",
+                      color: auction.status === "active" ? "primary.main" : "error.main",
+                    }}
                   >
                     <strong>Status:</strong> {auction.status}
                   </Typography>
@@ -120,7 +208,16 @@ const MyAuctions = () => {
                     color="primary"
                     component={Link}
                     to={`/auction/${auction.id}`}
-                    className={styles.viewButton}
+                    sx={{
+                      mt: 2,
+                      textTransform: "none",
+                      fontSize: "14px",
+                      transition: "background-color 0.3s ease, transform 0.3s ease",
+                      "&:hover": {
+                        backgroundColor: "primary.dark",
+                        transform: "scale(1.02)",
+                      },
+                    }}
                   >
                     View Auction
                   </Button>
@@ -130,7 +227,10 @@ const MyAuctions = () => {
           ))}
         </Grid>
       ) : (
-        <Typography variant="body1" className={styles.noAuctions}>
+        <Typography
+          variant="body1"
+          sx={{ mt: 3, textAlign: "center", color: "#777" }}
+        >
           You have not posted any auctions yet.
         </Typography>
       )}

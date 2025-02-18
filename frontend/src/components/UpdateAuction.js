@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from "react";
 import { getAuctionItem, updateAuctionItem } from "../services/auctionService";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import styles from "./CreateAuction.module.css"; // Reuse the create page styles for consistency
 import { UserContext } from "../contexts/UserContext";
 import { getAllCategories } from "../services/categoryService";
 import {
@@ -15,13 +14,24 @@ import {
   MenuItem,
   Divider,
 } from "@mui/material";
+import { keyframes } from "@emotion/react";
+
+const fadeIn = keyframes`
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+`;
+
+const slideUp = keyframes`
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+`;
 
 const UpdateAuction = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
 
-  // Fields similar to the create page
+  // Fields
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startingBid, setStartingBid] = useState("");
@@ -29,24 +39,19 @@ const UpdateAuction = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [condition, setCondition] = useState("");
   const [location, setLocation] = useState("");
-  // New images state: for new images (multiple allowed)
   const [newImages, setNewImages] = useState([]);
-  // To show existing images
   const [existingImages, setExistingImages] = useState([]);
-
-  // Other state
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [hasBids, setHasBids] = useState(false);
   const [categories, setCategories] = useState([]);
 
-  // Handle file selection for new images
   const handleImageChange = (e) => {
     const filesArray = Array.from(e.target.files);
     setNewImages(filesArray);
   };
 
-  // Fetch categories (same as in create page)
+  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -59,18 +64,18 @@ const UpdateAuction = () => {
     fetchCategories();
   }, []);
 
-  // Fetch the auction item details
+  // Fetch auction item details
   useEffect(() => {
     const fetchAuctionItemData = async () => {
       try {
         const data = await getAuctionItem(id);
-        // Check ownership (assuming data.owner is an object with a username)
+        // Check ownership
         if (user && user.username !== data.owner.username) {
           toast.error("You are not authorized to update this auction item.");
           navigate("/");
           return;
         }
-        // Prevent update if the auction has bids or has ended
+        // Prevent update if bids exist or auction has ended
         if (data.bids && data.bids.length > 0) {
           setHasBids(true);
           toast.info("This auction has received bids and cannot be updated.");
@@ -83,7 +88,7 @@ const UpdateAuction = () => {
           setLoading(false);
           return;
         }
-        // Pre-fill the form fields with existing data
+        // Pre-fill form
         setTitle(data.title);
         setDescription(data.description);
         setStartingBid(data.starting_bid);
@@ -108,18 +113,15 @@ const UpdateAuction = () => {
     e.preventDefault();
     setMessage("");
 
-    // Build FormData with updated fields
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
     formData.append("starting_bid", startingBid);
     formData.append("buy_now_price", buyNowPrice);
-    // end_time is not updated here
     formData.append("category", selectedCategory);
     formData.append("condition", condition);
     formData.append("location", location);
 
-    // Append any new images
     newImages.forEach((imageFile) => {
       formData.append("images", imageFile);
     });
@@ -135,42 +137,99 @@ const UpdateAuction = () => {
     }
   };
 
-  if (loading) return <p>Loading...</p>;
+  if (loading)
+    return (
+      <Box sx={{ textAlign: "center", mt: 4 }}>
+        <CircularProgress />
+        <Typography variant="body1" sx={{ mt: 2 }}>
+          Loading...
+        </Typography>
+      </Box>
+    );
 
   if (hasBids) {
     return (
-      <div className={styles.wrapper}>
-        <Paper elevation={3} className={styles.container}>
-          <Typography variant="h4" component="h2" gutterBottom>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          mt: 4,
+          p: 2,
+        }}
+      >
+        <Paper
+          elevation={3}
+          sx={{
+            p: 3,
+            maxWidth: 600,
+            width: "100%",
+            borderRadius: 2,
+            textAlign: "center",
+            animation: `${fadeIn} 0.8s ease-in-out`,
+          }}
+        >
+          <Typography variant="h4" gutterBottom>
             Update Auction Item
           </Typography>
           <Typography variant="body1">
             This auction has received bids and cannot be updated.
           </Typography>
           <Box mt={2}>
-            <Button variant="contained" color="primary" onClick={() => navigate("/")}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate("/")}
+              sx={{ textTransform: "none" }}
+            >
               Back to Auction List
             </Button>
           </Box>
         </Paper>
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div className={styles.wrapper}>
-      <Paper elevation={3} className={styles.container}>
-        <Typography variant="h4" component="h2" gutterBottom>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        mt: 4,
+        p: 2,
+      }}
+    >
+      <Paper
+        elevation={3}
+        sx={{
+          p: 3,
+          maxWidth: 600,
+          width: "100%",
+          borderRadius: 2,
+          animation: `${fadeIn} 0.8s ease-in-out`,
+        }}
+      >
+        <Typography variant="h4" gutterBottom>
           Update Auction Item
         </Typography>
 
         {message && (
-          <Typography variant="body1" color="error" className={styles.message}>
+          <Typography variant="body1" color="error" sx={{ mt: 1 }}>
             {message}
           </Typography>
         )}
 
-        <form onSubmit={handleSubmit} className={styles.form} encType="multipart/form-data">
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          encType="multipart/form-data"
+          sx={{
+            mt: 2,
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            animation: `${slideUp} 0.5s ease-out`,
+          }}
+        >
           {/* Title */}
           <TextField
             label="Title"
@@ -179,7 +238,13 @@ const UpdateAuction = () => {
             onChange={(e) => setTitle(e.target.value)}
             fullWidth
             required
-            margin="normal"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: "#d4a373" },
+                "&:hover fieldset": { borderColor: "#c5894f" },
+                "&.Mui-focused fieldset": { borderColor: "#a67c52" },
+              },
+            }}
           />
 
           {/* Description */}
@@ -192,10 +257,16 @@ const UpdateAuction = () => {
             rows={4}
             fullWidth
             required
-            margin="normal"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: "#d4a373" },
+                "&:hover fieldset": { borderColor: "#c5894f" },
+                "&.Mui-focused fieldset": { borderColor: "#a67c52" },
+              },
+            }}
           />
 
-          <Divider className={styles.divider} />
+          <Divider />
 
           {/* Starting Bid */}
           <TextField
@@ -206,11 +277,17 @@ const UpdateAuction = () => {
             onChange={(e) => setStartingBid(e.target.value)}
             required
             fullWidth
-            margin="normal"
             inputProps={{ min: "0", step: "0.01" }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: "#d4a373" },
+                "&:hover fieldset": { borderColor: "#c5894f" },
+                "&.Mui-focused fieldset": { borderColor: "#a67c52" },
+              },
+            }}
           />
 
-          {/* Buy Now Price (Optional) */}
+          {/* Buy Now Price */}
           <TextField
             label="Buy Now Price (Optional)"
             variant="outlined"
@@ -218,16 +295,22 @@ const UpdateAuction = () => {
             value={buyNowPrice}
             onChange={(e) => setBuyNowPrice(e.target.value)}
             fullWidth
-            margin="normal"
             inputProps={{
               min: parseFloat(startingBid) + 0.01 || 0,
               step: "0.01",
             }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: "#d4a373" },
+                "&:hover fieldset": { borderColor: "#c5894f" },
+                "&.Mui-focused fieldset": { borderColor: "#a67c52" },
+              },
+            }}
           />
 
-          <Divider className={styles.divider} />
+          <Divider />
 
-          {/* Additional Details */}
+          {/* Condition */}
           <TextField
             label="Condition"
             variant="outlined"
@@ -236,7 +319,6 @@ const UpdateAuction = () => {
             onChange={(e) => setCondition(e.target.value)}
             fullWidth
             required
-            margin="normal"
           >
             <MenuItem value="">Select condition</MenuItem>
             <MenuItem value="New">New</MenuItem>
@@ -244,6 +326,7 @@ const UpdateAuction = () => {
             <MenuItem value="Refurbished">Refurbished</MenuItem>
           </TextField>
 
+          {/* Location */}
           <TextField
             label="Location"
             variant="outlined"
@@ -251,11 +334,10 @@ const UpdateAuction = () => {
             onChange={(e) => setLocation(e.target.value)}
             fullWidth
             required
-            margin="normal"
             placeholder="City, State or Country"
           />
 
-          <Divider className={styles.divider} />
+          <Divider />
 
           {/* Category */}
           <TextField
@@ -264,10 +346,9 @@ const UpdateAuction = () => {
             variant="outlined"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            SelectProps={{ native: true }}
             fullWidth
             required
-            margin="normal"
+            SelectProps={{ native: true }}
           >
             <option value=""></option>
             {categories.map((category) => (
@@ -278,7 +359,7 @@ const UpdateAuction = () => {
           </TextField>
 
           {/* Images */}
-          <Box mt={2} mb={2}>
+          <Box>
             <Typography variant="body1" gutterBottom>
               Upload New Images (optional, multiple allowed):
             </Typography>
@@ -289,7 +370,10 @@ const UpdateAuction = () => {
                 accept="image/*"
                 multiple
                 hidden
-                onChange={handleImageChange}
+                onChange={(e) => {
+                  const filesArray = Array.from(e.target.files);
+                  setNewImages(filesArray);
+                }}
               />
             </Button>
             {newImages.length > 0 && (
@@ -297,16 +381,19 @@ const UpdateAuction = () => {
                 {newImages.length} image(s) selected
               </Typography>
             )}
-            {/* Display any existing images */}
             {existingImages.length > 0 && (
-              <Box mt={2}>
+              <Box mt={2} sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                 <Typography variant="body2">Existing Images:</Typography>
                 {existingImages.map((img) => (
-                  <img
+                  <Box
                     key={img.id}
+                    component="img"
                     src={img.image}
                     alt="Auction"
-                    style={{ width: "100px", marginRight: "10px" }}
+                    sx={{
+                      width: 100,
+                      borderRadius: 1,
+                    }}
                   />
                 ))}
               </Box>
@@ -314,20 +401,20 @@ const UpdateAuction = () => {
           </Box>
 
           {/* Submit Button */}
-          <Box mt={3} display="flex" justifyContent="flex-end">
-            <Button type="submit" variant="contained" color="primary" className={styles.submitButton}>
+          <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
+            <Button type="submit" variant="contained" color="primary" sx={{ textTransform: "none" }}>
               Update Auction
             </Button>
           </Box>
-        </form>
+        </Box>
 
-        <Box mt={2}>
-          <Link to="/" className={styles.backLink}>
+        <Box sx={{ mt: 2, textAlign: "center" }}>
+          <Link to="/" style={{ textDecoration: "none", color: "#1976d2" }}>
             Back to Auction List
           </Link>
         </Box>
       </Paper>
-    </div>
+    </Box>
   );
 };
 

@@ -1,100 +1,168 @@
-// frontend/src/components/ChatList.js
-
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { getChats } from '../services/auctionService';
-import styles from './ChatList.module.css';
-
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { getChats } from "../services/auctionService";
 import {
-    List,
-    ListItem,
-    ListItemAvatar,
-    Avatar,
-    ListItemText,
-    Typography,
-    Badge,
-    CircularProgress,
-    Paper,
-    Divider,
-} from '@mui/material';
-import ChatIcon from '@mui/icons-material/Chat';
+  List,
+  ListItem,
+  ListItemAvatar,
+  Avatar,
+  ListItemText,
+  Typography,
+  Badge,
+  CircularProgress,
+  Paper,
+  Divider,
+  Box,
+} from "@mui/material";
+import ChatIcon from "@mui/icons-material/Chat";
 
 const ChatList = () => {
-    const [chats, setChats] = useState([]);
-    const [loading, setLoading] = useState(true);
+  const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    // Fetch all unique chats
-    const fetchChats = async () => {
-        try {
-            const chats = await getChats();  // Get all unique chats for the logged-in user
-            setChats(chats);
-            setLoading(false);
-        } catch (error) {
-            console.error("Error fetching chats", error);
-            setLoading(false);
-        }
-    };
+  const fetchChats = async () => {
+    try {
+      const chats = await getChats();
+      console.log("Chats response:", chats);
+      setChats(chats);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching chats", error);
+      setLoading(false);
+    }
+  };
 
-    useEffect(() => {
-        fetchChats();
-    }, []);
+  useEffect(() => {
+    fetchChats();
+  }, []);
 
-    if (loading) return (
-        <div className={styles.loaderContainer}>
-            <CircularProgress />
-        </div>
-    );
-
+  if (loading)
     return (
-        <Paper className={styles.chatListContainer} elevation={3}>
-            <Typography variant="h5" className={styles.header}>
-                Your Chats
-            </Typography>
-            <Divider />
-            <List className={styles.chatList}>
-                {chats.length === 0 ? (
-                    <Typography variant="body1" className={styles.noChats}>
-                        No conversations yet. Start chatting now!
-                    </Typography>
-                ) : (
-                    chats.map((chat, index) => (
-                        <Link to={`/chat/${chat.owner}`} key={index} className={styles.chatLink}>
-                            <ListItem button className={styles.chatItem}>
-                                <ListItemAvatar>
-                                    <Badge
-                                        badgeContent={chat.unreadCount > 9 ? "9+" : chat.unreadCount}
-                                        color="error"
-                                        invisible={chat.unreadCount === 0}
-                                        anchorOrigin={{
-                                            vertical: 'top',
-                                            horizontal: 'right',
-                                        }}
-                                    >
-                                        <Avatar alt={chat.owner} src={chat.avatarUrl}>
-                                            {chat.owner.charAt(0).toUpperCase()}
-                                        </Avatar>
-                                    </Badge>
-                                </ListItemAvatar>
-                                <ListItemText
-                                    primary={
-                                        <Typography variant="subtitle1" className={styles.chatOwner}>
-                                            {chat.owner}
-                                        </Typography>
-                                    }
-                                    secondary={
-                                        <Typography variant="body2" className={styles.lastMessage}>
-                                            {chat.lastMessage}
-                                        </Typography>
-                                    }
-                                />
-                                <ChatIcon className={styles.chatIcon} />
-                            </ListItem>
-                        </Link>
-                    ))
-                )}
-            </List>
-        </Paper>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "60vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
     );
+
+  return (
+    <Paper
+      elevation={3}
+      sx={{
+        p: 3,
+        maxWidth: "800px",
+        mx: "auto",
+        my: 4,
+        backgroundColor: "#fff",
+        borderRadius: 2,
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+      }}
+    >
+      <Typography
+        variant="h5"
+        sx={{
+          mb: 2,
+          color: "#283593",
+          fontWeight: 700,
+          textAlign: "center",
+        }}
+      >
+        Your Chats
+      </Typography>
+      <Divider />
+      <List
+        sx={{
+          maxHeight: "600px",
+          overflowY: "auto",
+          p: 0,
+        }}
+      >
+        {chats.length === 0 ? (
+          <Typography
+            variant="body1"
+            sx={{
+              textAlign: "center",
+              color: "#888",
+              mt: 2,
+              fontSize: "1rem",
+            }}
+          >
+            No conversations yet. Start chatting now!
+          </Typography>
+        ) : (
+          chats.map((chat, index) => (
+            <Link
+              to={`/chat/${chat.owner}`}
+              key={index}
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              <ListItem
+                button
+                sx={{
+                  transition: "background-color 0.3s ease",
+                  "&:hover": { backgroundColor: "#f1f1f1" },
+                }}
+              >
+                <ListItemAvatar>
+                  <Badge
+                    badgeContent={chat.unreadCount > 9 ? "9+" : chat.unreadCount}
+                    color="error"
+                    invisible={chat.unreadCount === 0}
+                    anchorOrigin={{
+                      vertical: "top",
+                      horizontal: "right",
+                    }}
+                  >
+                    <Avatar alt={chat.owner} src={chat.avatarUrl}>
+                      {chat.owner.charAt(0).toUpperCase()}
+                    </Avatar>
+                  </Badge>
+                </ListItemAvatar>
+                <ListItemText
+                  primary={
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        color: "#283593",
+                        fontWeight: 600,
+                        fontSize: { xs: "1rem", sm: "1.1rem" },
+                      }}
+                    >
+                      {chat.owner}
+                    </Typography>
+                  }
+                  secondary={
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#555",
+                        fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                        mt: 0.5,
+                      }}
+                    >
+                      {chat.lastMessage}
+                    </Typography>
+                  }
+                />
+                <ChatIcon
+                  sx={{
+                    color: "#1976d2",
+                    display: { xs: "none", sm: "block" },
+                  }}
+                />
+              </ListItem>
+              <Divider />
+            </Link>
+          ))
+        )}
+      </List>
+    </Paper>
+  );
 };
 
 export default ChatList;

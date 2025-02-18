@@ -1,5 +1,3 @@
-// frontend/src/components/MyPurchases.js
-
 import React, { useState, useEffect, useContext } from "react";
 import { getMyPurchases } from "../services/auctionService";
 import { UserContext } from "../contexts/UserContext";
@@ -15,8 +13,20 @@ import {
   Typography,
   Container,
   CircularProgress,
+  Box,
 } from "@mui/material";
-import styles from "./MyPurchases.module.css";
+import { keyframes } from "@emotion/react";
+
+// Keyframe animations
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const slideUp = keyframes`
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+`;
 
 const MyPurchases = () => {
   const { user } = useContext(UserContext);
@@ -25,17 +35,20 @@ const MyPurchases = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Helper function to get the image URL:
+  // Helper function to get the image URL.
+  // It checks item.images, then item.image, then item.auction.images.
+  // If none found, it returns a placeholder URL.
   const getImageUrl = (item) => {
-    // Check if the item itself has an images array
-    if (item.images && item.images.length > 0) {
+    if (item.images && item.images.length > 0 && item.images[0].image) {
       return item.images[0].image;
     }
-    // Otherwise, check if the item has an auction object with images
-    if (item.auction && item.auction.images && item.auction.images.length > 0) {
+    if (item.image) {
+      return item.image;
+    }
+    if (item.auction && item.auction.images && item.auction.images.length > 0 && item.auction.images[0].image) {
       return item.auction.images[0].image;
     }
-    return null;
+    return "https://via.placeholder.com/250?text=No+Image";
   };
 
   useEffect(() => {
@@ -70,20 +83,22 @@ const MyPurchases = () => {
 
   if (loading) {
     return (
-      <div className={styles.loader}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "60vh",
+        }}
+      >
         <CircularProgress />
-      </div>
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <Typography
-        variant="body1"
-        color="error"
-        align="center"
-        className={styles.errorText}
-      >
+      <Typography variant="body1" color="error" align="center" sx={{ mt: 2 }}>
         {error}
       </Typography>
     );
@@ -91,12 +106,7 @@ const MyPurchases = () => {
 
   if (!Array.isArray(purchasedItems)) {
     return (
-      <Typography
-        variant="body1"
-        color="error"
-        align="center"
-        className={styles.errorText}
-      >
+      <Typography variant="body1" color="error" align="center" sx={{ mt: 2 }}>
         Unexpected data format received.
       </Typography>
     );
@@ -104,57 +114,121 @@ const MyPurchases = () => {
 
   if (purchasedItems.length === 0) {
     return (
-      <Typography
-        variant="body1"
-        align="center"
-        className={styles.noPurchasesText}
-      >
+      <Typography variant="body1" align="center" sx={{ mt: 2 }}>
         You have not purchased any items yet.
       </Typography>
     );
   }
 
   return (
-    <Container maxWidth="lg" className={styles.container}>
-      <div className={styles.header}>
+    <Container
+      maxWidth="lg"
+      sx={{
+        p: 2,
+        maxWidth: "1200px",
+        margin: "auto",
+        backgroundColor: "#fafafa",
+        animation: `${fadeIn} 1s ease-in-out`,
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+          flexDirection: { xs: "column", sm: "row" },
+        }}
+      >
         <Typography variant="h4" component="h2" gutterBottom>
           My Purchases
         </Typography>
-        <Link to="/" className={styles.backLink}>
+        <Link to="/" style={{ textDecoration: "none" }}>
           <Button variant="contained" color="primary">
             Back to Auction List
           </Button>
         </Link>
-      </div>
+      </Box>
 
       <Grid container spacing={3}>
         {purchasedItems.map((item) => {
           const imageUrl = getImageUrl(item);
           return (
             <Grid item xs={12} md={6} lg={4} key={item.id}>
-              <Card className={styles.purchaseCard}>
-                {imageUrl ? (
-                  <CardMedia
-                    component="img"
-                    height="250"
-                    image={imageUrl}
-                    alt={item.title}
-                    className={styles.cardMedia}
-                  />
-                ) : (
-                  <div className={styles.creativePlaceholder}>
-                    <Typography variant="h4" className={styles.placeholderText}>
-                      {item.title}
-                    </Typography>
-                  </div>
-                )}
-                <CardContent className={styles.cardContent}>
-                  <Link to={`/auction/${item.id}`} className={styles.itemLink}>
+              <Card
+                sx={{
+                  backgroundColor: "#fff",
+                  color: "#333",
+                  borderRadius: "8px",
+                  border: "1px solid #444",
+                  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-5px) scale(1.02)",
+                    boxShadow: "0 8px 16px rgba(0, 0, 0, 0.2)",
+                  },
+                }}
+              >
+                {/* Make the image clickable by wrapping it in a Link */}
+                <Link to={`/auction/${item.id}`} style={{ textDecoration: "none" }}>
+                  {imageUrl ? (
+                    <CardMedia
+                      component="img"
+                      height="250"
+                      image={imageUrl}
+                      alt={item.title}
+                      sx={{
+                        transition: "transform 0.3s ease",
+                        "&:hover": { transform: "scale(1.05)" },
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        height: "250px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background:
+                          "linear-gradient(135deg, #6a11cb, #2575fc)",
+                        borderRadius: "8px 8px 0 0",
+                        color: "#fff",
+                        p: 1,
+                        textAlign: "center",
+                      }}
+                    >
+                      <Typography
+                        variant="h4"
+                        sx={{
+                          fontSize: "1.75rem",
+                          fontWeight: "bold",
+                          m: 0,
+                        }}
+                      >
+                        {item.title}
+                      </Typography>
+                    </Box>
+                  )}
+                </Link>
+                <CardContent
+                  sx={{
+                    p: 2,
+                    animation: `${slideUp} 0.5s ease-out`,
+                  }}
+                >
+                  <Link
+                    to={`/auction/${item.id}`}
+                    style={{ textDecoration: "none", color: "inherit" }}
+                  >
                     <Typography variant="h6" gutterBottom>
                       {item.title}
                     </Typography>
                   </Link>
-                  <Typography variant="body2" color="textSecondary" paragraph>
+                  <Typography variant="body2" color="text.secondary" paragraph>
                     {item.description}
                   </Typography>
                   <Typography variant="body1">
