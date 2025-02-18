@@ -53,7 +53,7 @@ const Favorites = () => {
           No favorites yet.
         </Typography>
       ) : (
-        <Grid container spacing={2}>
+        <Grid container spacing={3}>
           {favorites.map((fav) => {
             const auctionItem = fav.auction_item;
             const imageUrl = getAuctionImage(auctionItem);
@@ -77,7 +77,7 @@ const Favorites = () => {
                     </div>
                   )}
                   <CardContent className={styles.cardContent}>
-                    <Typography variant="h6">
+                    <Typography variant="h6" className={styles.title}>
                       {auctionItem.title}
                     </Typography>
                     <IconButton
@@ -87,7 +87,7 @@ const Favorites = () => {
                         handleRemove(fav.id);
                       }}
                     >
-                      <DeleteIcon color="error" />
+                      <DeleteIcon />
                     </IconButton>
                   </CardContent>
                 </Card>

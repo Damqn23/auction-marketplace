@@ -1,5 +1,3 @@
-// frontend/src/components/AuctionList.js
-
 import React, { useContext, useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -31,7 +29,7 @@ import styles from "./AuctionList.module.css";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
 import BuyNowModal from "./BuyNowModal";
-import FavoriteButton from "./FavoriteButton"; // <-- Import the FavoriteButton component
+import FavoriteButton from "./FavoriteButton";
 
 // ---------------------
 // CountdownTimer Component
@@ -56,7 +54,6 @@ const CountdownTimer = ({ endTime }) => {
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
-
     return () => clearInterval(timer);
   }, [calculateTimeLeft]);
 
@@ -128,7 +125,6 @@ const AuctionList = () => {
     setFilterAnchorEl(null);
   };
 
-  // Update pending filters on input change
   const handleFilterChange = (e) => {
     setPendingFilters({
       ...pendingFilters,
@@ -140,7 +136,6 @@ const AuctionList = () => {
     setSortBy(e.target.value);
   };
 
-  // When "Apply Filters" is clicked, update filters and refetch
   const applyFilters = () => {
     setAppliedFilters(pendingFilters);
     handleFilterClose();
@@ -179,7 +174,6 @@ const AuctionList = () => {
     },
   });
 
-  // Handler for placing a bid
   const handlePlaceBid = (id) => {
     const amount = parseFloat(bidAmounts[id]);
     if (isNaN(amount)) {
@@ -189,7 +183,6 @@ const AuctionList = () => {
     bidMutation.mutate({ id, amount });
   };
 
-  // Buy Now Modal state and handlers
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -209,70 +202,58 @@ const AuctionList = () => {
     closeBuyNowModal();
   };
 
-  // Loading/Errors
   if (isLoading) return <p>Loading...</p>;
   if (isError) return <p>Failed to load auction items.</p>;
 
   return (
     <div className={styles.container}>
-      {/* Header */}
+      {/* New Header: Only Filter and Sort Controls with a stylish background */}
       <div className={styles.header}>
-        <Typography variant="h4" component="h2" gutterBottom>
-          Auction Items
-        </Typography>
-        <Link to="/create" style={{ textDecoration: "none" }}>
-          <Button variant="contained" color="primary">
-            Create New Auction
-          </Button>
-        </Link>
-      </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "20px",
-        }}
-      >
-        <IconButton color="primary" onClick={handleFilterClick}>
-          <FilterListIcon />
-          <Typography variant="body1" style={{ marginLeft: "8px" }}>
-            Filters
-          </Typography>
-        </IconButton>
-
-        <FormControl variant="outlined" size="small" style={{ minWidth: 150 }}>
-          <InputLabel>Sort By</InputLabel>
-          <Select value={sortBy} onChange={handleSortChange} label="Sort By">
-            <MenuItem value="newest">Newest</MenuItem>
-            <MenuItem value="ending_soon">Ending Soon</MenuItem>
-            <MenuItem value="highest_bid">Highest Bid</MenuItem>
-            <MenuItem value="lowest_price">Lowest Price</MenuItem>
-          </Select>
-        </FormControl>
+        <div className={styles.headerControls}>
+          <IconButton
+            className={styles.filterButton}
+            onClick={handleFilterClick}
+          >
+            <FilterListIcon />
+            <Typography variant="body1" className={styles.filterText}>
+              Filters
+            </Typography>
+          </IconButton>
+          <FormControl
+            variant="outlined"
+            size="small"
+            className={styles.sortControl}
+          >
+            <InputLabel>Sort By</InputLabel>
+            <Select
+              value={sortBy}
+              onChange={handleSortChange}
+              label="Sort By"
+            >
+              <MenuItem value="newest">Newest</MenuItem>
+              <MenuItem value="ending_soon">Ending Soon</MenuItem>
+              <MenuItem value="highest_bid">Highest Bid</MenuItem>
+              <MenuItem value="lowest_price">Lowest Price</MenuItem>
+            </Select>
+          </FormControl>
+        </div>
       </div>
 
+      {/* Auction Items Grid */}
       {Array.isArray(auctionItems) && auctionItems.length > 0 ? (
         <Grid container spacing={2}>
           {auctionItems.map((item) => {
-            // Only non-owners see bidding/Buy Now actions.
             const isNotOwner =
               user && item.owner && user.username !== item.owner.username;
-
-            // Determine if current user can place a bid
             const canBid =
               isNotOwner &&
               item.status === "active" &&
               !item.buy_now_buyer;
-
-            // Determine if Buy Now is available
             const canBuyNow =
               isNotOwner &&
               item.status === "active" &&
               item.buy_now_price &&
               !item.buy_now_buyer;
-
-            // Calculate the minimum required bid (2% increment)
             const minBidValue = item.current_bid
               ? parseFloat(item.current_bid)
               : parseFloat(item.starting_bid);
@@ -281,13 +262,11 @@ const AuctionList = () => {
 
             return (
               <Grid item xs={12} md={6} lg={4} key={item.id}>
-                {/* Make the entire card clickable */}
                 <Card
                   className={styles.auctionCard}
                   onClick={() => navigate(`/auction/${item.id}`)}
                   style={{ cursor: "pointer" }}
                 >
-                  {/* Card Image (or fallback text) */}
                   {item.images && item.images.length > 0 ? (
                     <CardMedia
                       component="img"
@@ -302,9 +281,7 @@ const AuctionList = () => {
                       </Typography>
                     </div>
                   )}
-
                   <CardContent style={{ marginTop: "10px" }}>
-                    {/* Display basic details */}
                     <Typography variant="h6" component="div" gutterBottom>
                       {item.title}
                     </Typography>
@@ -318,7 +295,9 @@ const AuctionList = () => {
                     </Typography>
                     <Typography variant="body1">
                       <strong>Current Bid:</strong>{" "}
-                      {item.current_bid ? `$${item.current_bid}` : "No bids yet"}
+                      {item.current_bid
+                        ? `$${item.current_bid}`
+                        : "No bids yet"}
                     </Typography>
                     {item.buy_now_price && (
                       <Typography variant="body1" color="secondary">
@@ -335,20 +314,21 @@ const AuctionList = () => {
                       </Typography>
                     )}
                     {item.buy_now_buyer && (
-                      <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-                        Purchased via Buy Now by: {item.buy_now_buyer.username}
+                      <Typography
+                        variant="body2"
+                        color="primary"
+                        sx={{ mt: 1 }}
+                      >
+                        Purchased via Buy Now by:{" "}
+                        {item.buy_now_buyer.username}
                       </Typography>
                     )}
                   </CardContent>
-
-                  {/* Card Actions */}
                   <CardActions
                     onClick={(e) => e.stopPropagation()}
                     className={styles.cardActions}
                   >
-                    {/* Left: Favorite Button */}
                     <FavoriteButton auctionItemId={item.id} />
-                    {/* Right: Bid/Buy Now actions for non-owners */}
                     {isNotOwner && (
                       <Box
                         sx={{
@@ -391,7 +371,6 @@ const AuctionList = () => {
                             </Button>
                           </div>
                         )}
-
                         {canBuyNow && (
                           <Button
                             variant="contained"
@@ -421,7 +400,6 @@ const AuctionList = () => {
         </Typography>
       )}
 
-      {/* Buy Now Modal */}
       {selectedItem && (
         <BuyNowModal
           open={modalOpen}
@@ -440,8 +418,6 @@ const AuctionList = () => {
           <Typography variant="h6" gutterBottom>
             Filters
           </Typography>
-
-          {/* Price Range */}
           <TextField
             label="Min Price"
             name="min_price"
@@ -460,8 +436,6 @@ const AuctionList = () => {
             margin="dense"
             type="number"
           />
-
-          {/* Condition */}
           <FormControl fullWidth margin="dense">
             <InputLabel>Condition</InputLabel>
             <Select
@@ -476,8 +450,6 @@ const AuctionList = () => {
               <MenuItem value="Refurbished">Refurbished</MenuItem>
             </Select>
           </FormControl>
-
-          {/* Location */}
           <TextField
             label="Location"
             name="location"
@@ -486,8 +458,6 @@ const AuctionList = () => {
             fullWidth
             margin="dense"
           />
-
-          {/* Category */}
           <FormControl fullWidth margin="dense">
             <InputLabel>Category</InputLabel>
             <Select
@@ -505,8 +475,6 @@ const AuctionList = () => {
                 ))}
             </Select>
           </FormControl>
-
-          {/* Apply Filters Button */}
           <Button
             variant="contained"
             color="primary"

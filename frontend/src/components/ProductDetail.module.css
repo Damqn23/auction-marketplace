@@ -1,133 +1,314 @@
-/* ProductDetail.module.css */
-
-/* Container & Card */
+/* ------------------------------------------------ */
+/* Full-Width Container with Animated Blue Gradient */
+/* ------------------------------------------------ */
 .container {
-  padding: 20px;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(270deg, #001f3f, #0074D9, #7FDBFF);
+  background-size: 600% 600%;
+  animation: gradientBackground 16s ease infinite;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Blue Gradient Animation Keyframes */
+@keyframes gradientBackground {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* ------------------------------------------------ */
+/* Content Wrapper (Centered, Full-Width Section)   */
+/* ------------------------------------------------ */
+.contentWrapper {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+/* Product Title */
+.productTitle {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 2.5rem;
+  color: #333;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ------------------------------------------------ */
+/* Layout for Product Details (Two-Column Grid)     */
+/* ------------------------------------------------ */
+.productGrid {
   display: flex;
-  justify-content: center;
-  background-color: var(--surface-color, #f9f9f9); /* fallback if var not set */
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
-.card {
-  max-width: 1200px;
-  width: 100%;
-  background-color: var(--card-surface-color, #ffffff);
-  color: var(--text-color); /* all text inside is light/dark based on theme */
-  border-radius: 8px;
-  box-shadow: var(--box-shadow, 0 4px 8px rgba(0, 0, 0, 0.1));
-  overflow: hidden;
-  margin: 20px;
+/* Left Column: Image Section */
+.imageSection {
+  flex: 1 1 60%;
 }
 
-/* Images */
-.image {
-  width: 100%;
-  height: auto;
-  border-radius: 8px;
-  margin-bottom: 10px;
+/* Right Column: Details Section */
+.detailsSection {
+  flex: 1 1 40%;
 }
 
-/* Image Slider */
+/* ------------------------------------------------ */
+/* Image Slider & Image Styles                      */
+/* ------------------------------------------------ */
 .imageSlider {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
+  overflow: hidden;
 }
 
-.prevButton,
-.nextButton {
+.imageSlider img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+/* Slider Navigation Buttons */
+.sliderButton {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(255, 255, 255, 0.7);
-  color: #333;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  color: #fff;
+  padding: 10px;
+  cursor: pointer;
   border-radius: 50%;
+  transition: background 0.3s ease, transform 0.3s ease;
+  z-index: 10;
+}
+
+.sliderButton:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: translateY(-50%) scale(1.2);
 }
 
 .prevButton {
-  left: 10px;
+  left: 20px;
 }
 
 .nextButton {
-  right: 10px;
+  right: 20px;
 }
 
-.prevButton:hover,
-.nextButton:hover {
-  background-color: rgba(255, 255, 255, 0.9);
-}
-
-/* Details Container */
+/* ------------------------------------------------ */
+/* Details & Typography Styles                      */
+/* ------------------------------------------------ */
 .detailsContainer {
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  padding: 20px;
+}
+
+.description {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #555;
+  margin-bottom: 20px;
 }
 
 /* Price Section */
 .priceSection {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--muted-text-color, #e0e0e0);
+  margin-top: 20px;
+  border-top: 2px solid #eee;
+  padding-top: 20px;
+  font-size: 1.2rem;
+  color: #333;
 }
 
 .buyNowPrice {
-  /* If you want a highlight color for buy-now lines, override or remove */
-  color: var(--accent-color, #f50057);
+  color: #e91e63;
+  font-weight: bold;
 }
 
-/* Bidding & Buying Sections */
+/* ------------------------------------------------ */
+/* Bidding & Buying Sections with Dynamic Effects   */
+/* ------------------------------------------------ */
 .bidSection,
 .buyNowSection {
-  margin-top: 20px;
+  margin-top: 30px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
 }
 
 .bidInput {
-  width: 120px;
+  width: 150px;
+  padding: 10px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+.bidInput:focus {
+  border-color: #0074D9;
+  transform: scale(1.05);
+  outline: none;
 }
 
 .bidButton,
 .buyNowButton {
-  height: 40px;
-  text-transform: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
-/* Owner Button Group (Delete & Update) */
+.bidButton {
+  background-color: #4caf50;
+  color: #fff;
+}
+
+.buyNowButton {
+  background-color: #ff5722;
+  color: #fff;
+}
+
+.bidButton:hover,
+.buyNowButton:hover {
+  transform: scale(1.05);
+}
+
+/* ------------------------------------------------ */
+/* Owner Action Buttons                             */
+/* ------------------------------------------------ */
 .buttonGroup {
-  margin-top: 20px;
-  display: flex;
-  gap: 10px;
-}
-
-/* Bid History */
-.bidHistory {
   margin-top: 30px;
-  padding: 20px;
-  background-color: var(--card-surface-color, #fafafa);
+  display: flex;
+  gap: 15px;
+}
+
+/* ------------------------------------------------ */
+/* Bid History Section with Fade-In Animation       */
+/* ------------------------------------------------ */
+.bidHistory {
+  margin-top: 40px;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 5px;
+  animation: fadeIn 1s ease-in;
+}
+
+.bidHistory ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.bidHistory li {
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 1rem;
+  color: #555;
+}
+
+.bidHistory li:last-child {
+  border-bottom: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ------------------------------------------------ */
+/* Custom Form Styling (e.g., for inquiries or reviews) */
+/* ------------------------------------------------ */
+.formContainer {
+  margin-top: 40px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 30px;
   border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* Additional Typography Styling */
-/* Remove the forced #333. Let the parent card color apply: */
-.description {
-  margin-bottom: 10px;
+.formTitle {
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #333;
 }
 
-.purchaseInfo {
-  margin-top: 10px;
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
 }
 
-/* Responsive adjustments */
-@media (max-width: 600px) {
-  .card {
-    margin: 10px;
+.formGroup label {
+  margin-bottom: 5px;
+  font-size: 1rem;
+  color: #333;
+}
+
+.formGroup input,
+.formGroup textarea,
+.formGroup select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #0074D9;
+}
+
+.submitButton {
+  background-color: #0074D9;
+  color: #fff;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submitButton:hover {
+  background-color: #005fa3;
+}
+
+/* ------------------------------------------------ */
+/* Responsive Adjustments                           */
+/* ------------------------------------------------ */
+@media (max-width: 768px) {
+  .productGrid {
+    flex-direction: column;
+  }
+  .imageSection,
+  .detailsSection {
+    flex: 1 1 100%;
   }
   .bidInput {
-    width: 100px;
+    width: 120px;
+  }
+  .detailsContainer {
+    padding: 15px;
   }
 }

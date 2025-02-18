@@ -1,54 +1,91 @@
-/* Container for the Favorites page */
+/* Page Container with a cool dark gradient background */
 .container {
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  
-  /* Header style */
-  .header {
-    margin-bottom: 20px;
-  }
-  
-  /* Style for the "No favorites" message */
-  .noFavorites {
-    margin-top: 20px;
-  }
-  
-  /* Card styling */
-  .card {
-    cursor: pointer;
-    transition: transform 0.2s ease;
-  }
-  
-  .card:hover {
-    transform: scale(1.02);
-  }
-  
-  /* Media (image) styling */
-  .media {
-    height: 200px;
-    object-fit: cover;
-  }
-  
-  /* Fallback when no image is available */
-  .noImageFallback {
-    height: 200px;
-    background-color: #ccc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  /* CardContent: position relative so that the delete button can be absolutely positioned */
-  .cardContent {
-    position: relative;
-  }
-  
-  /* Delete button positioned in the top-right corner */
-  .deleteButton {
-    position: absolute;
-    top: 0;
-    right: 0;
-  }
-  
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #2b5876, #4e4376);
+}
+
+/* Header styling */
+.header {
+  color: #fff;
+  text-align: center;
+  margin-bottom: 40px;
+  font-weight: bold;
+}
+
+/* "No favorites" message styling */
+.noFavorites {
+  color: #fff;
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Modern Card styling with glassmorphism effect */
+.card {
+  cursor: pointer;
+  border-radius: 15px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Media (image) styling with a zoom effect on hover */
+.media {
+  height: 250px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.card:hover .media {
+  transform: scale(1.05);
+}
+
+/* Fallback styling when no image is available */
+.noImageFallback {
+  height: 250px;
+  background-color: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+/* Card content styling with a subtle gradient overlay */
+.cardContent {
+  position: relative;
+  padding: 16px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.5));
+  color: #fff;
+}
+
+/* Auction title styling */
+.title {
+  margin: 0;
+  font-weight: bold;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Delete button styling positioned in the top-right corner */
+.deleteButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(5px);
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+
+.deleteButton:hover {
+  background: rgba(255, 255, 255, 0.4);
+}

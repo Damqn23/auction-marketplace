@@ -22,12 +22,16 @@ const CreateAuction = () => {
   const [description, setDescription] = useState("");
   const [startingBid, setStartingBid] = useState("");
   const [buyNowPrice, setBuyNowPrice] = useState("");
-  const [endTime, setEndTime] = useState("");
+  // Remove the endTime state because we’ll compute it from duration
+  // const [endTime, setEndTime] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
 
   // New fields
   const [condition, setCondition] = useState("");
   const [location, setLocation] = useState("");
+
+  // New auction duration state (in hours)
+  const [duration, setDuration] = useState("1");
 
   // Images (multiple allowed)
   const [images, setImages] = useState([]);
@@ -59,17 +63,16 @@ const CreateAuction = () => {
       return;
     }
 
-    if (!endTime) {
-      setMessage("End time is required.");
-      setLoading(false);
-      return;
-    }
-    
     if (!selectedCategory) {
       setMessage("Category selection is required.");
       setLoading(false);
       return;
     }
+
+    // Compute the end time based on the current time plus selected duration
+    const now = new Date();
+    now.setHours(now.getHours() + parseInt(duration, 10));
+    const computedEndTime = now.toISOString(); // Format as ISO string
 
     // Build FormData to send to the backend
     const formData = new FormData();
@@ -77,7 +80,7 @@ const CreateAuction = () => {
     formData.append("description", description);
     formData.append("starting_bid", startingBid);
     formData.append("buy_now_price", buyNowPrice);
-    formData.append("end_time", endTime);
+    formData.append("end_time", computedEndTime);
     formData.append("category", selectedCategory);
     
     // New fields: condition and location
@@ -170,18 +173,22 @@ const CreateAuction = () => {
             inputProps={{ min: "0", step: "0.01" }}
           />
 
-          {/* End Time */}
+          {/* Auction Duration Dropdown */}
           <TextField
-            label="End Time"
+            select
+            label="Auction Duration (hours)"
             variant="outlined"
-            type="datetime-local"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
             required
             fullWidth
             margin="normal"
-            InputLabelProps={{ shrink: true }}
-          />
+          >
+            <MenuItem value="1">1 Hour</MenuItem>
+            <MenuItem value="3">3 Hours</MenuItem>
+            <MenuItem value="6">6 Hours</MenuItem>
+            <MenuItem value="12">12 Hours</MenuItem>
+          </TextField>
 
           <Divider className={styles.divider} />
 
