@@ -9,51 +9,63 @@ from .models import AuctionItem, Bid, AuctionImage, ChatMessage, Category, Favor
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields ="__all__"
-
+        fields = "__all__"
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password = serializers.CharField(
+        write_only=True, required=True, validators=[validate_password]
+    )
     password2 = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
-        fields = ('username', 'password', 'password2', 'email', 'first_name', 'last_name')
+        fields = (
+            "username",
+            "password",
+            "password2",
+            "email",
+            "first_name",
+            "last_name",
+        )
         extra_kwargs = {
-            'first_name': {'required': False},
-            'last_name': {'required': False},
-            'email': {'required': False},
+            "first_name": {"required": False},
+            "last_name": {"required": False},
+            "email": {"required": False},
         }
 
     def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
+        if attrs["password"] != attrs["password2"]:
+            raise serializers.ValidationError(
+                {"password": "Password fields didn't match."}
+            )
 
         return attrs
 
     def create(self, validated_data):
         user = User.objects.create(
-            username=validated_data['username'],
-            email=validated_data.get('email', ''),
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', '')
+            username=validated_data["username"],
+            email=validated_data.get("email", ""),
+            first_name=validated_data.get("first_name", ""),
+            last_name=validated_data.get("last_name", ""),
         )
 
-        user.set_password(validated_data['password'])
+        user.set_password(validated_data["password"])
         user.save()
 
         return user
 
 
 class BidSerializer(serializers.ModelSerializer):
-    bidder = serializers.ReadOnlyField(source='bidder.username')
-    auction_item = serializers.ReadOnlyField(source='auction_item.title')
-    timestamp = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S%z")  # Ensure proper format
+    bidder = serializers.ReadOnlyField(source="bidder.username")
+    auction_item = serializers.ReadOnlyField(source="auction_item.title")
+    timestamp = serializers.DateTimeField(
+        format="%Y-%m-%dT%H:%M:%S%z"
+    )  # Ensure proper format
 
     class Meta:
         model = Bid
-        fields = ['id', 'auction_item', 'bidder', 'amount', 'timestamp']
+        fields = ["id", "auction_item", "bidder", "amount", "timestamp"]
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -61,7 +73,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'bids']
+        fields = ["id", "username", "email", "first_name", "last_name", "bids"]
 
 
 class AuctionImageSerializer(serializers.ModelSerializer):
@@ -69,10 +81,10 @@ class AuctionImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AuctionImage
-        fields = ['id', 'image']
+        fields = ["id", "image"]
 
     def get_image(self, obj):
-        request = self.context.get('request')
+        request = self.context.get("request")
         if obj.image and request:
             return request.build_absolute_uri(obj.image.url)
         return None
@@ -81,8 +93,12 @@ class AuctionImageSerializer(serializers.ModelSerializer):
 class AuctionItemSerializer(serializers.ModelSerializer):
     owner = UserSerializer(read_only=True)  # Serialize 'owner' as a nested object
     bids = BidSerializer(many=True, read_only=True)
-    images = AuctionImageSerializer(many=True, read_only=True)  # Nested Serializer for images
-    buy_now_buyer = UserSerializer(read_only=True)  # Include buyer details if purchased via Buy Now
+    images = AuctionImageSerializer(
+        many=True, read_only=True
+    )  # Nested Serializer for images
+    buy_now_buyer = UserSerializer(
+        read_only=True
+    )  # Include buyer details if purchased via Buy Now
     winner = UserSerializer(read_only=True)
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
     # Optionally, to return nested category data in GET responses:
@@ -94,39 +110,60 @@ class AuctionItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuctionItem
         fields = [
-            'id', 'title', 'description', 'starting_bid', 'current_bid',
-            'buy_now_price', 'buy_now_buyer', 'owner', 'image',
-            'images', 'status', 'end_time', 'winner', 'bids',
-            'category', 'category_data',
-            'condition', 'location',
+            "id",
+            "title",
+            "description",
+            "starting_bid",
+            "current_bid",
+            "buy_now_price",
+            "buy_now_buyer",
+            "owner",
+            "image",
+            "images",
+            "status",
+            "end_time",
+            "winner",
+            "bids",
+            "category",
+            "category_data",
+            "condition",
+            "location",
         ]
-        read_only_fields = ['status', 'buy_now_buyer', 'winner']  # Make these fields read-only
+        read_only_fields = [
+            "status",
+            "buy_now_buyer",
+            "winner",
+        ]  # Make these fields read-only
 
     def validate(self, data):
         """
         Ensure that buy_now_price is higher than starting_bid.
         """
-        buy_now_price = data.get('buy_now_price')
-        starting_bid = data.get('starting_bid', getattr(self.instance, 'starting_bid', None))
+        buy_now_price = data.get("buy_now_price")
+        starting_bid = data.get(
+            "starting_bid", getattr(self.instance, "starting_bid", None)
+        )
 
         if buy_now_price is not None and starting_bid is not None:
             if buy_now_price <= starting_bid:
-                raise serializers.ValidationError("Buy Now price must be higher than the starting bid.")
+                raise serializers.ValidationError(
+                    "Buy Now price must be higher than the starting bid."
+                )
 
         return data
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        request = self.context.get('request')
+        request = self.context.get("request")
         if instance.image and request:
-            representation['image'] = request.build_absolute_uri(instance.image.url)
+            representation["image"] = request.build_absolute_uri(instance.image.url)
         else:
-            representation['image'] = None
+            representation["image"] = None
         # Ensure images are also correctly serialized
-        if 'images' in representation:
-            for img in representation['images']:
-                if 'image' in img and img['image']:
-                    img['image'] = request.build_absolute_uri(img['image'])
+        if "images" in representation:
+            for img in representation["images"]:
+                if "image" in img and img["image"]:
+                    img["image"] = request.build_absolute_uri(img["image"])
         return representation
 
 
@@ -135,16 +172,18 @@ class FavoriteSerializer(serializers.ModelSerializer):
     auction_item = AuctionItemSerializer(read_only=True)
     # Allow posting using auction_item_id
     auction_item_id = serializers.PrimaryKeyRelatedField(
-        source='auction_item',
-        queryset=AuctionItem.objects.all(),
-        write_only=True
+        source="auction_item", queryset=AuctionItem.objects.all(), write_only=True
     )
 
     class Meta:
         model = Favorite
-        fields = ['id', 'auction_item', 'auction_item_id', 'created_at']
+        fields = ["id", "auction_item", "auction_item_id", "created_at"]
+
 
 class ChatMessageSerializer(serializers.ModelSerializer):
+    sender = serializers.CharField(source="sender.username", read_only=True)
+    recipient = serializers.CharField(source="recipient.username", read_only=True)
+
     class Meta:
         model = ChatMessage
-        fields = ['id', 'sender', 'recipient', 'message', 'timestamp', 'is_read']
+        fields = ["id", "sender", "recipient", "message", "timestamp", "is_read"]
