@@ -50,6 +50,9 @@ const CreateAuction = () => {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
 
+  // New state for cities
+  const [cities, setCities] = useState([]);
+
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
 
@@ -108,6 +111,7 @@ const CreateAuction = () => {
     setLoading(false);
   };
 
+  // Fetch categories on component mount
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -119,6 +123,22 @@ const CreateAuction = () => {
     };
     fetchCategories();
   }, []);
+
+  // Fetch Bulgarian cities from the local bg.json file
+  // Fetch Bulgarian cities from the local bg.json file
+useEffect(() => {
+  fetch("/data/bg.json")
+    .then((res) => res.json())
+    .then((data) => {
+      // Sort the data alphabetically by the "city" field
+      const sortedCities = data.sort((a, b) =>
+        a.city.localeCompare(b.city)
+      );
+      setCities(sortedCities);
+    })
+    .catch((error) => console.error("Error fetching cities:", error));
+}, []);
+
 
   return (
     <Box
@@ -232,15 +252,26 @@ const CreateAuction = () => {
             <MenuItem value="Refurbished">Refurbished</MenuItem>
           </TextField>
 
+          {/* Location (Select from Bulgarian cities) */}
           <TextField
+            select
             label="Location"
             variant="outlined"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             fullWidth
             required
-            placeholder="City, State or Country"
-          />
+            helperText="Select your city/region"
+          >
+            <MenuItem value="">
+              <em>Select City</em>
+            </MenuItem>
+            {cities.map((city) => (
+              <MenuItem key={city.city} value={city.city}>
+                {city.city}
+              </MenuItem>
+            ))}
+          </TextField>
 
           <Divider sx={{ my: 2 }} />
 
@@ -322,7 +353,10 @@ const CreateAuction = () => {
         </Box>
 
         <Box sx={{ mt: 2, textAlign: "center" }}>
-          <Link to="/" style={{ textDecoration: "none", color: "#1976d2", fontWeight: 500 }}>
+          <Link
+            to="/"
+            style={{ textDecoration: "none", color: "#1976d2", fontWeight: 500 }}
+          >
             Back to Auction List
           </Link>
         </Box>

@@ -285,6 +285,46 @@ const Home = () => {
           </Button>
         </Box>
       </Container>
+            {/* SECOND IMAGE SECTION */}
+<AnimatedBox>
+  <Box
+    sx={{
+      backgroundImage: 'url(/images/money-2180330_1280.jpg)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      height: { xs: '300px', md: '500px' },
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+      mt: 8,
+    }}
+  >
+    {/* Optional overlay for better text readability */}
+    <Box
+      sx={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+      }}
+    />
+    <Typography
+      variant="h3"
+      sx={{
+        position: 'relative',
+        color: '#fff',
+        fontWeight: 'bold',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+        fontSize: { xs: '1.8rem', md: '3rem' },
+      }}
+    >
+      The Power of Investments
+    </Typography>
+  </Box>
+</AnimatedBox>
 
       {/* NEW LOWER SECTION: HOW IT WORKS */}
       <Container
