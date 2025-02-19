@@ -80,8 +80,7 @@ const CountdownTimer = ({ endTime }) => {
 
   return (
     <Typography component="span">
-      {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m{" "}
-      {timeLeft.seconds}s
+      {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
     </Typography>
   );
 };
@@ -98,8 +97,8 @@ const AuctionList = () => {
   const navigate = useNavigate();
 
   // Get search query and category from URL parameters
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
+  const locationHook = useLocation();
+  const queryParams = new URLSearchParams(locationHook.search);
   const query = queryParams.get("q") || "";
   const categoryFromUrl = queryParams.get("category") || "";
 
@@ -134,6 +133,23 @@ const AuctionList = () => {
       toast.error("Failed to load auction items.");
     },
   });
+
+  // New state for Bulgarian cities
+  const [cities, setCities] = useState([]);
+
+  // Fetch Bulgarian cities from the local bg.json file
+  useEffect(() => {
+    fetch("/data/bg.json")
+      .then((res) => res.json())
+      .then((data) => {
+        // Sort the data alphabetically by the "city" field
+        const sortedCities = data.sort((a, b) =>
+          a.city.localeCompare(b.city)
+        );
+        setCities(sortedCities);
+      })
+      .catch((error) => console.error("Error fetching cities:", error));
+  }, []);
 
   const handleFilterClick = (event) => {
     setFilterAnchorEl(event.currentTarget);
@@ -342,8 +358,7 @@ const AuctionList = () => {
                     position: "relative",
                     background: "#ffffff",
                     overflow: "hidden",
-                    transition:
-                      "transform 0.3s ease, box-shadow 0.3s ease",
+                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
                     zIndex: 0,
                     cursor: "pointer",
                     "&:hover": {
@@ -406,9 +421,7 @@ const AuctionList = () => {
                     </Typography>
                     <Typography variant="body1">
                       <strong>Current Bid:</strong>{" "}
-                      {item.current_bid
-                        ? `$${item.current_bid}`
-                        : "No bids yet"}
+                      {item.current_bid ? `$${item.current_bid}` : "No bids yet"}
                     </Typography>
                     {item.buy_now_price && (
                       <Typography variant="body1" color="secondary">
@@ -425,13 +438,8 @@ const AuctionList = () => {
                       </Typography>
                     )}
                     {item.buy_now_buyer && (
-                      <Typography
-                        variant="body2"
-                        color="primary"
-                        sx={{ mt: 1 }}
-                      >
-                        Purchased via Buy Now by:{" "}
-                        {item.buy_now_buyer.username}
+                      <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+                        Purchased via Buy Now by: {item.buy_now_buyer.username}
                       </Typography>
                     )}
                   </CardContent>
@@ -551,6 +559,7 @@ const AuctionList = () => {
         />
       )}
 
+      {/* Filter Menu */}
       <Menu
         anchorEl={filterAnchorEl}
         open={Boolean(filterAnchorEl)}
@@ -592,14 +601,25 @@ const AuctionList = () => {
               <MenuItem value="Refurbished">Refurbished</MenuItem>
             </Select>
           </FormControl>
+          {/* Use a dropdown for Location with the fetched cities */}
           <TextField
+            select
             label="Location"
             name="location"
             value={pendingFilters.location}
             onChange={handleFilterChange}
             fullWidth
             margin="dense"
-          />
+          >
+            <MenuItem value="">
+              <em>Select City</em>
+            </MenuItem>
+            {cities.map((city) => (
+              <MenuItem key={city.city} value={city.city}>
+                {city.city}
+              </MenuItem>
+            ))}
+          </TextField>
           <FormControl fullWidth margin="dense">
             <InputLabel>Category</InputLabel>
             <Select

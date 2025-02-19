@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from datetime import timedelta
 
 from rest_framework import viewsets, status, permissions, generics
@@ -330,17 +331,34 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], permission_classes=[AllowAny])
     def search(self, request):
-        query = request.query_params.get("q", "")
-        category = request.query_params.get("category", "")  # New category filter
-
-        filters = Q(status="active")
+        """
+        Custom search action that only filters by title.
+        If a query word ends with an 's' (or equals 'часовници'),
+        it also checks for the singular form.
+        """
+        query = request.query_params.get("q", "").strip()
+        category = request.query_params.get("category", "").strip()
+        qs = AuctionItem.objects.filter(status="active")
         if query:
-            filters &= Q(title__icontains=query) | Q(description__icontains=query)
+            words = query.split()
+            q_filter = Q()
+            for word in words:
+                # Check for a Bulgarian plural example and English 's'
+                if word.lower() == "часовници":
+                    singular = "часовник"
+                elif word.endswith("s"):
+                    singular = word[:-1]
+                else:
+                    singular = None
+                if singular:
+                    word_q = Q(title__icontains=word) | Q(title__icontains=singular)
+                else:
+                    word_q = Q(title__icontains=word)
+                q_filter &= word_q
+            qs = qs.filter(q_filter)
         if category:
-            filters &= Q(category__name__icontains=category)
-
-        items = AuctionItem.objects.filter(filters)
-        serializer = self.get_serializer(items, many=True)
+            qs = qs.filter(category__name__icontains=category)
+        serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
     @action(
