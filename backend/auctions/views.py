@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from datetime import timedelta
 
 from rest_framework import viewsets, status, permissions, generics
 from rest_framework.response import Response
@@ -53,6 +54,7 @@ class UserBidsView(APIView):
             .distinct()
         )
         auctions = AuctionItem.objects.filter(id__in=user_bids)
+        now = timezone.now()
 
         winning_now = []
         won = []
@@ -61,13 +63,15 @@ class UserBidsView(APIView):
 
         for auction in auctions:
             highest_bid = auction.bids.order_by("-amount").first()
-
-            if auction.status == "active":
-                if highest_bid.bidder == user:
+            # Consider auction closed if its end_time has passed
+            if auction.status == "active" and auction.end_time > now:
+                # Auction is still active
+                if highest_bid and highest_bid.bidder == user:
                     winning_now.append(auction)
                 else:
                     losing_now.append(auction)
-            elif auction.status == "closed":
+            else:
+                # Auction is closed (either by status or because its end_time has passed)
                 if auction.winner == user:
                     won.append(auction)
                 else:
@@ -227,11 +231,14 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
     def bid(self, request, pk=None):
         """
         Custom action to place a bid on an auction item.
+        Also, if a bid is placed with less than 60 seconds remaining,
+        extend the auction time by 2 minutes.
         """
         auction_item = self.get_object()
+        now = timezone.now()
 
-        # Update status if auction has ended
-        if auction_item.status == "active" and auction_item.end_time <= timezone.now():
+        # If auction end time has passed, update status to closed.
+        if auction_item.status == "active" and auction_item.end_time <= now:
             auction_item.status = "closed"
             auction_item.save()
             return Response(
@@ -239,28 +246,28 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Check if auction is active
+        # Ensure auction is active
         if auction_item.status != "active":
             return Response(
                 {"detail": "Bidding is closed for this item."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Prevent owner from bidding on their own item
+        # Prevent owner from bidding on their own item.
         if auction_item.owner == request.user:
             return Response(
                 {"detail": "Owners cannot bid on their own items."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Prevent bidding if Buy Now has been used
+        # Prevent bidding if Buy Now has been used.
         if auction_item.buy_now_buyer is not None:
             return Response(
                 {"detail": "This item has been purchased via Buy Now."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Get bid amount
+        # Get bid amount from request.
         amount = request.data.get("amount")
         if not amount:
             return Response(
@@ -269,11 +276,11 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            # Convert amount to Decimal
             amount = Decimal(str(amount))
         except (ValueError, InvalidOperation):
             return Response(
-                {"detail": "Invalid bid amount."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Invalid bid amount."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Determine minimum bid (2% increment)
@@ -285,7 +292,7 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         min_increment = (min_bid * Decimal("0.02")).quantize(Decimal("0.01"))
         min_required_bid = (min_bid + min_increment).quantize(Decimal("0.01"))
 
-        # If Buy Now is set, ensure bids do not exceed it
+        # If Buy Now is set, ensure bid is less than the Buy Now price.
         if auction_item.buy_now_price:
             if amount >= auction_item.buy_now_price:
                 return Response(
@@ -301,12 +308,20 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Create the bid
+        # Extend auction time if less than 60 seconds remain.
+        time_left = auction_item.end_time - now
+        if time_left.total_seconds() < 60:
+            extension = timedelta(
+                minutes=2
+            )  # You can adjust the extension duration here.
+            auction_item.end_time = now + extension
+            auction_item.save()
+
+        # Create the bid.
         bid = Bid.objects.create(
             auction_item=auction_item, bidder=request.user, amount=amount
         )
-
-        # Update the current bid
+        # Update current bid.
         auction_item.current_bid = amount
         auction_item.save()
 
