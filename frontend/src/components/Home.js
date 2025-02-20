@@ -8,12 +8,13 @@ import {
   Button,
   Box,
   Card,
-  CardContent
+  CardContent,
+  Fade,
 } from '@mui/material';
 import { keyframes } from '@emotion/react';
 import { icons } from './CategoryIcons';
 import { useInView } from 'react-intersection-observer';
-// Import additional Material UI icons for the "How It Works" section
+// Additional icons for "How It Works" section
 import { MenuBook, Create, EmojiNature } from '@mui/icons-material';
 
 // ----- Keyframe Animations -----
@@ -82,7 +83,7 @@ const Home = () => {
   const displayedCategories = showAll ? categories : categories.slice(0, 15);
 
   return (
-    <Box sx={{ overflowY: 'scroll', height: '100vh', scrollBehavior: 'smooth' }}>
+    <Box sx={{ overflowY: 'auto', minHeight: '100vh', backgroundColor: 'background.default' }}>
       {/* HERO SECTION */}
       <Box
         sx={{
@@ -97,7 +98,7 @@ const Home = () => {
           animation: `${gradientAnimation} 15s ease infinite`,
         }}
       >
-        {/* Background image with minimalist overlay */}
+        {/* Background Image Overlay */}
         <Box
           sx={{
             position: 'absolute',
@@ -142,8 +143,8 @@ const Home = () => {
               variant="contained"
               onClick={() => navigate('/auction-list')}
               sx={{
-                backgroundColor: '#ffeb3b',
-                color: '#283593',
+                backgroundColor: 'secondary.main',
+                color: 'primary.contrastText',
                 fontSize: '1.1rem',
                 py: 1.5,
                 px: 4,
@@ -152,7 +153,7 @@ const Home = () => {
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                 transition: 'background-color 0.3s ease, transform 0.3s ease',
                 '&:hover': {
-                  backgroundColor: '#fdd835',
+                  backgroundColor: 'secondary.dark',
                   transform: 'scale(1.05)',
                 },
               }}
@@ -180,14 +181,14 @@ const Home = () => {
             sx={{
               mb: 4,
               fontWeight: 'bold',
-              color: '#283593',
+              color: 'primary.main',
               fontSize: { xs: '1.75rem', md: '2.5rem' },
               position: 'relative',
               '&::after': {
                 content: '""',
                 width: 80,
                 height: 4,
-                background: '#283593',
+                background: 'primary.main',
                 display: 'block',
                 mx: 'auto',
                 borderRadius: 2,
@@ -200,17 +201,17 @@ const Home = () => {
           </Typography>
         </AnimatedBox>
         <Grid container spacing={4} justifyContent="center">
-          {displayedCategories.map((category, idx) => {
-            const IconComponent = icons[category.name] || icons['Uncategorized'];
+          {displayedCategories.map((cat, idx) => {
+            const IconComponent = icons[cat.name] || icons['Uncategorized'];
             return (
               <Grid
                 item
-                key={category.id}
+                key={cat.id}
                 xs={12}
                 sm={6}
                 md={4}
                 lg={3}
-                onClick={() => handleCategoryClick(category.name)}
+                onClick={() => handleCategoryClick(cat.name)}
                 sx={{
                   cursor: 'pointer',
                   transition: 'transform 0.3s ease',
@@ -222,7 +223,7 @@ const Home = () => {
                     sx={{
                       borderRadius: '12px',
                       p: { xs: 2, md: 3 },
-                      boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+                      boxShadow: 3,
                       textAlign: 'center',
                       transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                       '&:hover': {
@@ -238,22 +239,9 @@ const Home = () => {
                         alignItems: 'center',
                       }}
                     >
-                      <IconComponent
-                        sx={{
-                          fontSize: '50px',
-                          color: '#3f51b5',
-                          mb: 2,
-                        }}
-                      />
-                      <Typography
-                        variant="subtitle1"
-                        sx={{
-                          fontSize: '1.2rem',
-                          fontWeight: 500,
-                          color: '#283593',
-                        }}
-                      >
-                        {category.name}
+                      <IconComponent sx={{ fontSize: '50px', color: 'primary.main', mb: 2 }} />
+                      <Typography variant="subtitle1" sx={{ fontSize: '1.2rem', fontWeight: 500, color: 'primary.main' }}>
+                        {cat.name}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -271,13 +259,13 @@ const Home = () => {
               px: 4,
               py: 1,
               borderRadius: '25px',
-              backgroundColor: '#3f51b5',
+              backgroundColor: 'primary.main',
               color: '#fff',
               fontSize: '1rem',
               textTransform: 'none',
               transition: 'background-color 0.3s ease',
               '&:hover': {
-                backgroundColor: '#5c6bc0',
+                backgroundColor: 'primary.dark',
               },
             }}
           >
@@ -285,48 +273,48 @@ const Home = () => {
           </Button>
         </Box>
       </Container>
-            {/* SECOND IMAGE SECTION */}
-<AnimatedBox>
-  <Box
-    sx={{
-      backgroundImage: 'url(/images/money-2180330_1280.jpg)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      height: { xs: '300px', md: '500px' },
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      position: 'relative',
-      mt: 8,
-    }}
-  >
-    {/* Optional overlay for better text readability */}
-    <Box
-      sx={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.4)',
-      }}
-    />
-    <Typography
-      variant="h3"
-      sx={{
-        position: 'relative',
-        color: '#fff',
-        fontWeight: 'bold',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-        fontSize: { xs: '1.8rem', md: '3rem' },
-      }}
-    >
-      The Power of Investments
-    </Typography>
-  </Box>
-</AnimatedBox>
 
-      {/* NEW LOWER SECTION: HOW IT WORKS */}
+      {/* SECOND IMAGE SECTION */}
+      <AnimatedBox>
+        <Box
+          sx={{
+            backgroundImage: 'url(/images/money-2180330_1280.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            height: { xs: '300px', md: '500px' },
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            position: 'relative',
+            mt: 8,
+          }}
+        >
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.4)',
+            }}
+          />
+          <Typography
+            variant="h3"
+            sx={{
+              position: 'relative',
+              color: '#fff',
+              fontWeight: 'bold',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+              fontSize: { xs: '1.8rem', md: '3rem' },
+            }}
+          >
+            The Power of Investments
+          </Typography>
+        </Box>
+      </AnimatedBox>
+
+      {/* HOW IT WORKS SECTION */}
       <Container
         maxWidth="lg"
         sx={{
@@ -342,7 +330,7 @@ const Home = () => {
             variant="h4"
             align="center"
             gutterBottom
-            sx={{ color: '#283593', fontWeight: 'bold', mb: 4 }}
+            sx={{ color: 'primary.main', fontWeight: 'bold', mb: 4 }}
           >
             How It Works
           </Typography>
@@ -350,17 +338,12 @@ const Home = () => {
         <Grid container spacing={4}>
           <Grid item xs={12} md={4}>
             <AnimatedBox delay="0.2s">
-              <Box
-                sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-              >
-                <MenuBook sx={{ fontSize: 80, color: '#3f51b5', mb: 2 }} />
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: 'bold', color: '#283593', mb: 1 }}
-                >
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <MenuBook sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 1 }}>
                   Search Auctions
                 </Typography>
-                <Typography variant="body2" align="center" sx={{ color: '#555' }}>
+                <Typography variant="body2" align="center" sx={{ color: 'text.secondary' }}>
                   Browse through thousands of unique items with ease.
                 </Typography>
               </Box>
@@ -368,17 +351,12 @@ const Home = () => {
           </Grid>
           <Grid item xs={12} md={4}>
             <AnimatedBox delay="0.4s">
-              <Box
-                sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-              >
-                <Create sx={{ fontSize: 80, color: '#3f51b5', mb: 2 }} />
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: 'bold', color: '#283593', mb: 1 }}
-                >
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <Create sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 1 }}>
                   Place Your Bid
                 </Typography>
-                <Typography variant="body2" align="center" sx={{ color: '#555' }}>
+                <Typography variant="body2" align="center" sx={{ color: 'text.secondary' }}>
                   Enter competitive bids and secure your chance to win.
                 </Typography>
               </Box>
@@ -386,17 +364,12 @@ const Home = () => {
           </Grid>
           <Grid item xs={12} md={4}>
             <AnimatedBox delay="0.6s">
-              <Box
-                sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-              >
-                <EmojiNature sx={{ fontSize: 80, color: '#3f51b5', mb: 2 }} />
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: 'bold', color: '#283593', mb: 1 }}
-                >
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <EmojiNature sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 1 }}>
                   Win & Enjoy
                 </Typography>
-                <Typography variant="body2" align="center" sx={{ color: '#555' }}>
+                <Typography variant="body2" align="center" sx={{ color: 'text.secondary' }}>
                   Celebrate your win and enjoy your prized item.
                 </Typography>
               </Box>
@@ -409,8 +382,8 @@ const Home = () => {
               variant="contained"
               onClick={() => navigate('/auction-list')}
               sx={{
-                backgroundColor: '#ffeb3b',
-                color: '#283593',
+                backgroundColor: 'secondary.main',
+                color: 'primary.contrastText',
                 fontSize: '1.1rem',
                 py: 1.5,
                 px: 4,
@@ -418,7 +391,7 @@ const Home = () => {
                 textTransform: 'none',
                 transition: 'background-color 0.3s ease, transform 0.3s ease',
                 '&:hover': {
-                  backgroundColor: '#fdd835',
+                  backgroundColor: 'secondary.dark',
                   transform: 'scale(1.05)',
                 },
               }}
@@ -432,7 +405,7 @@ const Home = () => {
       {/* FOOTER */}
       <Box
         sx={{
-          backgroundColor: '#283593',
+          backgroundColor: 'primary.main',
           color: '#fff',
           textAlign: 'center',
           py: 2,

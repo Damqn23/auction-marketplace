@@ -1,24 +1,17 @@
-import React, {
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+// --------------------------------------------------------
+// Key changes summarized:
+// 1) Make "Bid" button similar size/style to "Buy Now" button.
+// 2) Expand the TextField width to show full min bid amount.
+// 3) Enlarge "Buy Now" text and make it a black button (as an example).
+// 4) Adjust the "Buy Now: $..." text to be larger/hot-pink.
+// --------------------------------------------------------
+
+import React, { useContext, useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  getAllAuctionItems,
-  placeBid,
-  buyNow,
-} from "../services/auctionService";
-import { getAllCategories } from "../services/categoryService";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
+  Box,
   Button,
-  Card,
-  CardActions,
-  CardContent,
-  CardMedia,
-  Grid,
   Typography,
   TextField,
   Menu,
@@ -27,82 +20,29 @@ import {
   InputLabel,
   Select,
   IconButton,
-  Box,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import { keyframes } from "@emotion/react";
-import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
+
+import { getAllAuctionItems, placeBid, buyNow } from "../services/auctionService";
+import { getAllCategories } from "../services/categoryService";
+import { UserContext } from "../contexts/UserContext";
+
+import CountdownTimer from "./CountdownTimer";
 import BuyNowModal from "./BuyNowModal";
 import FavoriteButton from "./FavoriteButton";
 
-// ----- Keyframe Animations -----
-const borderShift = keyframes`
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-`;
-
-const pulseBackground = keyframes`
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-`;
-
-// ---------------------
-// CountdownTimer Component
-// ---------------------
-const CountdownTimer = ({ endTime }) => {
-  const calculateTimeLeft = useCallback(() => {
-    const difference = new Date(endTime) - new Date();
-    if (difference > 0) {
-      return {
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((difference / (1000 * 60)) % 60),
-        seconds: Math.floor((difference / 1000) % 60),
-      };
-    }
-    return null;
-  }, [endTime]);
-
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [calculateTimeLeft]);
-
-  if (!timeLeft) {
-    return <Typography component="span">Auction ended</Typography>;
-  }
-
-  return (
-    <Typography component="span">
-      {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
-    </Typography>
-  );
-};
-
-// ---------------------
-// AuctionList Component
-// ---------------------
 const AuctionList = () => {
   const { user } = useContext(UserContext);
   const queryClient = useQueryClient();
-  const [bidAmounts, setBidAmounts] = useState({});
-  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
-  const [sortBy, setSortBy] = useState("newest");
   const navigate = useNavigate();
 
-  // Get search query and category from URL parameters
+  // ----- URL search params and filters -----
   const locationHook = useLocation();
   const queryParams = new URLSearchParams(locationHook.search);
   const query = queryParams.get("q") || "";
   const categoryFromUrl = queryParams.get("category") || "";
 
-  // Initialize filter states
   const initialFilterValues = {
     min_price: "",
     max_price: "",
@@ -113,70 +53,41 @@ const AuctionList = () => {
   const [pendingFilters, setPendingFilters] = useState(initialFilterValues);
   const [appliedFilters, setAppliedFilters] = useState(initialFilterValues);
 
-  // Fetch categories for the filter dropdown
+  // ----- Sort & Filter UI state -----
+  const [sortBy, setSortBy] = useState("newest");
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+
+  // ----- Data fetching -----
   const { data: categoriesData } = useQuery({
     queryKey: ["categories"],
     queryFn: getAllCategories,
   });
 
-  // Fetch auction items using applied filters
   const { data: auctionItems, isLoading, isError } = useQuery({
     queryKey: ["auctionItems", query, appliedFilters, sortBy],
     queryFn: () => {
       const params = { ...appliedFilters, sort_by: sortBy };
-      if (query) {
-        params.q = query;
-      }
+      if (query) params.q = query;
       return getAllAuctionItems(params);
     },
-    onError: () => {
-      toast.error("Failed to load auction items.");
-    },
+    onError: () => toast.error("Failed to load auction items."),
   });
 
-  // New state for Bulgarian cities
+  // ----- Bulgarian cities (for Location filter) -----
   const [cities, setCities] = useState([]);
-
-  // Fetch Bulgarian cities from the local bg.json file
   useEffect(() => {
     fetch("/data/bg.json")
       .then((res) => res.json())
       .then((data) => {
-        // Sort the data alphabetically by the "city" field
-        const sortedCities = data.sort((a, b) =>
-          a.city.localeCompare(b.city)
-        );
+        const sortedCities = data.sort((a, b) => a.city.localeCompare(b.city));
         setCities(sortedCities);
       })
       .catch((error) => console.error("Error fetching cities:", error));
   }, []);
 
-  const handleFilterClick = (event) => {
-    setFilterAnchorEl(event.currentTarget);
-  };
+  // ----- Bidding & Buy Now mutations -----
+  const [bidAmounts, setBidAmounts] = useState({});
 
-  const handleFilterClose = () => {
-    setFilterAnchorEl(null);
-  };
-
-  const handleFilterChange = (e) => {
-    setPendingFilters({
-      ...pendingFilters,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSortChange = (e) => {
-    setSortBy(e.target.value);
-  };
-
-  const applyFilters = () => {
-    setAppliedFilters(pendingFilters);
-    handleFilterClose();
-    queryClient.invalidateQueries(["auctionItems"]);
-  };
-
-  // Place Bid Mutation
   const bidMutation = useMutation({
     mutationFn: placeBid,
     onSuccess: () => {
@@ -184,15 +95,19 @@ const AuctionList = () => {
       toast.success("Bid placed successfully!");
     },
     onError: (error) => {
-      if (error.response && error.response.data.detail) {
-        toast.error(error.response.data.detail);
-      } else {
-        toast.error("Failed to place bid. Please try again.");
-      }
+      toast.error(error?.response?.data?.detail || "Failed to place bid.");
     },
   });
 
-  // Buy Now Mutation
+  const handlePlaceBid = (auctionId) => {
+    const amount = parseFloat(bidAmounts[auctionId]);
+    if (isNaN(amount)) {
+      toast.error("Please enter a valid bid amount.");
+      return;
+    }
+    bidMutation.mutate({ id: auctionId, amount });
+  };
+
   const buyNowMutation = useMutation({
     mutationFn: buyNow,
     onSuccess: () => {
@@ -200,22 +115,9 @@ const AuctionList = () => {
       toast.success("Purchase successful!");
     },
     onError: (error) => {
-      if (error.response && error.response.data.detail) {
-        toast.error(error.response.data.detail);
-      } else {
-        toast.error("Failed to complete purchase. Please try again.");
-      }
+      toast.error(error?.response?.data?.detail || "Failed to complete purchase.");
     },
   });
-
-  const handlePlaceBid = (id) => {
-    const amount = parseFloat(bidAmounts[id]);
-    if (isNaN(amount)) {
-      toast.error("Please enter a valid bid amount.");
-      return;
-    }
-    bidMutation.mutate({ id, amount });
-  };
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -224,332 +126,301 @@ const AuctionList = () => {
     setSelectedItem(item);
     setModalOpen(true);
   };
-
   const closeBuyNowModal = () => {
     setSelectedItem(null);
     setModalOpen(false);
   };
-
   const handleConfirmBuyNow = () => {
     if (!selectedItem) return;
     buyNowMutation.mutate(selectedItem.id);
     closeBuyNowModal();
   };
 
-  if (isLoading)
-    return (
-      <Typography variant="body1" sx={{ p: 2 }}>
-        Loading...
-      </Typography>
-    );
-  if (isError)
-    return (
-      <Typography variant="body1" sx={{ p: 2 }}>
-        Failed to load auction items.
-      </Typography>
-    );
+  // ----- Filter Handlers -----
+  const handleFilterClick = (event) => setFilterAnchorEl(event.currentTarget);
+  const handleFilterClose = () => setFilterAnchorEl(null);
+  const handleFilterChange = (e) => {
+    setPendingFilters({ ...pendingFilters, [e.target.name]: e.target.value });
+  };
+  const handleSortChange = (e) => setSortBy(e.target.value);
+  const applyFilters = () => {
+    setAppliedFilters(pendingFilters);
+    handleFilterClose();
+    queryClient.invalidateQueries(["auctionItems"]);
+  };
+
+  // ----- Loading/Error states -----
+  if (isLoading) {
+    return <Typography sx={{ p: 2 }}>Loading...</Typography>;
+  }
+  if (isError) {
+    return <Typography sx={{ p: 2 }}>Failed to load auction items.</Typography>;
+  }
 
   return (
-    <Box
-      sx={{
-        position: "relative",
-        p: "20px",
-        width: "100%",
-        m: 0,
-        background: "linear-gradient(135deg, #a6c0fe, #f68084)",
-        overflow: "hidden",
-        fontFamily: "'Roboto', sans-serif",
-      }}
-    >
-      {/* Header with Filter & Sort Controls */}
+    <Box sx={{ maxWidth: 1200, mx: "auto", p: 2 }}>
+      {/* ----------------------
+          Top Bar (Filters + Sort)
+         ---------------------- */}
       <Box
         sx={{
-          position: "sticky",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          background: "rgba(255, 255, 255, 0.95)",
-          py: "12px",
-          px: "24px",
-          borderBottom: "1px solid #ddd",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          mb: 2,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: "20px",
+          gap: 2,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: "20px" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <IconButton
             onClick={handleFilterClick}
             sx={{
-              backgroundColor: "#ff8a80",
-              color: "#ffffff",
-              borderRadius: "8px",
-              py: "8px",
-              px: "16px",
-              display: "flex",
-              alignItems: "center",
-              transition: "background-color 0.3s ease, transform 0.2s ease",
-              "&:hover": {
-                backgroundColor: "#ff5252",
-                transform: "scale(1.05)",
-              },
+              backgroundColor: "primary.main",
+              color: "#fff",
+              "&:hover": { backgroundColor: "primary.dark" },
             }}
           >
             <FilterListIcon />
-            <Typography variant="body1" sx={{ ml: 1 }}>
-              Filters
-            </Typography>
           </IconButton>
-          <FormControl
-            variant="outlined"
-            size="small"
-            sx={{
-              backgroundColor: "#e0f7fa",
-              borderRadius: "8px",
-              p: "4px 8px",
-              "& .MuiInputBase-root, & .MuiInputLabel-root": {
-                color: "#333",
-              },
-            }}
-          >
-            <InputLabel>Sort By</InputLabel>
-            <Select value={sortBy} onChange={handleSortChange} label="Sort By">
-              <MenuItem value="newest">Newest</MenuItem>
-              <MenuItem value="ending_soon">Ending Soon</MenuItem>
-              <MenuItem value="highest_bid">Highest Bid</MenuItem>
-              <MenuItem value="lowest_price">Lowest Price</MenuItem>
-            </Select>
-          </FormControl>
+          <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+            Filters
+          </Typography>
         </Box>
+        <FormControl variant="outlined" size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Sort By</InputLabel>
+          <Select value={sortBy} onChange={handleSortChange} label="Sort By">
+            <MenuItem value="newest">Newest</MenuItem>
+            <MenuItem value="ending_soon">Ending Soon</MenuItem>
+            <MenuItem value="highest_bid">Highest Bid</MenuItem>
+            <MenuItem value="lowest_price">Lowest Price</MenuItem>
+          </Select>
+        </FormControl>
       </Box>
 
-      {/* Auction Items Grid */}
+      {/* ----------------------
+          Items List (OLX-style Row)
+         ---------------------- */}
       {Array.isArray(auctionItems) && auctionItems.length > 0 ? (
-        <Grid container spacing={2}>
+        <Box>
           {auctionItems.map((item) => {
             const isNotOwner =
-              user &&
-              item.owner &&
-              user.username !== item.owner.username;
+              user && item.owner && user.username !== item.owner.username;
             const canBid =
-              isNotOwner &&
-              item.status === "active" &&
-              !item.buy_now_buyer;
+              isNotOwner && item.status === "active" && !item.buy_now_buyer;
             const canBuyNow =
               isNotOwner &&
               item.status === "active" &&
               item.buy_now_price &&
               !item.buy_now_buyer;
-            const minBidValue = item.current_bid
+
+            // Minimum bid logic
+            const minBid = item.current_bid
               ? parseFloat(item.current_bid)
               : parseFloat(item.starting_bid);
-            const minIncrement = minBidValue * 0.02;
-            const minRequiredBid = (minBidValue + minIncrement).toFixed(2);
+            const minIncrement = minBid * 0.02;
+            const minRequiredBid = (minBid + minIncrement).toFixed(2);
 
             return (
-              <Grid item xs={12} md={6} lg={4} key={item.id}>
-                <Card
-                  onClick={() => navigate(`/auction/${item.id}`)}
+              <Box
+                key={item.id}
+                onClick={() => navigate(`/auction/${item.id}`)}
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  border: "1px solid #ddd",
+                  borderRadius: 2,
+                  mb: 2,
+                  p: 2,
+                  cursor: "pointer",
+                  "&:hover": {
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                  },
+                }}
+              >
+                {/* --- Left: Square Image --- */}
+                <Box
                   sx={{
-                    borderRadius: "16px",
-                    position: "relative",
-                    background: "#ffffff",
-                    overflow: "hidden",
-                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                    zIndex: 0,
-                    cursor: "pointer",
-                    "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: "0 12px 20px rgba(0, 0, 0, 0.15)",
-                    },
-                    "&::before": {
-                      content: '""',
-                      position: "absolute",
-                      top: "-2px",
-                      left: "-2px",
-                      right: "-2px",
-                      bottom: "-2px",
-                      background:
-                        "linear-gradient(45deg, #ff8a80, #81d4fa, #4fc3f7, #ff5252)",
-                      backgroundSize: "400% 400%",
-                      zIndex: -1,
-                      filter: "blur(8px)",
-                      animation: `${borderShift} 10s ease infinite`,
-                      borderRadius: "18px",
-                      opacity: 0.8,
-                    },
+                    width: 150,
+                    height: 150,
+                    mr: 2,
+                    flexShrink: 0,
                   }}
                 >
                   {item.images && item.images.length > 0 ? (
-                    <CardMedia
-                      component="img"
-                      height="250"
-                      image={item.images[0].image}
+                    <img
+                      src={item.images[0].image}
                       alt={item.title}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        borderRadius: "6px",
+                      }}
                     />
                   ) : (
                     <Box
                       sx={{
-                        height: "250px",
+                        width: "100%",
+                        height: "100%",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        background:
-                          "linear-gradient(135deg, #f5f7fa, #c3cfe2)",
-                        animation: `${pulseBackground} 4s ease-in-out infinite`,
+                        backgroundColor: "#f4f4f4",
+                        borderRadius: "6px",
                       }}
                     >
-                      <Typography variant="body2" color="textSecondary">
-                        No image available
+                      <Typography variant="caption" color="textSecondary">
+                        No image
                       </Typography>
                     </Box>
                   )}
-                  <CardContent sx={{ mt: 1 }}>
-                    <Typography variant="h6" component="div" gutterBottom>
-                      {item.title}
+                </Box>
+
+                {/* --- Middle: Title, Category, Current Bid, Time Left, City, Condition --- */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "hidden",
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: "bold", mb: 0.5 }}>
+                    {item.title}
+                  </Typography>
+                  {item.category_data?.name && (
+                    <Typography variant="body2" color="textSecondary">
+                      {item.category_data.name}
                     </Typography>
-                    {item.category_data && (
-                      <Typography variant="body2" color="textSecondary">
-                        <strong>Category:</strong> {item.category_data.name}
-                      </Typography>
-                    )}
-                    <Typography variant="body1">
-                      <strong>Starting Bid:</strong> ${item.starting_bid}
+                  )}
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    <strong>Current Bid:</strong>{" "}
+                    {item.current_bid ? `$${item.current_bid}` : "No bids yet"}
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Time Left:</strong>{" "}
+                    <CountdownTimer endTime={item.end_time} />
+                  </Typography>
+
+                  {item.location && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      <strong>City:</strong> {item.location}
                     </Typography>
-                    <Typography variant="body1">
-                      <strong>Current Bid:</strong>{" "}
-                      {item.current_bid ? `$${item.current_bid}` : "No bids yet"}
-                    </Typography>
-                    {item.buy_now_price && (
-                      <Typography variant="body1" color="secondary">
-                        <strong>Buy Now Price:</strong> ${item.buy_now_price}
-                      </Typography>
-                    )}
+                  )}
+                  {item.condition && (
                     <Typography variant="body2">
-                      <strong>Time Remaining:</strong>{" "}
-                      <CountdownTimer endTime={item.end_time} />
+                      <strong>Condition:</strong> {item.condition}
                     </Typography>
-                    {item.owner && item.owner.username && (
-                      <Typography variant="body2">
-                        <strong>Owner:</strong> {item.owner.username}
-                      </Typography>
-                    )}
-                    {item.buy_now_buyer && (
-                      <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-                        Purchased via Buy Now by: {item.buy_now_buyer.username}
-                      </Typography>
-                    )}
-                  </CardContent>
-                  <CardActions
-                    onClick={(e) => e.stopPropagation()}
-                    sx={{
-                      display: "flex",
-                      flexDirection: { xs: "column", md: "row" },
-                      alignItems: { xs: "flex-start", md: "center" },
-                      justifyContent: "space-between",
-                      p: "16px",
-                    }}
-                  >
-                    <FavoriteButton auctionItemId={item.id} />
-                    {isNotOwner && (
-                      <Box
+                  )}
+                </Box>
+
+                {/* --- Right: Buy Now Price, Bid & Heart (onClick stopPropagation) --- */}
+                <Box
+                  onClick={(e) => e.stopPropagation()}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-end",
+                    gap: 1,
+                  }}
+                >
+                  {/* Buy Now Price: bigger/hot-pink */}
+                  {item.buy_now_price && (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: "black",
+                        fontWeight: "bold",
+                        fontSize: "1.1rem",
+                      }}
+                    >
+                      Buy Now: ${item.buy_now_price}
+                    </Typography>
+                  )}
+
+                  {/* Heart icon */}
+                  <FavoriteButton auctionItemId={item.id} />
+
+                  {/* Bid Input & Button */}
+                  {canBid && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <TextField
+                        label={`Min: $${minRequiredBid}`}
+                        placeholder={`$${minRequiredBid}`}
+                        type="number"
+                        value={bidAmounts[item.id] || ""}
+                        onChange={(e) =>
+                          setBidAmounts({
+                            ...bidAmounts,
+                            [item.id]: e.target.value,
+                          })
+                        }
+                        variant="outlined"
+                        size="small"
+                        // Enough width so the entire min bid is visible
+                        sx={{ width: 130 }}
+                      />
+                      <Button
+                        variant="contained"
+                        onClick={() => handlePlaceBid(item.id)}
                         sx={{
-                          ml: "auto",
-                          display: "flex",
-                          alignItems: "center",
+                          backgroundColor: "#2e7d32", // green
+                          color: "#fff",
+                          fontSize: "0.875rem",
+                          fontWeight: "bold",
+                          textTransform: "none",
+                          padding: "6px 12px",
+                          "&:hover": {
+                            backgroundColor: "#1b5e20",
+                          },
                         }}
                       >
-                        {canBid && (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                            }}
-                          >
-                            <TextField
-                              label={`Min: $${minRequiredBid}`}
-                              type="number"
-                              value={bidAmounts[item.id] || ""}
-                              onChange={(e) =>
-                                setBidAmounts({
-                                  ...bidAmounts,
-                                  [item.id]: e.target.value,
-                                })
-                              }
-                              inputProps={{
-                                min: minRequiredBid,
-                                step: "0.01",
-                              }}
-                              variant="outlined"
-                              size="small"
-                              sx={{ width: "100px" }}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <Button
-                              variant="contained"
-                              color="success"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePlaceBid(item.id);
-                              }}
-                              sx={{
-                                textTransform: "none",
-                                transition: "background-color 0.3s ease",
-                                "&:hover": {
-                                  backgroundColor: "#66bb6a",
-                                },
-                              }}
-                            >
-                              Bid
-                            </Button>
-                          </Box>
-                        )}
-                        {canBuyNow && (
-                          <Button
-                            variant="contained"
-                            color="secondary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openBuyNowModal(item);
-                            }}
-                            sx={{
-                              backgroundColor: "#ff5722",
-                              color: "#ffffff",
-                              textTransform: "none",
-                              ml: { xs: 0, md: "16px" },
-                              mt: { xs: "10px", md: 0 },
-                              transition:
-                                "background-color 0.3s ease, transform 0.3s ease",
-                              "&:hover": {
-                                backgroundColor: "#e64a19",
-                                transform: "scale(1.05)",
-                              },
-                              width: { xs: "100%", md: "auto" },
-                            }}
-                          >
-                            Buy Now
-                          </Button>
-                        )}
-                      </Box>
-                    )}
-                  </CardActions>
-                </Card>
-              </Grid>
+                        BID
+                      </Button>
+                    </Box>
+                  )}
+
+                  {/* Buy Now button: bigger, black background, white text */}
+                  {canBuyNow && (
+                    <Button
+                      variant="contained"
+                      onClick={() => openBuyNowModal(item)}
+                      sx={{
+                        mt: canBid ? 0 : 1,
+                        backgroundColor: "#000000",
+                        color: "#ffffff",
+                        fontWeight: "bold",
+                        fontSize: "0.9rem",
+                        padding: "8px 16px",
+                        textTransform: "none",
+                        "&:hover": {
+                          backgroundColor: "#333333",
+                        },
+                      }}
+                    >
+                      BUY NOW
+                    </Button>
+                  )}
+                </Box>
+              </Box>
             );
           })}
-        </Grid>
+        </Box>
       ) : (
-        <Typography variant="body1" sx={{ mt: 2 }}>
-          {query
-            ? "No auction items found for your search."
-            : "No auction items available."}
+        <Typography sx={{ mt: 2 }}>
+          {query ? "No auction items found for your search." : "No auction items available."}
         </Typography>
       )}
 
+      {/* Buy Now Modal */}
       {selectedItem && (
         <BuyNowModal
           open={modalOpen}
@@ -565,7 +436,7 @@ const AuctionList = () => {
         open={Boolean(filterAnchorEl)}
         onClose={handleFilterClose}
       >
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: 2, width: 250 }}>
           <Typography variant="h6" gutterBottom>
             Filters
           </Typography>
@@ -601,7 +472,6 @@ const AuctionList = () => {
               <MenuItem value="Refurbished">Refurbished</MenuItem>
             </Select>
           </FormControl>
-          {/* Use a dropdown for Location with the fetched cities */}
           <TextField
             select
             label="Location"
@@ -614,9 +484,9 @@ const AuctionList = () => {
             <MenuItem value="">
               <em>Select City</em>
             </MenuItem>
-            {cities.map((city) => (
-              <MenuItem key={city.city} value={city.city}>
-                {city.city}
+            {cities.map((cityObj) => (
+              <MenuItem key={cityObj.city} value={cityObj.city}>
+                {cityObj.city}
               </MenuItem>
             ))}
           </TextField>
@@ -642,7 +512,7 @@ const AuctionList = () => {
             color="primary"
             fullWidth
             onClick={applyFilters}
-            sx={{ mt: "10px" }}
+            sx={{ mt: 1 }}
           >
             Apply Filters
           </Button>

@@ -1,3 +1,4 @@
+// frontend/src/components/CategoryIcons.js
 import {
     Devices,
     Checkroom,
