@@ -93,17 +93,11 @@ class AuctionImageSerializer(serializers.ModelSerializer):
 class AuctionItemSerializer(serializers.ModelSerializer):
     owner = UserSerializer(read_only=True)  # Serialize 'owner' as a nested object
     bids = BidSerializer(many=True, read_only=True)
-    images = AuctionImageSerializer(
-        many=True, read_only=True
-    )  # Nested Serializer for images
-    buy_now_buyer = UserSerializer(
-        read_only=True
-    )  # Include buyer details if purchased via Buy Now
+    images = AuctionImageSerializer(many=True, read_only=True)
+    buy_now_buyer = UserSerializer(read_only=True)
     winner = UserSerializer(read_only=True)
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
-    # Optionally, to return nested category data in GET responses:
     category_data = CategorySerializer(source="category", read_only=True)
-    # New fields (if you added them in the model):
     condition = serializers.CharField()
     location = serializers.CharField()
 
@@ -129,11 +123,7 @@ class AuctionItemSerializer(serializers.ModelSerializer):
             "condition",
             "location",
         ]
-        read_only_fields = [
-            "status",
-            "buy_now_buyer",
-            "winner",
-        ]  # Make these fields read-only
+        read_only_fields = ["status", "buy_now_buyer", "winner"]
 
     def validate(self, data):
         """
@@ -143,17 +133,18 @@ class AuctionItemSerializer(serializers.ModelSerializer):
         starting_bid = data.get(
             "starting_bid", getattr(self.instance, "starting_bid", None)
         )
-
         if buy_now_price is not None and starting_bid is not None:
             if buy_now_price <= starting_bid:
                 raise serializers.ValidationError(
                     "Buy Now price must be higher than the starting bid."
                 )
-
         return data
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
+        # Override the status with effective_status so that it returns "closed" when end_time has passed.
+        representation["status"] = instance.effective_status
+
         request = self.context.get("request")
         if instance.image and request:
             representation["image"] = request.build_absolute_uri(instance.image.url)

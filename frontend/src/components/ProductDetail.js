@@ -1,44 +1,28 @@
 import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  getAuctionItem,
-  placeBid,
-  buyNow,
-  deleteAuctionItem,
-} from '../services/auctionService';
+import { getAuctionItem, placeBid, buyNow, deleteAuctionItem, getSimilarAuctions } from '../services/auctionService';
 import { UserContext } from '../contexts/UserContext';
 import { toast } from 'react-toastify';
 import moment from 'moment';
 import {
+  Box,
+  Typography,
+  TextField,
   Button,
   Card,
   CardContent,
   CardMedia,
-  Typography,
-  TextField,
-  Tooltip,
   Grid,
-  Box,
   IconButton,
+  Fade,
+  Divider,
 } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { keyframes } from '@emotion/react';
 
-// Keyframe Animations
-const gradientBackground = keyframes`
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-`;
-
-const fadeIn = keyframes`
-  from { opacity: 0; }
-  to { opacity: 1; }
-`;
-
-// CountdownTimer Component
+// --- Countdown Timer Component ---
 const CountdownTimer = ({ endTime }) => {
   const calculateTimeLeft = useCallback(() => {
     const difference = new Date(endTime) - new Date();
@@ -54,7 +38,6 @@ const CountdownTimer = ({ endTime }) => {
   }, [endTime]);
 
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
-
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
@@ -73,20 +56,17 @@ const CountdownTimer = ({ endTime }) => {
   );
 };
 
-// ImageSlider Component
+// --- Image Slider Component ---
 const ImageSlider = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-
   const handlePrev = (e) => {
     e.stopPropagation();
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
   };
-
   const handleNext = (e) => {
     e.stopPropagation();
     setCurrentIndex((prev) => (prev + 1) % images.length);
   };
-
   return (
     <Box sx={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
       <IconButton
@@ -146,7 +126,7 @@ const ImageSlider = ({ images }) => {
   );
 };
 
-// ProductDetails Component
+// --- ProductDetails Component ---
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -154,20 +134,23 @@ const ProductDetails = () => {
   const queryClient = useQueryClient();
   const [bidAmount, setBidAmount] = useState('');
 
-  // Fetch single auction item
-  const {
-    data: auctionItem,
-    isLoading,
-    isError,
-  } = useQuery({
+  // Fetch auction item data
+  const { data: auctionItem, isLoading, isError } = useQuery({
     queryKey: ['auctionItem', id],
     queryFn: () => getAuctionItem(id),
-    onError: () => {
-      toast.error('Failed to load auction item.');
-    },
+    onError: () => toast.error('Failed to load auction item.'),
   });
 
-  // Place Bid Mutation
+  // Fetch similar auctions (by category, excluding current auction)
+  const { data: similarAuctions } = useQuery({
+    queryKey: ['similarAuctions', auctionItem?.category_data?.name],
+    queryFn: () => getSimilarAuctions(auctionItem?.category_data?.name, auctionItem.id),
+    enabled: !!auctionItem,
+  });
+  
+  
+
+  // Define mutations (bid, buy now, delete) as needed
   const bidMutation = useMutation({
     mutationFn: placeBid,
     onSuccess: () => {
@@ -184,7 +167,6 @@ const ProductDetails = () => {
     },
   });
 
-  // Buy Now Mutation
   const buyNowMutation = useMutation({
     mutationFn: buyNow,
     onSuccess: () => {
@@ -201,7 +183,6 @@ const ProductDetails = () => {
     },
   });
 
-  // Delete Auction Item Mutation
   const deleteMutation = useMutation({
     mutationFn: deleteAuctionItem,
     onSuccess: () => {
@@ -215,19 +196,11 @@ const ProductDetails = () => {
   });
 
   if (isLoading)
-    return (
-      <Typography variant="body1" sx={{ p: 2 }}>
-        Loading...
-      </Typography>
-    );
+    return <Typography variant="body1" sx={{ p: 2 }}>Loading...</Typography>;
   if (isError || !auctionItem)
-    return (
-      <Typography variant="body1" sx={{ p: 2 }}>
-        Failed to load auction item.
-      </Typography>
-    );
+    return <Typography variant="body1" sx={{ p: 2 }}>Failed to load auction item.</Typography>;
 
-  // Checks
+  // Determine if the user can bid or buy now
   const canBid =
     user &&
     auctionItem.owner &&
@@ -250,7 +223,7 @@ const ProductDetails = () => {
   const minIncrement = minBid * 0.02;
   const minRequiredBid = (minBid + minIncrement).toFixed(2);
 
-  // Place a bid
+  // Handlers for bid, buy now, delete
   const handlePlaceBid = () => {
     const amount = parseFloat(bidAmount);
     if (isNaN(amount)) {
@@ -264,14 +237,12 @@ const ProductDetails = () => {
     bidMutation.mutate({ id: auctionItem.id, amount });
   };
 
-  // Buy Now
   const handleBuyNow = () => {
     if (window.confirm('Are you sure you want to buy this item now?')) {
       buyNowMutation.mutate(auctionItem.id);
     }
   };
 
-  // Delete
   const handleDelete = () => {
     if (window.confirm('Are you sure you want to delete this auction item?')) {
       deleteMutation.mutate(auctionItem.id);
@@ -279,253 +250,168 @@ const ProductDetails = () => {
   };
 
   return (
+    <Box sx={{ p: 3, backgroundColor: '#f7f7f7', minHeight: '100vh' }}>
+      <Fade in timeout={1000}>
+        <Box sx={{ maxWidth: 1200, mx: 'auto', backgroundColor: '#fff', p: 3, borderRadius: 2, boxShadow: 3 }}>
+          {/* Product Header */}
+          <Grid container spacing={2}>
+            {/* Left Column: Image Slider */}
+            <Grid item xs={12} md={6}>
+              {auctionItem.images && auctionItem.images.length > 1 ? (
+                <ImageSlider images={auctionItem.images} />
+              ) : auctionItem.images?.length === 1 ? (
+                <CardMedia
+                  component="img"
+                  image={auctionItem.images[0].image}
+                  alt={auctionItem.title}
+                  sx={{ width: '100%', height: 'auto', objectFit: 'cover' }}
+                />
+              ) : auctionItem.image ? (
+                <CardMedia
+                  component="img"
+                  image={auctionItem.image}
+                  alt={auctionItem.title}
+                  sx={{ width: '100%', height: 'auto', objectFit: 'cover' }}
+                />
+              ) : (
+                <Typography variant="body2">No image available.</Typography>
+              )}
+            </Grid>
+            {/* Right Column: Details */}
+            <Grid item xs={12} md={6}>
+              <Typography variant="h4" gutterBottom>{auctionItem.title}</Typography>
+              <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
+                Price: ${auctionItem.buy_now_price || auctionItem.current_bid || auctionItem.starting_bid}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                {auctionItem.description}
+              </Typography>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="body2" color="textSecondary">
+                Category: {auctionItem.category_data?.name}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Condition: {auctionItem.condition}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Location: {auctionItem.location}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Seller: {auctionItem.owner?.username}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Time Remaining: <CountdownTimer endTime={auctionItem.end_time} />
+              </Typography>
+              {/* Action Buttons */}
+              {canBid && (
+                <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <TextField
+                    type="number"
+                    value={bidAmount}
+                    onChange={(e) => setBidAmount(e.target.value)}
+                    label={`Min bid: $${minRequiredBid}`}
+                    size="small"
+                    sx={{ width: 150 }}
+                  />
+                  <Button variant="contained" color="success" onClick={handlePlaceBid}>
+                    Bid
+                  </Button>
+                </Box>
+              )}
+              {canBuyNow && (
+                <Button variant="contained" color="secondary" onClick={handleBuyNow} sx={{ mt: 2 }}>
+                  Buy Now for ${auctionItem.buy_now_price}
+                </Button>
+              )}
+              {user?.username === auctionItem.owner?.username && (
+                <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                  <Button variant="outlined" onClick={handleDelete}>Delete</Button>
+                  <Button variant="outlined" component={Link} to={`/update/${auctionItem.id}`}>
+                    Update
+                  </Button>
+                </Box>
+              )}
+            </Grid>
+          </Grid>
+          {/* Bid History */}
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="h6">Bid History:</Typography>
+            {auctionItem.bids && auctionItem.bids.length ? (
+              <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0 }}>
+                {auctionItem.bids.map((bid) => (
+                  <Box key={bid.id} component="li" sx={{ py: 1, borderBottom: '1px solid #eee' }}>
+                    {bid.bidder?.username} bid ${bid.amount} on {moment(bid.timestamp).format('MMMM Do YYYY, h:mm:ss a')}
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <Typography variant="body2">No bids yet.</Typography>
+            )}
+          </Box>
+        </Box>
+      </Fade>
+      {/* Similar Auctions Section */}
+{similarAuctions && similarAuctions.length > 0 && (
+  <Box sx={{ mt: 4 }}>
+    <Typography variant="h5" sx={{ mb: 2, ml: 1 }}>
+      Similar Products
+    </Typography>
     <Box
       sx={{
-        width: '100%',
-        minHeight: '100vh',
-        background: 'linear-gradient(270deg, #001f3f, #0074D9, #7FDBFF)',
-        backgroundSize: '600% 600%',
-        animation: `${gradientBackground} 16s ease infinite`,
-        p: 0,
-        boxSizing: 'border-box',
+        display: 'flex',
+        flexWrap: 'nowrap',
+        overflowX: 'auto',
+        gap: 2,
+        p: 1,
       }}
     >
-      <Box
-        sx={{
-          width: '100%',
-          maxWidth: '1400px',
-          mx: 'auto',
-          background: 'rgba(255, 255, 255, 0.95)',
-          p: 4,
-          boxSizing: 'border-box',
-        }}
-      >
-        <Card sx={{ p: 2 }}>
-          <CardContent>
-            {/* Title & Description */}
-            <Typography variant="h4" gutterBottom sx={{ textAlign: 'center', mb: 3 }}>
-              {auctionItem.title}
-            </Typography>
-            <Typography
-              variant="body1"
-              gutterBottom
-              sx={{ fontSize: '1.1rem', lineHeight: 1.6, color: '#555', mb: 3 }}
-            >
-              {auctionItem.description}
-            </Typography>
-
-            <Grid container spacing={2}>
-              {/* Left Column: Images */}
-              <Grid item xs={12} md={6}>
-                {auctionItem.images && auctionItem.images.length > 1 ? (
-                  <ImageSlider images={auctionItem.images} />
-                ) : auctionItem.images?.length === 1 ? (
-                  <CardMedia
-                    component="img"
-                    image={auctionItem.images[0].image}
-                    alt={auctionItem.title}
-                    sx={{ width: '100%', height: 'auto', objectFit: 'cover' }}
-                  />
-                ) : auctionItem.image ? (
-                  <CardMedia
-                    component="img"
-                    image={auctionItem.image}
-                    alt={auctionItem.title}
-                    sx={{ width: '100%', height: 'auto', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <Typography variant="body2">No image available.</Typography>
-                )}
-              </Grid>
-
-              {/* Right Column: Details */}
-              <Grid item xs={12} md={6}>
-                <Box sx={{ p: 2 }}>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      {auctionItem.category_data && (
-                        <Typography variant="body2">
-                          <strong>Category:</strong> {auctionItem.category_data.name}
-                        </Typography>
-                      )}
-                      {auctionItem.condition && (
-                        <Typography variant="body2">
-                          <strong>Condition:</strong> {auctionItem.condition}
-                        </Typography>
-                      )}
-                      {auctionItem.location && (
-                        <Typography variant="body2">
-                          <strong>Location:</strong> {auctionItem.location}
-                        </Typography>
-                      )}
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2">
-                        <strong>Status:</strong> {auctionItem.status}
-                      </Typography>
-                      <Typography variant="body2">
-                        <strong>Time Remaining:</strong>{' '}
-                        <CountdownTimer endTime={auctionItem.end_time} />
-                      </Typography>
-                      {auctionItem.owner?.username && (
-                        <Typography variant="body2">
-                          <strong>Owner:</strong> {auctionItem.owner.username}
-                        </Typography>
-                      )}
-                    </Grid>
-                  </Grid>
-
-                  <Box
-                    sx={{
-                      mt: 2,
-                      borderTop: '2px solid #eee',
-                      pt: 2,
-                      fontSize: '1.2rem',
-                      color: '#333',
-                    }}
-                  >
-                    <Typography variant="h6">
-                      <strong>Starting Bid:</strong> ${auctionItem.starting_bid}
-                    </Typography>
-                    <Typography variant="h6">
-                      <strong>Current Bid:</strong>{' '}
-                      {auctionItem.current_bid ? `$${auctionItem.current_bid}` : 'No bids yet'}
-                    </Typography>
-                    {auctionItem.buy_now_price && (
-                      <Typography variant="h6" sx={{ color: '#e91e63', fontWeight: 'bold' }}>
-                        <strong>Buy Now Price:</strong> ${auctionItem.buy_now_price}
-                      </Typography>
-                    )}
-                  </Box>
-
-                  {auctionItem.buy_now_buyer?.username && (
-                    <Typography variant="body1" sx={{ mt: 2 }}>
-                      Purchased via Buy Now by: {auctionItem.buy_now_buyer.username}
-                    </Typography>
-                  )}
-
-                  {/* Bidding Section */}
-                  {canBid && (
-                    <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Typography variant="subtitle1">
-                        Place Your Bid (Min: ${minRequiredBid}):
-                      </Typography>
-                      <TextField
-                        type="number"
-                        value={bidAmount}
-                        onChange={(e) => setBidAmount(e.target.value)}
-                        inputProps={{
-                          min: minRequiredBid,
-                          step: '0.01',
-                        }}
-                        variant="outlined"
-                        size="small"
-                        sx={{
-                          width: '150px',
-                          transition: 'border-color 0.3s ease, transform 0.3s ease',
-                          '& input': { p: '10px' },
-                        }}
-                      />
-                      <Button
-                        variant="contained"
-                        onClick={handlePlaceBid}
-                        sx={{
-                          backgroundColor: '#4caf50',
-                          color: '#fff',
-                          textTransform: 'none',
-                          '&:hover': { transform: 'scale(1.05)' },
-                        }}
-                      >
-                        Bid
-                      </Button>
-                    </Box>
-                  )}
-
-                  {/* Buy Now Section */}
-                  {canBuyNow && (
-                    <Box sx={{ mt: 3 }}>
-                      <Button
-                        variant="contained"
-                        onClick={handleBuyNow}
-                        sx={{
-                          backgroundColor: '#ff5722',
-                          color: '#fff',
-                          textTransform: 'none',
-                          '&:hover': { transform: 'scale(1.05)' },
-                        }}
-                      >
-                        Buy Now for ${auctionItem.buy_now_price}
-                      </Button>
-                    </Box>
-                  )}
-
-                  {/* Owner Actions */}
-                  {user?.username === auctionItem.owner?.username && (
-                    <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-                      {auctionItem.bids?.length > 0 || auctionItem.buy_now_buyer ? (
-                        <Tooltip title="Cannot delete auction items that have received bids or been purchased via Buy Now.">
-                          <span>
-                            <Button variant="outlined" disabled>
-                              Delete
-                            </Button>
-                          </span>
-                        </Tooltip>
-                      ) : (
-                        <>
-                          <Button variant="outlined" onClick={handleDelete}>
-                            Delete
-                          </Button>
-                          <Link to={`/update/${auctionItem.id}`} style={{ textDecoration: 'none' }}>
-                            <Button variant="outlined">Update</Button>
-                          </Link>
-                        </>
-                      )}
-                    </Box>
-                  )}
-                </Box>
-              </Grid>
-            </Grid>
-
-            {/* Bid History */}
+      {similarAuctions.map((sim) => (
+        <Card
+          key={sim.id}
+          variant="outlined"
+          sx={{
+            minWidth: 250,
+            flex: '0 0 auto',
+            cursor: 'pointer',
+            transition: 'box-shadow 0.3s',
+            '&:hover': { boxShadow: 6 },
+          }}
+          onClick={() => navigate(`/auction/${sim.id}`)}
+        >
+          {sim.images && sim.images.length > 0 ? (
+            <CardMedia
+              component="img"
+              image={sim.images[0].image}
+              alt={sim.title}
+              sx={{ height: 150, objectFit: 'cover' }}
+            />
+          ) : (
             <Box
               sx={{
-                mt: 4,
-                p: 3,
-                background: 'rgba(255, 255, 255, 0.9)',
-                borderRadius: '5px',
-                animation: `${fadeIn} 1s ease-in`,
+                height: 150,
+                backgroundColor: '#ddd',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Bid History:
-              </Typography>
-              {auctionItem.bids?.length ? (
-                <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0 }}>
-                  {auctionItem.bids.map((bid) => (
-                    <Box
-                      component="li"
-                      key={bid.id}
-                      sx={{
-                        py: 1.5,
-                        borderBottom: '1px solid #eee',
-                        fontSize: '1rem',
-                        color: '#555',
-                        '&:last-of-type': { borderBottom: 'none' },
-                      }}
-                    >
-                      {bid.bidder?.username || ''} bid ${bid.amount} on{' '}
-                      {moment(bid.timestamp).format('MMMM Do YYYY, h:mm:ss a')}
-                    </Box>
-                  ))}
-                </Box>
-              ) : (
-                <Typography variant="body2">No bids yet.</Typography>
-              )}
+              <Typography variant="caption">No image</Typography>
             </Box>
+          )}
+          <CardContent>
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+              {sim.title}
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              ${sim.buy_now_price || sim.current_bid || sim.starting_bid}
+            </Typography>
           </CardContent>
         </Card>
-      </Box>
+      ))}
     </Box>
+  </Box>
+)}
+</Box>
   );
 };
 

@@ -176,3 +176,17 @@ export const getMyPurchases = async () => {
         throw error;
     }
 };
+
+export const getSimilarAuctions = async (categoryName, excludeId) => {
+    try {
+      const response = await axiosInstance.get(`auction-items/?category=${encodeURIComponent(categoryName)}`);
+      const auctions = response.data.results || response.data;
+      // Exclude the current auction
+      return auctions.filter((auction) => auction.id !== excludeId);
+    } catch (error) {
+      console.error('Error fetching similar auctions:', error);
+      throw error;
+    }
+  };
+  
+  

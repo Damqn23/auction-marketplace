@@ -16,6 +16,7 @@ import BidHistory from './components/BidHistory';
 import ChatList from './components/ChatList';
 import Chat from './components/Chat';
 import MyBids from './components/MyBids';
+import Dashboard from './components/Dashboard';
 import NotFound from './components/NotFound';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -54,6 +55,7 @@ function App() {
               <Route path="/my-auctions" element={<PrivateRoute element={MyAuctions} />} />
               <Route path="/chat/:ownerUsername" element={<PrivateRoute element={Chat} />} />
               <Route path="/favorites" element={<PrivateRoute element={Favorites} />} />
+              <Route path="/dashboard" element={<PrivateRoute element={Dashboard} />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <ToastContainer />

@@ -105,6 +105,7 @@ const NavBar = () => {
         { text: "My Purchases", link: "/my-purchases" },
         { text: "My Auctions", link: "/my-auctions" },
         { text: "Favorites", link: "/favorites" },
+        { text: "Dashboard", link: "/dashboard" },
         { text: "Logout", action: handleLogout },
       ]
     : [

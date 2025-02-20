@@ -4,10 +4,10 @@ from django.shortcuts import render
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, Sum, Avg
+from django.db.models.functions import TruncDay, TruncMonth
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from datetime import timedelta
-
 from rest_framework import viewsets, status, permissions, generics
 from rest_framework.response import Response
 from rest_framework.permissions import (
@@ -18,7 +18,6 @@ from rest_framework.permissions import (
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-
 from .models import AuctionImage, AuctionItem, Bid, Category, ChatMessage, Favorite
 from .serializers import (
     CategorySerializer,
@@ -30,13 +29,92 @@ from .serializers import (
     FavoriteSerializer,
 )
 from .permissions import IsOwnerOrReadOnly, IsBidderOrReadOnly  # Custom Permissions
-
 from decimal import Decimal, InvalidOperation
-
 import logging
 
 
 logger = logging.getLogger(__name__)
+
+
+class DashboardStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user  # Filter by current user
+
+        period = request.query_params.get("period", "month")
+        category_filter = request.query_params.get("category", None)
+
+        # Calculate statistics only for auctions created by the user
+        total_published = AuctionItem.objects.filter(owner=user).count()
+        active_auctions = AuctionItem.objects.filter(
+            owner=user, status="active", end_time__gt=timezone.now()
+        ).count()
+
+        # Closed auctions for sales stats
+        closed_auctions = AuctionItem.objects.filter(owner=user).filter(
+            Q(status="closed") | Q(end_time__lte=timezone.now())
+        )
+
+        if category_filter:
+            closed_auctions = closed_auctions.filter(
+                category__name__icontains=category_filter
+            )
+
+        total_revenue = (
+            closed_auctions.aggregate(total=Sum("current_bid"))["total"] or 0
+        )
+        average_sale = closed_auctions.aggregate(avg=Avg("current_bid"))["avg"] or 0
+
+        # For average bid, use bids made by the user
+        average_bid = (
+            Bid.objects.filter(bidder=user).aggregate(avg=Avg("amount"))["avg"] or 0
+        )
+
+        # Determine grouping based on period
+        now = timezone.now()
+        if period == "week":
+            start_date = now - timedelta(days=7)
+            trunc_func = TruncDay
+        elif period == "year":
+            start_date = now - timedelta(days=365)
+            trunc_func = TruncMonth
+        else:  # default to month
+            start_date = now - timedelta(days=30)
+            trunc_func = TruncDay
+
+        # Chart data for closed auctions of this user
+        chart_data_qs = (
+            closed_auctions.filter(end_time__gte=start_date)
+            .annotate(period=trunc_func("end_time"))
+            .values("period")
+            .annotate(total=Sum("current_bid"))
+            .order_by("period")
+        )
+        chart_data = [
+            {"period": data["period"].strftime("%Y-%m-%d"), "total": data["total"]}
+            for data in chart_data_qs
+        ]
+
+        # Pie chart data: distribution by category
+        pie_data_qs = closed_auctions.values("category__name").annotate(
+            total=Sum("current_bid")
+        )
+        pie_data = [
+            {"category": data["category__name"], "total": data["total"]}
+            for data in pie_data_qs
+        ]
+
+        response_data = {
+            "total_published": total_published,
+            "active_auctions": active_auctions,
+            "total_revenue": total_revenue,
+            "average_bid": average_bid,
+            "average_sale": average_sale,
+            "line_chart_data": chart_data,
+            "pie_chart_data": pie_data,
+        }
+        return Response(response_data)
 
 
 class CategoryListView(generics.ListAPIView):

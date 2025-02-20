@@ -1,4 +1,4 @@
-// frontend/src/components/FavoriteButton.jsx
+// frontend/src/components/FavoriteButton.js
 import React, { useState, useEffect } from "react";
 import { IconButton } from "@mui/material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
