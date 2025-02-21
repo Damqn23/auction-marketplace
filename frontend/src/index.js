@@ -11,6 +11,9 @@ import { ThemeProvider } from '@mui/material/styles';
 import theme from './theme';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick-theme.css";
+
 
 
 ReactDOM.render(
@@ -19,7 +22,7 @@ ReactDOM.render(
       <UserProvider>
       <ThemeProvider theme={theme}>
           <App />
-          </ThemeProvider>
+      </ThemeProvider>
       </UserProvider>
       <ToastContainer />
     </QueryClientProvider>
