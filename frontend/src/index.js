@@ -10,6 +10,7 @@ import queryClient from "./queryClient";
 import { ThemeProvider } from '@mui/material/styles';
 import theme from './theme';
 import { ToastContainer } from "react-toastify";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import "react-toastify/dist/ReactToastify.css";
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
@@ -21,7 +22,9 @@ ReactDOM.render(
     <QueryClientProvider client={queryClient}>
       <UserProvider>
       <ThemeProvider theme={theme}>
-          <App />
+        <NotificationProvider>
+            <App />
+        </NotificationProvider>
       </ThemeProvider>
       </UserProvider>
       <ToastContainer />

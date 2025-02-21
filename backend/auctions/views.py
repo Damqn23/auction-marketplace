@@ -233,6 +233,29 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @action(
+        detail=False,
+        methods=["get"],
+        permission_classes=[IsAuthenticated],
+        url_path="my_bid_auctions",  # <--- EXACT path
+    )
+    def my_bid_auctions(self, request):
+        """
+        Returns all AuctionItems where the current user has placed a bid.
+        """
+        user = request.user
+        bid_auction_ids = (
+            Bid.objects.filter(bidder=user)
+            .values_list("auction_item", flat=True)
+            .distinct()
+        )
+        auctions = AuctionItem.objects.filter(id__in=bid_auction_ids)
+
+        serializer = AuctionItemSerializer(
+            auctions, many=True, context={"request": request}
+        )
+        return Response(serializer.data, status=200)
+
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
     def my_auctions(self, request):
         """

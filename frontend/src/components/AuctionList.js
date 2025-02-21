@@ -1,12 +1,4 @@
-// --------------------------------------------------------
-// Key changes summarized:
-// 1) Make "Bid" button similar size/style to "Buy Now" button.
-// 2) Expand the TextField width to show full min bid amount.
-// 3) Enlarge "Buy Now" text and make it a black button (as an example).
-// 4) Adjust the "Buy Now: $..." text to be larger/hot-pink.
-// --------------------------------------------------------
-
-import React, { useContext, useState, useEffect, useCallback } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -20,6 +12,8 @@ import {
   InputLabel,
   Select,
   IconButton,
+  Grid,
+  Menu as MuiMenu,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import { toast } from "react-toastify";
@@ -71,6 +65,7 @@ const AuctionList = () => {
       return getAllAuctionItems(params);
     },
     onError: () => toast.error("Failed to load auction items."),
+    refetchInterval: 5000, // Refresh data every 5 seconds
   });
 
   // ----- Bulgarian cities (for Location filter) -----
@@ -159,9 +154,7 @@ const AuctionList = () => {
 
   return (
     <Box sx={{ maxWidth: 1200, mx: "auto", p: 2 }}>
-      {/* ----------------------
-          Top Bar (Filters + Sort)
-         ---------------------- */}
+      {/* Top Bar (Filters + Sort) */}
       <Box
         sx={{
           mb: 2,
@@ -197,9 +190,7 @@ const AuctionList = () => {
         </FormControl>
       </Box>
 
-      {/* ----------------------
-          Items List (OLX-style Row)
-         ---------------------- */}
+      {/* Auction Items Grid */}
       {Array.isArray(auctionItems) && auctionItems.length > 0 ? (
         <Box>
           {auctionItems.map((item) => {
@@ -238,7 +229,7 @@ const AuctionList = () => {
                   },
                 }}
               >
-                {/* --- Left: Square Image --- */}
+                {/* Left: Square Image */}
                 <Box
                   sx={{
                     width: 150,
@@ -277,7 +268,7 @@ const AuctionList = () => {
                   )}
                 </Box>
 
-                {/* --- Middle: Title, Category, Current Bid, Time Left, City, Condition --- */}
+                {/* Middle: Auction Details */}
                 <Box
                   sx={{
                     flex: 1,
@@ -302,7 +293,6 @@ const AuctionList = () => {
                     <strong>Time Left:</strong>{" "}
                     <CountdownTimer endTime={item.end_time} />
                   </Typography>
-
                   {item.location && (
                     <Typography variant="body2" sx={{ mt: 1 }}>
                       <strong>City:</strong> {item.location}
@@ -315,7 +305,7 @@ const AuctionList = () => {
                   )}
                 </Box>
 
-                {/* --- Right: Buy Now Price, Bid & Heart (onClick stopPropagation) --- */}
+                {/* Right: Actions */}
                 <Box
                   onClick={(e) => e.stopPropagation()}
                   sx={{
@@ -325,7 +315,6 @@ const AuctionList = () => {
                     gap: 1,
                   }}
                 >
-                  {/* Buy Now Price: bigger/hot-pink */}
                   {item.buy_now_price && (
                     <Typography
                       variant="body1"
@@ -338,41 +327,26 @@ const AuctionList = () => {
                       Buy Now: ${item.buy_now_price}
                     </Typography>
                   )}
-
-                  {/* Heart icon */}
                   <FavoriteButton auctionItemId={item.id} />
-
-                  {/* Bid Input & Button */}
                   {canBid && (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
+                    <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 1 }}>
                       <TextField
                         label={`Min: $${minRequiredBid}`}
                         placeholder={`$${minRequiredBid}`}
                         type="number"
                         value={bidAmounts[item.id] || ""}
                         onChange={(e) =>
-                          setBidAmounts({
-                            ...bidAmounts,
-                            [item.id]: e.target.value,
-                          })
+                          setBidAmounts({ ...bidAmounts, [item.id]: e.target.value })
                         }
                         variant="outlined"
                         size="small"
-                        // Enough width so the entire min bid is visible
                         sx={{ width: 130 }}
                       />
                       <Button
                         variant="contained"
-                        onClick={() => handlePlaceBid(item.id)}
+                        onClick={() => handlePlaceBid(item.id, minRequiredBid)}
                         sx={{
-                          backgroundColor: "#2e7d32", // green
+                          backgroundColor: "#2e7d32",
                           color: "#fff",
                           fontSize: "0.875rem",
                           fontWeight: "bold",
@@ -387,22 +361,20 @@ const AuctionList = () => {
                       </Button>
                     </Box>
                   )}
-
-                  {/* Buy Now button: bigger, black background, white text */}
                   {canBuyNow && (
                     <Button
                       variant="contained"
                       onClick={() => openBuyNowModal(item)}
                       sx={{
                         mt: canBid ? 0 : 1,
-                        backgroundColor: "#000000",
-                        color: "#ffffff",
+                        backgroundColor: "#000",
+                        color: "#fff",
                         fontWeight: "bold",
                         fontSize: "0.9rem",
                         padding: "8px 16px",
                         textTransform: "none",
                         "&:hover": {
-                          backgroundColor: "#333333",
+                          backgroundColor: "#333",
                         },
                       }}
                     >
@@ -431,7 +403,7 @@ const AuctionList = () => {
       )}
 
       {/* Filter Menu */}
-      <Menu
+      <MuiMenu
         anchorEl={filterAnchorEl}
         open={Boolean(filterAnchorEl)}
         onClose={handleFilterClose}
@@ -517,7 +489,7 @@ const AuctionList = () => {
             Apply Filters
           </Button>
         </Box>
-      </Menu>
+      </MuiMenu>
     </Box>
   );
 };

@@ -142,15 +142,35 @@ class AuctionItemSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        # Override the status with effective_status so that it returns "closed" when end_time has passed.
+        request = self.context.get("request")
+
+        # Override the status with effective_status (closed if the end_time has passed)
         representation["status"] = instance.effective_status
 
-        request = self.context.get("request")
+        # Add computed highest bid information
+        highest_bid = instance.bids.order_by("-amount").first()
+        if highest_bid:
+            representation["top_bid"] = str(highest_bid.amount)
+            representation["top_bidder"] = highest_bid.bidder.username
+        else:
+            representation["top_bid"] = None
+            representation["top_bidder"] = None
+
+        # Determine if the current request.user is the highest bidder
+        if request and hasattr(request, "user") and request.user.is_authenticated:
+            representation["is_winning"] = bool(
+                highest_bid and highest_bid.bidder == request.user
+            )
+        else:
+            representation["is_winning"] = False
+
+        # Serialize the main image properly
         if instance.image and request:
             representation["image"] = request.build_absolute_uri(instance.image.url)
         else:
             representation["image"] = None
-        # Ensure images are also correctly serialized
+
+        # Process additional images
         if "images" in representation:
             for img in representation["images"]:
                 if "image" in img and img["image"]:

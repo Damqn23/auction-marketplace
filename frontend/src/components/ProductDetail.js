@@ -31,7 +31,7 @@ import {
 import { UserContext } from "../contexts/UserContext";
 
 // ----------------------
-// Countdown Timer
+// Countdown Timer Component
 // ----------------------
 const CountdownTimer = ({ endTime }) => {
   const calculateTimeLeft = useCallback(() => {
@@ -67,11 +67,10 @@ const CountdownTimer = ({ endTime }) => {
 };
 
 // ----------------------
-// Image Slider
+// Image Slider Component
 // ----------------------
 const ImageSlider = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-
   const handlePrev = (e) => {
     e.stopPropagation();
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
@@ -145,17 +144,16 @@ const ImageSlider = ({ images }) => {
 };
 
 // ----------------------
-// ProductDetails
+// ProductDetails Component
 // ----------------------
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const queryClient = useQueryClient();
-
   const [bidAmount, setBidAmount] = useState("");
 
-  // 1) Fetch main auction item
+  // 1) Fetch main auction item with polling for live updates
   const {
     data: auctionItem,
     isLoading,
@@ -164,13 +162,13 @@ const ProductDetails = () => {
     queryKey: ["auctionItem", id],
     queryFn: () => getAuctionItem(id),
     onError: () => toast.error("Failed to load auction item."),
+    refetchInterval: 5000, // Poll every 5 seconds for updates
   });
 
   // 2) Fetch similar auctions
   const { data: similarAuctions } = useQuery({
     queryKey: ["similarAuctions", auctionItem?.category_data?.name],
-    queryFn: () =>
-      getSimilarAuctions(auctionItem?.category_data?.name, auctionItem.id),
+    queryFn: () => getSimilarAuctions(auctionItem?.category_data?.name, auctionItem.id),
     enabled: !!auctionItem,
   });
 
@@ -183,11 +181,7 @@ const ProductDetails = () => {
       setBidAmount("");
     },
     onError: (error) => {
-      if (error.response?.data?.detail) {
-        toast.error(error.response.data.detail);
-      } else {
-        toast.error("Failed to place bid. Please try again.");
-      }
+      toast.error(error?.response?.data?.detail || "Failed to place bid. Please try again.");
     },
   });
 
@@ -199,11 +193,7 @@ const ProductDetails = () => {
       navigate("/");
     },
     onError: (error) => {
-      if (error.response?.data?.detail) {
-        toast.error(error.response.data.detail);
-      } else {
-        toast.error("Failed to complete purchase. Please try again.");
-      }
+      toast.error(error?.response?.data?.detail || "Failed to complete purchase. Please try again.");
     },
   });
 
@@ -219,19 +209,11 @@ const ProductDetails = () => {
     },
   });
 
-  // ----- Loading states -----
+  // ----- Loading/Error states -----
   if (isLoading)
-    return (
-      <Typography variant="body1" sx={{ p: 2 }}>
-        Loading...
-      </Typography>
-    );
+    return <Typography variant="body1" sx={{ p: 2 }}>Loading...</Typography>;
   if (isError || !auctionItem)
-    return (
-      <Typography variant="body1" sx={{ p: 2 }}>
-        Failed to load auction item.
-      </Typography>
-    );
+    return <Typography variant="body1" sx={{ p: 2 }}>Failed to load auction item.</Typography>;
 
   // ----- Permissions -----
   const canBid =
@@ -240,7 +222,6 @@ const ProductDetails = () => {
     user.username !== auctionItem.owner.username &&
     auctionItem.status === "active" &&
     !auctionItem.buy_now_buyer;
-
   const canBuyNow =
     user &&
     auctionItem.owner &&
@@ -282,7 +263,6 @@ const ProductDetails = () => {
     }
   };
 
-  // ----- Layout (OLX‐like) -----
   return (
     <Box sx={{ p: 3, backgroundColor: "#f7f7f7", minHeight: "100vh" }}>
       <Fade in timeout={900}>
@@ -296,7 +276,7 @@ const ProductDetails = () => {
             p: 2,
           }}
         >
-          {/* --------- TOP ROW: Images on the left, Key Info on the right ---------- */}
+          {/* Top Row: Images on the left, Key Info on the right */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
             {/* Left: Image/Slider */}
             <Grid item xs={12} md={7}>
@@ -323,13 +303,11 @@ const ProductDetails = () => {
               )}
             </Grid>
 
-            {/* Right: Title, Price, Condition, Location, Bid/Buy */}
+            {/* Right: Details */}
             <Grid item xs={12} md={5}>
               <Typography variant="h4" sx={{ mb: 1 }}>
                 {auctionItem.title}
               </Typography>
-
-              {/* Price or currentBid fallback */}
               <Typography
                 variant="h5"
                 sx={{ color: "primary.main", fontWeight: "bold", mb: 2 }}
@@ -340,7 +318,6 @@ const ProductDetails = () => {
                   ? `Current Bid: $${auctionItem.current_bid}`
                   : `Starting Bid: $${auctionItem.starting_bid}`}
               </Typography>
-
               <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
                 Category: {auctionItem.category_data?.name}
               </Typography>
@@ -368,28 +345,16 @@ const ProductDetails = () => {
                     size="small"
                     sx={{ width: 140 }}
                   />
-                  <Button
-                    variant="contained"
-                    color="success"
-                    onClick={handlePlaceBid}
-                  >
+                  <Button variant="contained" color="success" onClick={handlePlaceBid}>
                     Bid
                   </Button>
                 </Box>
               )}
-
               {canBuyNow && (
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  onClick={handleBuyNow}
-                  sx={{ mt: 2 }}
-                >
+                <Button variant="contained" color="secondary" onClick={handleBuyNow} sx={{ mt: 2 }}>
                   Buy Now for ${auctionItem.buy_now_price}
                 </Button>
               )}
-
-              {/* If user is the owner, show Delete/Update */}
               {user?.username === auctionItem.owner?.username && (
                 <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
                   <Button variant="outlined" onClick={handleDelete}>
@@ -403,16 +368,8 @@ const ProductDetails = () => {
             </Grid>
           </Grid>
 
-          {/* --------- DESCRIPTION Section ---------- */}
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2,
-              mb: 3,
-              borderRadius: 2,
-              borderColor: "#ddd",
-            }}
-          >
+          {/* Description Section */}
+          <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2, borderColor: "#ddd" }}>
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
               Description
             </Typography>
@@ -421,7 +378,7 @@ const ProductDetails = () => {
             </Typography>
           </Paper>
 
-          {/* --------- BID HISTORY Section ---------- */}
+          {/* Bid History Section */}
           <Box sx={{ mb: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
               Bid History
@@ -429,11 +386,7 @@ const ProductDetails = () => {
             {auctionItem.bids && auctionItem.bids.length ? (
               <Box component="ul" sx={{ listStyle: "none", p: 0, m: 0 }}>
                 {auctionItem.bids.map((bid) => (
-                  <Box
-                    key={bid.id}
-                    component="li"
-                    sx={{ py: 1, borderBottom: "1px solid #eee" }}
-                  >
+                  <Box key={bid.id} component="li" sx={{ py: 1, borderBottom: "1px solid #eee" }}>
                     <strong>{bid.bidder?.username}</strong> bid ${bid.amount} on{" "}
                     {moment(bid.timestamp).format("MMMM Do YYYY, h:mm:ss a")}
                   </Box>
@@ -444,7 +397,7 @@ const ProductDetails = () => {
             )}
           </Box>
 
-          {/* --------- SIMILAR PRODUCTS Section ---------- */}
+          {/* Similar Products Section */}
           {similarAuctions && similarAuctions.length > 0 && (
             <Box sx={{ mt: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
@@ -497,10 +450,7 @@ const ProductDetails = () => {
                         {sim.title}
                       </Typography>
                       <Typography variant="body2" color="textSecondary">
-                        $
-                        {sim.buy_now_price ||
-                          sim.current_bid ||
-                          sim.starting_bid}
+                        ${sim.buy_now_price || sim.current_bid || sim.starting_bid}
                       </Typography>
                     </CardContent>
                   </Card>

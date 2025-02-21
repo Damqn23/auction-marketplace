@@ -14,6 +14,7 @@ import MyAuctions from './components/MyAuctions';
 import MyPurchases from './components/MyPurchases';
 import BidHistory from './components/BidHistory';
 import ChatList from './components/ChatList';
+import BidStatusNotifier from "./components/BidStatusNotifier";
 import Chat from './components/Chat';
 import MyBids from './components/MyBids';
 import Dashboard from './components/Dashboard';
@@ -40,6 +41,7 @@ function App() {
         <Router>
           <div className="App">
             <NavBar />
+            <BidStatusNotifier />
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/auction-list" element={<AuctionList />} />

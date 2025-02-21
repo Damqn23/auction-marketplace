@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
+import { useNotification } from "../contexts/NotificationContext";
 import { getUnreadMessages } from "../services/auctionService";
 import {
   AppBar,
@@ -25,7 +26,6 @@ import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { keyframes } from "@emotion/react";
 
-// Define the animated gradient keyframes
 const gradientAnimation = keyframes`
   0% {
     background-position: 0% 50%;
@@ -44,7 +44,11 @@ const NavBar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const theme = useTheme();
+  
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+
+  // Remove or comment out this line to avoid infinite loops:
+  // notify("You have been outbidded!", "warning");
 
   // Fetch unread messages when user is logged in
   useEffect(() => {
@@ -86,7 +90,6 @@ const NavBar = () => {
     setDrawerOpen(open);
   };
 
-  // Define action groups for the drawer
   const primaryActions = user
     ? [
         { text: "Create Auction", link: "/create" },
@@ -113,11 +116,8 @@ const NavBar = () => {
         { text: "Register", link: "/register" },
       ];
 
-  // For mobile view, combine primary and secondary actions.
   const mobileMenuItems = user ? [...primaryActions, ...secondaryActions] : secondaryActions;
-  // For desktop logged-in users, show only secondary actions in the drawer.
   const drawerMenuItems = isDesktop && user ? secondaryActions : mobileMenuItems;
-  // Set drawer anchor: right for desktop logged-in users, left otherwise.
   const drawerAnchor = user && isDesktop ? "right" : "left";
 
   return (
@@ -131,23 +131,10 @@ const NavBar = () => {
         boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
       }}
     >
-      <Toolbar
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        {/* Left Section: Logo and (for mobile) hamburger menu */}
+      <Toolbar sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box sx={{ display: "flex", alignItems: "center" }}>
           {!isDesktop && (
-            <IconButton
-              edge="start"
-              color="inherit"
-              aria-label="menu"
-              onClick={toggleDrawer(true)}
-              sx={{ mr: 1, color: "#ffffff" }}
-            >
+            <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer(true)} sx={{ mr: 1, color: "#ffffff" }}>
               <MenuIcon />
             </IconButton>
           )}
@@ -166,8 +153,6 @@ const NavBar = () => {
             Auction Marketplace
           </Typography>
         </Box>
-
-        {/* Center Section: Search Bar */}
         <Box sx={{ flex: 1, maxWidth: "500px", mx: 2 }}>
           <TextField
             placeholder="Search items..."
@@ -190,16 +175,9 @@ const NavBar = () => {
             }}
           />
         </Box>
-
-        {/* Right Section: Desktop Primary Actions */}
         {isDesktop && user && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={() => navigate("/create")}
-              sx={{ textTransform: "none" }}
-            >
+            <Button variant="contained" color="secondary" onClick={() => navigate("/create")} sx={{ textTransform: "none" }}>
               Create Auction
             </Button>
             <IconButton color="inherit" onClick={() => navigate("/chat")}>
@@ -212,8 +190,6 @@ const NavBar = () => {
             </IconButton>
           </Box>
         )}
-
-        {/* Right Section: For Desktop when not logged in */}
         {isDesktop && !user && (
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <IconButton color="inherit" onClick={toggleDrawer(true)}>
@@ -222,15 +198,8 @@ const NavBar = () => {
           </Box>
         )}
       </Toolbar>
-
-      {/* Drawer for Navigation */}
       <Drawer anchor={drawerAnchor} open={drawerOpen} onClose={toggleDrawer(false)}>
-        <Box
-          role="presentation"
-          onClick={toggleDrawer(false)}
-          onKeyDown={toggleDrawer(false)}
-          sx={{ width: 250 }}
-        >
+        <Box role="presentation" onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)} sx={{ width: 250 }}>
           <List>
             {drawerMenuItems.map((item, index) => (
               <React.Fragment key={index}>

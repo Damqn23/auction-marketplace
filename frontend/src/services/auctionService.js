@@ -188,5 +188,20 @@ export const getSimilarAuctions = async (categoryName, excludeId) => {
       throw error;
     }
   };
-  
-  
+
+export const getMyWinningAuctions = async () => {
+    // This endpoint should return auctions where the user is currently winning
+    // Adjust the endpoint URL as per your backend.
+    const response = await axiosInstance.get("auction-items/my-winning-auctions/");
+    return response.data;
+  };
+
+export const getMyBidAuctions = async () => {
+    try {
+      const response = await axiosInstance.get('auction-items/my_bid_auctions/');
+      return response.data; // This should be an array of AuctionItem objects with { is_winning: bool, ... }
+    } catch (error) {
+      console.error('Error fetching bid auctions:', error);
+      throw error;
+    }
+  };
