@@ -18,7 +18,7 @@ import {
 import FilterListIcon from "@mui/icons-material/FilterList";
 import { toast } from "react-toastify";
 
-import { getAllAuctionItems, placeBid, buyNow } from "../services/auctionService";
+import { getAllAuctionItems, placeBid, buyNow, searchAuctionItems } from "../services/auctionService";
 import { getAllCategories } from "../services/categoryService";
 import { UserContext } from "../contexts/UserContext";
 
@@ -60,12 +60,17 @@ const AuctionList = () => {
   const { data: auctionItems, isLoading, isError } = useQuery({
     queryKey: ["auctionItems", query, appliedFilters, sortBy],
     queryFn: () => {
-      const params = { ...appliedFilters, sort_by: sortBy };
-      if (query) params.q = query;
-      return getAllAuctionItems(params);
+      // If user typed something, do fuzzy search:
+      if (query) {
+        return searchAuctionItems(query, appliedFilters.category);
+      } else {
+        // No query? Then just do the normal listing
+        const params = { ...appliedFilters, sort_by: sortBy };
+        return getAllAuctionItems(params);
+      }
     },
+    refetchInterval: 5000,
     onError: () => toast.error("Failed to load auction items."),
-    refetchInterval: 5000, // Refresh data every 5 seconds
   });
 
   // ----- Bulgarian cities (for Location filter) -----

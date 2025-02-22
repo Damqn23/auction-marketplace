@@ -36,6 +36,77 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def levenshtein(a, b):
+    """
+    Returns the Levenshtein distance between two strings `a` and `b`.
+    This is a measure of how many single-character edits (insertions,
+    deletions, or substitutions) are needed to transform `a` into `b`.
+    """
+    # If `a` is shorter, swap them so we always iterate over the shorter string
+    if len(a) < len(b):
+        return levenshtein(b, a)
+    if len(b) == 0:
+        return len(a)
+
+    # dp[j] will track distance for (some prefix of `a`) to (prefix of `b` up to j)
+    dp = range(len(b) + 1)
+    for i, char_a in enumerate(a):
+        # At the start of each row i, we set new_dp[0] = i+1
+        new_dp = [i + 1]
+        for j, char_b in enumerate(b):
+            cost = 0 if char_a == char_b else 1
+            # Take the min of three edit operations:
+            #  - dp[j] + cost: substitution (if chars differ),
+            #  - dp[j+1] + 1: deletion,
+            #  - new_dp[-1] + 1: insertion
+            new_dp.append(
+                min(
+                    dp[j] + cost,  # substitution
+                    dp[j + 1] + 1,  # deletion
+                    new_dp[-1] + 1,  # insertion
+                )
+            )
+        dp = new_dp
+    return dp[-1]
+
+
+def fuzzy_match(candidate, query):
+    """
+    Returns True if `candidate` string "fuzzily" matches `query`.
+    1) If query is a direct substring of candidate, return True immediately.
+    2) Otherwise, for every query word, ensure it has at least one
+       candidate word within a Levenshtein distance threshold.
+    """
+    candidate_lower = candidate.lower()
+    query_lower = query.lower()
+
+    # Quick check: exact substring => immediate True
+    if query_lower in candidate_lower:
+        return True
+
+    # Split candidate and query into words
+    candidate_words = candidate_lower.split()
+    query_words = query_lower.split()
+
+    # For every word in the query, we must find at least one "close enough" candidate word
+    for qw in query_words:
+        matched_this_query_word = False
+        for cw in candidate_words:
+            dist = levenshtein(cw, qw)
+            # You can tune the threshold. A common approach:
+            #   e.g. threshold = max(1, len(qw) // 3)
+            # meaning "up to a third of the query word length in edits"
+            threshold = max(1, len(qw) // 3)
+            if dist <= threshold:
+                matched_this_query_word = True
+                break
+        if not matched_this_query_word:
+            # If we couldn't match this query word, entire fuzzy_match fails
+            return False
+
+    return True
+
+
 class DashboardStatsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -432,33 +503,38 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], permission_classes=[AllowAny])
     def search(self, request):
-        """
-        Custom search action that only filters by title.
-        If a query word ends with an 's' (or equals 'часовници'),
-        it also checks for the singular form.
-        """
         query = request.query_params.get("q", "").strip()
         category = request.query_params.get("category", "").strip()
-        qs = AuctionItem.objects.filter(status="active")
+
+        # Only get "active" items whose end_time hasn't passed
+        qs = AuctionItem.objects.filter(status="active", end_time__gt=timezone.now())
+
+        # 1) Direct substring search
         if query:
-            words = query.split()
-            q_filter = Q()
-            for word in words:
-                # Check for a Bulgarian plural example and English 's'
-                if word.lower() == "часовници":
-                    singular = "часовник"
-                elif word.endswith("s"):
-                    singular = word[:-1]
-                else:
-                    singular = None
-                if singular:
-                    word_q = Q(title__icontains=word) | Q(title__icontains=singular)
-                else:
-                    word_q = Q(title__icontains=word)
-                q_filter &= word_q
-            qs = qs.filter(q_filter)
+            direct_qs = qs.filter(
+                Q(title__icontains=query) | Q(description__icontains=query)
+            )
+        else:
+            # If no query, just return all active, non-ended
+            serializer = self.get_serializer(qs, many=True)
+            return Response(serializer.data)
+
+        # 2) Fuzzy pass – still within the same filtered qs
+        fuzzy_matches = []
+        if query:
+            for item in qs:
+                text_to_check = f"{item.title} {item.description}"
+                if fuzzy_match(text_to_check, query):
+                    fuzzy_matches.append(item.id)
+
+        # Combine direct AND fuzzy
+        combined_ids = set(direct_qs.values_list("id", flat=True)) | set(fuzzy_matches)
+        qs = qs.filter(id__in=combined_ids)
+
+        # 3) Filter by category if present
         if category:
             qs = qs.filter(category__name__icontains=category)
+
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
@@ -533,7 +609,6 @@ class FavoriteListCreateAPIView(generics.ListCreateAPIView):
         serializer.save(user=self.request.user)
 
 
-# API view to remove a favorite
 class FavoriteDeleteAPIView(generics.DestroyAPIView):
     serializer_class = FavoriteSerializer
     permission_classes = [permissions.IsAuthenticated]

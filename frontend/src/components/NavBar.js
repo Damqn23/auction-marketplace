@@ -2,7 +2,6 @@ import React, { useContext, useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
-import { useNotification } from "../contexts/NotificationContext";
 import { getUnreadMessages } from "../services/auctionService";
 import {
   AppBar,
@@ -44,7 +43,6 @@ const NavBar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const theme = useTheme();
-  
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
 
   // Remove or comment out this line to avoid infinite loops:
