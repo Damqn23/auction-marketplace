@@ -1,32 +1,34 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { useParams } from "react-router-dom";
-import {
-  sendMessage,
-  getMessages,
-  markAsRead,
-  getUnreadMessages,
-} from "../services/auctionService";
+import { getMessages, markAsRead, getUnreadMessages } from "../services/auctionService";
 import { UserContext } from "../contexts/UserContext";
 import {
   Box,
   Typography,
   TextField,
   Button,
-  CircularProgress,
 } from "@mui/material";
 
 const Chat = () => {
-  const { ownerUsername } = useParams();
+  const { ownerUsername } = useParams(); // The "other" user's username
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const { user, setUnreadCount } = useContext(UserContext);
   const messagesEndRef = useRef(null);
+  const ws = useRef(null);
+
+  // Generate a stable room name so both participants connect to the same room
+  const chatRoomName =
+    user.username < ownerUsername
+      ? user.username + "_" + ownerUsername
+      : ownerUsername + "_" + user.username;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // 1. Load previous messages via REST API
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -34,10 +36,14 @@ const Chat = () => {
         setMessages(response);
         setLoading(false);
 
+        // Mark them as read
         await markAsRead(ownerUsername);
+
+        // Update unread count
         const unreadResponse = await getUnreadMessages();
         setUnreadCount(unreadResponse.unread_count);
 
+        // Scroll down
         scrollToBottom();
       } catch (error) {
         console.error("Error fetching messages", error);
@@ -48,33 +54,55 @@ const Chat = () => {
     fetchData();
   }, [ownerUsername, setUnreadCount]);
 
-  const handleSendMessage = async () => {
+  // 2. Open WebSocket connection for real-time chat
+  useEffect(() => {
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    ws.current = new WebSocket(
+      `${protocol}://localhost:8000/ws/chat/${chatRoomName}/`
+    );
+
+    ws.current.onopen = () => console.log("WebSocket connected");
+    ws.current.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      // Append the incoming message to state
+      setMessages((prev) => [...prev, data]);
+      scrollToBottom();
+    };
+    ws.current.onclose = () => console.log("WebSocket disconnected");
+
+    return () => {
+      ws.current.close();
+    };
+  }, [chatRoomName]);
+
+  // 3. Send message via WebSocket
+  const handleSendMessage = () => {
     const trimmed = newMessage.trim();
     if (!trimmed) return; // Avoid sending empty messages
 
-    try {
-      const sentMessage = await sendMessage(ownerUsername, trimmed);
-      setNewMessage(""); // Clear input field
-      setMessages((prev) => [...prev, sentMessage]);
-      scrollToBottom();
-    } catch (error) {
-      console.error("Error sending message", error);
+    // Prepare the message payload (include 'recipient')
+    const messageData = {
+      message: trimmed,
+      sender: user.username,
+      recipient: ownerUsername, // <-- This is critical to store in DB
+    };
+
+    // Send the message if the WebSocket is open
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify(messageData));
+    } else {
+      console.error("WebSocket is not connected.");
     }
+    setNewMessage("");
   };
 
-  if (loading)
+  if (loading) {
     return (
-      <Box
-        sx={{
-          color: "#fff",
-          fontSize: "1.2rem",
-          textAlign: "center",
-          p: 3,
-        }}
-      >
+      <Box sx={{ color: "#fff", fontSize: "1.2rem", textAlign: "center", p: 3 }}>
         Loading chat...
       </Box>
     );
+  }
 
   return (
     <Box
@@ -102,6 +130,7 @@ const Chat = () => {
         Chat with {ownerUsername}
       </Typography>
 
+      {/* Messages List */}
       <Box
         sx={{
           height: { xs: 300, md: 400 },
@@ -129,13 +158,11 @@ const Chat = () => {
             No messages yet.
           </Typography>
         ) : (
-          messages.map((msg) => {
-            // Since our serializer returns sender as a string,
-            // we can directly compare it with user.username.
+          messages.map((msg, index) => {
             const isSentByCurrentUser = msg.sender === user.username;
             return (
               <Box
-                key={msg.id}
+                key={index}
                 sx={{
                   alignSelf: isSentByCurrentUser ? "flex-end" : "flex-start",
                   mb: 2,
@@ -162,10 +189,12 @@ const Chat = () => {
                     textAlign: "right",
                   }}
                 >
-                  {new Date(msg.timestamp).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {msg.timestamp
+                    ? new Date(msg.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : ""}
                 </Typography>
               </Box>
             );
@@ -174,6 +203,7 @@ const Chat = () => {
         <Box ref={messagesEndRef} />
       </Box>
 
+      {/* Message Input & Send Button */}
       <Box
         sx={{
           display: "flex",
