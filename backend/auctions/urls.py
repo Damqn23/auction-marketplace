@@ -5,8 +5,11 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     AuctionItemViewSet,
     ChatMessageViewSet,
+    CreateDepositPaymentIntentView,
     RegisterView,
     SearchAuctionItemsView,
+    StripeWebhookView,
+    UserBalanceView,
     UserViewSet,
     BidViewSet,
     MyPurchasesView,
@@ -54,4 +57,11 @@ urlpatterns = [
         "favorites/<int:id>/", FavoriteDeleteAPIView.as_view(), name="favorite-delete"
     ),
     path("dashboard/", DashboardStatsView.as_view(), name="dashboard-stats"),
+    path(
+        "create-deposit-payment-intent/",
+        CreateDepositPaymentIntentView.as_view(),
+        name="create-deposit-payment-intent",
+    ),
+    path("stripe-webhook/", StripeWebhookView.as_view(), name="stripe-webhook"),
+    path("user-balance/", UserBalanceView.as_view(), name="user-balance"),
 ]

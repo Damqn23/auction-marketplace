@@ -12,6 +12,7 @@ import Favorites from './components/Favorites';
 import ProductDetail from './components/ProductDetail';
 import MyAuctions from './components/MyAuctions';
 import MyPurchases from './components/MyPurchases';
+import Deposit from './components/Deposit';
 import BidHistory from './components/BidHistory';
 import ChatList from './components/ChatList';
 import BidStatusNotifier from "./components/BidStatusNotifier";
@@ -56,6 +57,7 @@ function App() {
               <Route path="/chat" element={<PrivateRoute element={ChatList} />} />
               <Route path="/my-auctions" element={<PrivateRoute element={MyAuctions} />} />
               <Route path="/chat/:ownerUsername" element={<PrivateRoute element={Chat} />} />
+              <Route path="/deposit" element={<PrivateRoute element={Deposit} />}/>
               <Route path="/favorites" element={<PrivateRoute element={Favorites} />} />
               <Route path="/dashboard" element={<PrivateRoute element={Dashboard} />} />
               <Route path="*" element={<NotFound />} />

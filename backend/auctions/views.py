@@ -3,10 +3,15 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db import transaction
+import stripe
 from django.shortcuts import get_object_or_404
+from django.conf import settings
+import json
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from django.db.models import Q, Sum, Avg
 from django.db.models.functions import TruncDay, TruncMonth
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from datetime import timedelta
 from rest_framework import viewsets, status, permissions, generics
 from rest_framework.response import Response
@@ -18,7 +23,16 @@ from rest_framework.permissions import (
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .models import AuctionImage, AuctionItem, Bid, Category, ChatMessage, Favorite
+from .models import (
+    AuctionImage,
+    AuctionItem,
+    Bid,
+    Category,
+    ChatMessage,
+    Favorite,
+    UserAccount,
+    Transaction,
+)
 from .serializers import (
     CategorySerializer,
     ChatMessageSerializer,
@@ -31,6 +45,8 @@ from .serializers import (
 from .permissions import IsOwnerOrReadOnly, IsBidderOrReadOnly  # Custom Permissions
 from decimal import Decimal, InvalidOperation
 import logging
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 logger = logging.getLogger(__name__)
@@ -402,61 +418,38 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         parser_classes=[JSONParser],
     )
     def bid(self, request, pk=None):
-        """
-        Custom action to place a bid on an auction item.
-        Also, if a bid is placed with less than 60 seconds remaining,
-        extend the auction time by 2 minutes.
-        """
         auction_item = self.get_object()
         now = timezone.now()
 
-        # If auction end time has passed, update status to closed.
+        # 1) Basic checks
         if auction_item.status == "active" and auction_item.end_time <= now:
             auction_item.status = "closed"
             auction_item.save()
-            return Response(
-                {"detail": "Bidding is closed for this item."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"detail": "Bidding is closed for this item."}, status=400)
 
-        # Ensure auction is active
         if auction_item.status != "active":
-            return Response(
-                {"detail": "Bidding is closed for this item."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"detail": "Bidding is closed for this item."}, status=400)
 
-        # Prevent owner from bidding on their own item.
         if auction_item.owner == request.user:
             return Response(
-                {"detail": "Owners cannot bid on their own items."},
-                status=status.HTTP_403_FORBIDDEN,
+                {"detail": "Owners cannot bid on their own items."}, status=403
             )
 
-        # Prevent bidding if Buy Now has been used.
         if auction_item.buy_now_buyer is not None:
             return Response(
-                {"detail": "This item has been purchased via Buy Now."},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"detail": "This item has been purchased via Buy Now."}, status=400
             )
 
-        # Get bid amount from request.
-        amount = request.data.get("amount")
-        if not amount:
-            return Response(
-                {"detail": "Bid amount is required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        amount_str = request.data.get("amount")
+        if not amount_str:
+            return Response({"detail": "Bid amount is required."}, status=400)
 
         try:
-            amount = Decimal(str(amount))
+            amount = Decimal(str(amount_str))
         except (ValueError, InvalidOperation):
-            return Response(
-                {"detail": "Invalid bid amount."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"detail": "Invalid bid amount."}, status=400)
 
-        # Determine minimum bid (2% increment)
+        # 2) Minimum bid checks
         min_bid = (
             auction_item.current_bid
             if auction_item.current_bid
@@ -465,41 +458,110 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         min_increment = (min_bid * Decimal("0.02")).quantize(Decimal("0.01"))
         min_required_bid = (min_bid + min_increment).quantize(Decimal("0.01"))
 
-        # If Buy Now is set, ensure bid is less than the Buy Now price.
-        if auction_item.buy_now_price:
-            if amount >= auction_item.buy_now_price:
-                return Response(
-                    {
-                        "detail": f"Bid must be less than Buy Now price of ${auction_item.buy_now_price}."
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        if auction_item.buy_now_price and amount >= auction_item.buy_now_price:
+            return Response(
+                {
+                    "detail": f"Bid must be less than Buy Now price of ${auction_item.buy_now_price}."
+                },
+                status=400,
+            )
 
         if amount < min_required_bid:
             return Response(
                 {"detail": f"Bid must be at least ${min_required_bid}."},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=400,
             )
 
-        # Extend auction time if less than 60 seconds remain.
+        # 3) Extend auction if < 60 seconds remain
         time_left = auction_item.end_time - now
         if time_left.total_seconds() < 60:
-            extension = timedelta(
-                minutes=2
-            )  # You can adjust the extension duration here.
+            extension = timedelta(minutes=2)
             auction_item.end_time = now + extension
             auction_item.save()
 
-        # Create the bid.
-        bid = Bid.objects.create(
-            auction_item=auction_item, bidder=request.user, amount=amount
-        )
-        # Update current bid.
-        auction_item.current_bid = amount
-        auction_item.save()
+        # 4) Check if there's an old highest bid
+        old_highest_bid = auction_item.bids.order_by("-amount").first()
 
-        serializer = BidSerializer(bid)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # 5) If there's an old highest bid, figure out if it's the same user or a different user
+        if old_highest_bid:
+            old_bidder = old_highest_bid.bidder
+            old_amount = old_highest_bid.amount
+
+            # If a DIFFERENT user was the old highest bidder
+            if old_bidder != request.user:
+                # Return old highest bid to that user
+                with transaction.atomic():
+                    old_bidder.account.balance += old_amount
+                    old_bidder.account.save()
+
+                # Deduct the entire new bid from the new bidder
+                bidder_account = request.user.account
+                if bidder_account.balance < amount:
+                    return Response({"detail": "Insufficient funds."}, status=400)
+
+                with transaction.atomic():
+                    bidder_account.balance -= amount
+                    bidder_account.save()
+
+                    # Create the new bid record
+                    new_bid = Bid.objects.create(
+                        auction_item=auction_item, bidder=request.user, amount=amount
+                    )
+                    auction_item.current_bid = amount
+                    auction_item.save()
+
+                serializer = BidSerializer(new_bid)
+                return Response(serializer.data, status=201)
+
+            else:
+                # The SAME user is increasing their own highest bid
+                difference = amount - old_amount
+
+                if difference <= 0:
+                    return Response(
+                        {
+                            "detail": "New bid must be higher than your current highest bid."
+                        },
+                        status=400,
+                    )
+
+                bidder_account = request.user.account
+                if bidder_account.balance < difference:
+                    return Response({"detail": "Insufficient funds."}, status=400)
+
+                with transaction.atomic():
+                    # Deduct ONLY the difference
+                    bidder_account.balance -= difference
+                    bidder_account.save()
+
+                    # Create a NEW bid record (or you could update the old one if you prefer)
+                    new_bid = Bid.objects.create(
+                        auction_item=auction_item, bidder=request.user, amount=amount
+                    )
+                    auction_item.current_bid = amount
+                    auction_item.save()
+
+                serializer = BidSerializer(new_bid)
+                return Response(serializer.data, status=201)
+
+        else:
+            # No old bids at all—this is the first bid
+            bidder_account = request.user.account
+            if bidder_account.balance < amount:
+                return Response({"detail": "Insufficient funds."}, status=400)
+
+            with transaction.atomic():
+                bidder_account.balance -= amount
+                bidder_account.save()
+
+                new_bid = Bid.objects.create(
+                    auction_item=auction_item, bidder=request.user, amount=amount
+                )
+                auction_item.current_bid = amount
+                auction_item.save()
+
+            serializer = BidSerializer(new_bid)
+            return Response(serializer.data, status=201)
 
     @action(detail=False, methods=["get"], permission_classes=[AllowAny])
     def search(self, request):
@@ -545,57 +607,60 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         parser_classes=[JSONParser],
     )
     def buy_now(self, request, pk=None):
-        """
-        Custom action to purchase an auction item via Buy Now.
-        """
         auction_item = self.get_object()
 
-        # Check if auction is active
         if auction_item.status != "active":
             return Response(
                 {"detail": "Cannot Buy Now on this item as the auction is not active."},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=400,
             )
 
-        # Prevent owner from buying their own item
         if auction_item.owner == request.user:
             return Response(
-                {"detail": "Owners cannot Buy Now their own items."},
-                status=status.HTTP_403_FORBIDDEN,
+                {"detail": "Owners cannot Buy Now their own items."}, status=403
             )
 
-        # Prevent multiple Buy Now purchases
         if auction_item.buy_now_buyer is not None:
             return Response(
                 {"detail": "This item has already been purchased via Buy Now."},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=400,
             )
 
-        # Check if Buy Now price is set
         if not auction_item.buy_now_price:
             return Response(
-                {"detail": "Buy Now price is not set for this item."},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"detail": "Buy Now price is not set for this item."}, status=400
             )
 
-        # Optionally, check user funds or other business logic here
+        # Check user funds
+        buyer_account = request.user.account
+        if buyer_account.balance < auction_item.buy_now_price:
+            return Response({"detail": "Insufficient funds to Buy Now."}, status=400)
 
-        # Set buyer, update current bid, mark auction as closed,
-        # and update the end_time to the current time (as if the auction has ended)
-        auction_item.buy_now_buyer = request.user
-        auction_item.current_bid = auction_item.buy_now_price
-        auction_item.status = "closed"
-        auction_item.end_time = timezone.now()
-        auction_item.save()
+        # Deduct
+        with transaction.atomic():
+            buyer_account.balance -= auction_item.buy_now_price
+            buyer_account.save()
 
-        # Optionally, set winner if not already set via Buy Now (this block may be unnecessary since we've just set buy_now_buyer)
-        if not auction_item.winner and auction_item.bids.exists():
-            highest_bid = auction_item.bids.order_by("-amount").first()
-            auction_item.winner = highest_bid.bidder
+            # Mark item as closed
+            auction_item.buy_now_buyer = request.user
+            auction_item.current_bid = auction_item.buy_now_price
+            auction_item.status = "closed"
+            auction_item.end_time = timezone.now()
             auction_item.save()
 
+            # (Optionally, if you want to pay the seller here, do so)
+            # seller_account = auction_item.owner.account
+            # seller_account.balance += auction_item.buy_now_price
+            # seller_account.save()
+
+            # (Optionally, set winner)
+            if not auction_item.winner and auction_item.bids.exists():
+                highest_bid = auction_item.bids.order_by("-amount").first()
+                auction_item.winner = highest_bid.bidder
+                auction_item.save()
+
         serializer = AuctionItemSerializer(auction_item)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=200)
 
 
 class FavoriteListCreateAPIView(generics.ListCreateAPIView):
@@ -855,3 +920,118 @@ class SearchAuctionItemsView(APIView):
             auction_items, many=True, context={"request": request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CreateDepositPaymentIntentView(APIView):
+    """
+    Create a PaymentIntent for depositing funds.
+    The frontend will use the returned client secret to complete the payment.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        amount_str = request.data.get("amount")
+        if not amount_str:
+            return Response(
+                {"detail": "Deposit amount is required."},
+                status=400,
+            )
+        try:
+            amount = Decimal(amount_str)
+        except Exception:
+            return Response(
+                {"detail": "Invalid amount format."},
+                status=400,
+            )
+        if amount <= 0:
+            return Response(
+                {"detail": "Deposit amount must be positive."},
+                status=400,
+            )
+
+        # Stripe expects the amount in the smallest currency unit (e.g. cents)
+        amount_cents = int(amount * 100)
+
+        try:
+            intent = stripe.PaymentIntent.create(
+                amount=amount_cents,
+                currency="usd",
+                metadata={"user_id": request.user.id, "deposit_amount": str(amount)},
+                # Optionally, add receipt_email or other parameters.
+            )
+        except Exception as e:
+            logger.error(f"Stripe PaymentIntent creation failed: {e}")
+            return Response(
+                {"detail": "Error creating PaymentIntent."},
+                status=500,
+            )
+
+        return Response(
+            {"client_secret": intent.client_secret},
+            status=200,
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class StripeWebhookView(APIView):
+    """
+    Listens for Stripe webhook events. Specifically, we'll handle payment_intent.succeeded
+    to credit the user's account when the deposit is confirmed.
+    """
+
+    permission_classes = []  # Webhook doesn't send an auth token, so typically no auth.
+
+    def post(self, request, *args, **kwargs):
+        payload = request.body
+        sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+        endpoint_secret = settings.STRIPE_WEBHOOK_SECRET  # Make sure this is set
+
+        try:
+            event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+        except (ValueError, stripe.error.SignatureVerificationError):
+            # Invalid payload or signature
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        # Handle the event
+        if event["type"] == "payment_intent.succeeded":
+            payment_intent = event["data"]["object"]
+            metadata = payment_intent.get("metadata", {})
+            user_id = metadata.get("user_id")
+            deposit_amount_str = metadata.get("deposit_amount")
+
+            if user_id and deposit_amount_str:
+                try:
+                    deposit_amount = Decimal(deposit_amount_str)
+                    user = User.objects.get(id=user_id)
+
+                    # Atomically update the balance and create a Transaction record
+                    with transaction.atomic():
+                        user.account.balance += deposit_amount
+                        user.account.save()
+                        Transaction.objects.create(
+                            user=user,
+                            transaction_type="deposit",
+                            amount=deposit_amount,
+                            status="completed",
+                            description="Deposit completed via Stripe.",
+                        )
+                except Exception as e:
+                    logger.error(f"Error handling payment_intent.succeeded: {e}")
+                    return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        elif event["type"] == "payment_intent.payment_failed":
+            # Optionally handle failed payments
+            pass
+
+        # Return a 200 to acknowledge receipt of the event
+        return Response(status=status.HTTP_200_OK)
+
+
+class UserBalanceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Assume every user has an associated UserAccount (thanks to your post_save signal)
+        user_account = request.user.account
+        return Response({"balance": str(user_account.balance)}, status=200)

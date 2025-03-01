@@ -1,11 +1,13 @@
 # auctions/models.py
-from enum import unique
 
 from django.db import models
+from decimal import Decimal
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class Category(models.Model):
@@ -13,6 +15,51 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class UserAccount(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="account")
+    balance = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00")
+    )
+
+    def __str__(self):
+        return f"{self.user.username} account - balance: ${self.balance}"
+
+
+@receiver(post_save, sender=User)
+def create_user_account(sender, instance, created, **kwargs):
+    if created:
+        UserAccount.objects.create(user=instance)
+
+
+class Transaction(models.Model):
+    TRANSACTION_TYPE_CHOICES = [
+        ("deposit", "Deposit"),
+        ("withdrawal", "Withdrawal"),
+        ("bid_lock", "Bid Lock"),  # When funds are temporarily held for a bid.
+        ("bid_release", "Bid Release"),  # When funds are released (e.g., bid lost).
+        ("seller_payment", "Seller Payment"),  # Payment to seller after verification.
+    ]
+
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
+    ]
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="transactions"
+    )
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.get_transaction_type_display()} of {self.amount} for {self.user.username} - {self.status}"
 
 
 class AuctionItem(models.Model):

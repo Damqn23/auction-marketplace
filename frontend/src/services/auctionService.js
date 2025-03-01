@@ -205,3 +205,8 @@ export const getMyBidAuctions = async () => {
       throw error;
     }
   };
+
+export const getUserBalance = async () => {
+    const response = await axiosInstance.get('user-balance/');
+    return response.data; // { balance: "10.00" }
+  };

@@ -18,3 +18,9 @@ build/
 *.ntvs*
 *.njsproj
 *.sln
+
+# Ignore React .env
+frontend/.env
+
+# Ignore Django .env
+backend/.env

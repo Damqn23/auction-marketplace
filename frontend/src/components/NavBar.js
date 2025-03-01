@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
-import { getUnreadMessages } from "../services/auctionService";
+import { getUnreadMessages, getUserBalance } from "../services/auctionService";
 import {
   AppBar,
   Toolbar,
@@ -45,9 +45,26 @@ const NavBar = () => {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
 
-  // Remove or comment out this line to avoid infinite loops:
-  // notify("You have been outbidded!", "warning");
+  const [balance, setBalance] = useState(null);
 
+  useEffect(() => {
+    // If user is logged in, fetch unread messages
+    if (user) {
+      getUnreadMessages()
+        .then((response) => setUnreadCount(response.unread_count))
+        .catch((error) => console.error("Error fetching unread messages:", error));
+    }
+  }, [user, setUnreadCount]);
+
+  useEffect(() => {
+    if (user) {
+      getUserBalance()
+        .then((data) => {
+          setBalance(data.balance); // e.g. "10.00"
+        })
+        .catch((err) => console.error("Error fetching user balance:", err));
+    }
+  }, [user]);
   // Fetch unread messages when user is logged in
   useEffect(() => {
     if (user) {
@@ -130,9 +147,16 @@ const NavBar = () => {
       }}
     >
       <Toolbar sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        {/* Left Section */}
         <Box sx={{ display: "flex", alignItems: "center" }}>
           {!isDesktop && (
-            <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer(true)} sx={{ mr: 1, color: "#ffffff" }}>
+            <IconButton
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              onClick={toggleDrawer(true)}
+              sx={{ mr: 1, color: "#ffffff" }}
+            >
               <MenuIcon />
             </IconButton>
           )}
@@ -151,6 +175,8 @@ const NavBar = () => {
             Auction Marketplace
           </Typography>
         </Box>
+
+        {/* Middle: Search Bar */}
         <Box sx={{ flex: 1, maxWidth: "500px", mx: 2 }}>
           <TextField
             placeholder="Search items..."
@@ -173,9 +199,21 @@ const NavBar = () => {
             }}
           />
         </Box>
+
+        {/* Right Section (Desktop) */}
         {isDesktop && user && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Button variant="contained" color="secondary" onClick={() => navigate("/create")} sx={{ textTransform: "none" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {/* 3. Show user balance and Deposit button */}
+            {balance && (
+              <Typography variant="body1" sx={{ color: "#fff" }}>
+                Balance: ${balance}
+              </Typography>
+            )}
+            <Button variant="contained" color="warning" onClick={() => navigate("/deposit")}>
+              Deposit
+            </Button>
+
+            <Button variant="contained" color="secondary" onClick={() => navigate("/create")}>
               Create Auction
             </Button>
             <IconButton color="inherit" onClick={() => navigate("/chat")}>
@@ -188,6 +226,7 @@ const NavBar = () => {
             </IconButton>
           </Box>
         )}
+
         {isDesktop && !user && (
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <IconButton color="inherit" onClick={toggleDrawer(true)}>
@@ -196,8 +235,15 @@ const NavBar = () => {
           </Box>
         )}
       </Toolbar>
+
+      {/* Drawer for mobile or secondary actions */}
       <Drawer anchor={drawerAnchor} open={drawerOpen} onClose={toggleDrawer(false)}>
-        <Box role="presentation" onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)} sx={{ width: 250 }}>
+        <Box
+          role="presentation"
+          onClick={toggleDrawer(false)}
+          onKeyDown={toggleDrawer(false)}
+          sx={{ width: 250 }}
+        >
           <List>
             {drawerMenuItems.map((item, index) => (
               <React.Fragment key={index}>
