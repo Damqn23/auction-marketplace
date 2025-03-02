@@ -58,3 +58,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             )
         )
+
+
+class BalanceConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        # Only allow authenticated users to connect
+        if self.scope["user"].is_anonymous:
+            await self.close()
+        else:
+            self.user = self.scope["user"]
+            # Create a unique group name for each user
+            self.group_name = f"user_balance_{self.user.id}"
+            await self.channel_layer.group_add(self.group_name, self.channel_name)
+            await self.accept()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    # This handler receives the balance update event
+    async def balance_update(self, event):
+        balance = event["balance"]
+        await self.send(text_data=json.dumps({"balance": balance}))

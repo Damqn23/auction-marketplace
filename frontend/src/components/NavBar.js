@@ -26,15 +26,9 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { keyframes } from "@emotion/react";
 
 const gradientAnimation = keyframes`
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 `;
 
 const NavBar = () => {
@@ -47,8 +41,8 @@ const NavBar = () => {
 
   const [balance, setBalance] = useState(null);
 
+  // Fetch unread messages when user is logged in
   useEffect(() => {
-    // If user is logged in, fetch unread messages
     if (user) {
       getUnreadMessages()
         .then((response) => setUnreadCount(response.unread_count))
@@ -56,6 +50,7 @@ const NavBar = () => {
     }
   }, [user, setUnreadCount]);
 
+  // Initial fetch of user balance when logged in
   useEffect(() => {
     if (user) {
       getUserBalance()
@@ -65,7 +60,8 @@ const NavBar = () => {
         .catch((err) => console.error("Error fetching user balance:", err));
     }
   }, [user]);
-  // Fetch unread messages when user is logged in
+
+  // Poll unread messages on mount (optional duplicate if needed)
   useEffect(() => {
     if (user) {
       const fetchUnreadMessages = async () => {
@@ -79,6 +75,25 @@ const NavBar = () => {
       fetchUnreadMessages();
     }
   }, [user, setUnreadCount]);
+
+  // NEW: Open a WebSocket connection for balance updates with JWT token attached
+  useEffect(() => {
+    if (user) {
+      const token = localStorage.getItem("access_token");
+      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+      const ws = new WebSocket(`${protocol}://localhost:8000/ws/balance/?token=${token}`);
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.balance) {
+          setBalance(data.balance);
+        }
+      };
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+      return () => ws.close();
+    }
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -203,7 +218,6 @@ const NavBar = () => {
         {/* Right Section (Desktop) */}
         {isDesktop && user && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            {/* 3. Show user balance and Deposit button */}
             {balance && (
               <Typography variant="body1" sx={{ color: "#fff" }}>
                 Balance: ${balance}
@@ -212,7 +226,6 @@ const NavBar = () => {
             <Button variant="contained" color="warning" onClick={() => navigate("/deposit")}>
               Deposit
             </Button>
-
             <Button variant="contained" color="secondary" onClick={() => navigate("/create")}>
               Create Auction
             </Button>
