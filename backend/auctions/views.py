@@ -677,12 +677,29 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
             )
 
         buyer_account = request.user.account
+        channel_layer = get_channel_layer()
 
-        # Check if the user has an existing bid on this auction
+        # --- Refund the previous highest bid if it exists and isn't from the buyer ---
+        old_highest_bid = auction_item.bids.order_by("-amount").first()
+        if old_highest_bid and old_highest_bid.bidder != request.user:
+            with transaction.atomic():
+                old_bidder = old_highest_bid.bidder
+                old_amount = old_highest_bid.amount
+                old_bidder.account.balance += old_amount
+                old_bidder.account.save()
+            async_to_sync(channel_layer.group_send)(
+                f"user_balance_{old_bidder.id}",
+                {
+                    "type": "balance_update",
+                    "balance": str(old_bidder.account.balance),
+                },
+            )
+
+        # --- Determine additional amount to charge ---
         user_bid = (
             auction_item.bids.filter(bidder=request.user).order_by("-amount").first()
         )
-        if user_bid:
+        if user_bid and auction_item.current_bid == user_bid.amount:
             additional_amount = auction_item.buy_now_price - user_bid.amount
         else:
             additional_amount = auction_item.buy_now_price
@@ -690,9 +707,8 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         if buyer_account.balance < additional_amount:
             return Response({"detail": "Insufficient funds to Buy Now."}, status=400)
 
-        channel_layer = get_channel_layer()
         with transaction.atomic():
-            # Deduct only the additional amount needed
+            # Deduct only the additional amount needed from the buyer
             buyer_account.balance -= additional_amount
             buyer_account.save()
 

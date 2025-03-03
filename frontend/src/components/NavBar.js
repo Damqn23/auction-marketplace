@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
@@ -39,14 +39,19 @@ const NavBar = () => {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
 
-  const [balance, setBalance] = useState(null);
+  // Balance states
+  const [balance, setBalance] = useState(null); // actual balance from backend
+  const [displayedBalance, setDisplayedBalance] = useState(null); // animated display value
+  const prevBalanceRef = useRef(null); // to store the previous balance value
 
-  // Fetch unread messages when user is logged in
+  // Fetch unread messages on login
   useEffect(() => {
     if (user) {
       getUnreadMessages()
         .then((response) => setUnreadCount(response.unread_count))
-        .catch((error) => console.error("Error fetching unread messages:", error));
+        .catch((error) =>
+          console.error("Error fetching unread messages:", error)
+        );
     }
   }, [user, setUnreadCount]);
 
@@ -55,13 +60,16 @@ const NavBar = () => {
     if (user) {
       getUserBalance()
         .then((data) => {
-          setBalance(data.balance); // e.g. "10.00"
+          const bal = parseFloat(data.balance);
+          setBalance(bal);
+          setDisplayedBalance(bal.toFixed(2));
+          prevBalanceRef.current = bal;
         })
         .catch((err) => console.error("Error fetching user balance:", err));
     }
   }, [user]);
 
-  // Poll unread messages on mount (optional duplicate if needed)
+  // Poll unread messages (if needed)
   useEffect(() => {
     if (user) {
       const fetchUnreadMessages = async () => {
@@ -76,16 +84,45 @@ const NavBar = () => {
     }
   }, [user, setUnreadCount]);
 
-  // NEW: Open a WebSocket connection for balance updates with JWT token attached
+  // Animation function to update the displayed balance
+  const animateBalanceChange = (newBalance) => {
+    const start = prevBalanceRef.current !== null ? prevBalanceRef.current : newBalance;
+    const end = newBalance;
+    const duration = 1000; // animation duration in ms
+    const intervalTime = 50; // update every 50ms
+    const steps = duration / intervalTime;
+    let currentStep = 0;
+
+    const interval = setInterval(() => {
+      currentStep++;
+      if (currentStep < steps) {
+        const progress = currentStep / steps;
+        // Linear interpolation between start and end
+        const interpolated = start + (end - start) * progress;
+        // Add a bit of random noise (10% of the difference) for a "spinning" effect
+        const noise = (Math.random() - 0.5) * Math.abs(end - start) * 0.1;
+        setDisplayedBalance((interpolated + noise).toFixed(2));
+      } else {
+        setDisplayedBalance(end.toFixed(2));
+        clearInterval(interval);
+      }
+    }, intervalTime);
+    prevBalanceRef.current = newBalance;
+  };
+
+  // WebSocket connection for balance updates using your existing setup
   useEffect(() => {
     if (user) {
       const token = localStorage.getItem("access_token");
       const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-      const ws = new WebSocket(`${protocol}://localhost:8000/ws/balance/?token=${token}`);
+      const wsUrl = `${protocol}://${process.env.REACT_APP_WEBSOCKET_URL}/ws/balance/?token=${token}`;
+      const ws = new WebSocket(wsUrl);
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.balance) {
-          setBalance(data.balance);
+          const newBal = parseFloat(data.balance);
+          setBalance(newBal);
+          animateBalanceChange(newBal);
         }
       };
       ws.onerror = (error) => {
@@ -218,9 +255,9 @@ const NavBar = () => {
         {/* Right Section (Desktop) */}
         {isDesktop && user && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            {balance && (
+            {displayedBalance !== null && (
               <Typography variant="body1" sx={{ color: "#fff" }}>
-                Balance: ${balance}
+                Balance: ${displayedBalance}
               </Typography>
             )}
             <Button variant="contained" color="warning" onClick={() => navigate("/deposit")}>
@@ -251,12 +288,7 @@ const NavBar = () => {
 
       {/* Drawer for mobile or secondary actions */}
       <Drawer anchor={drawerAnchor} open={drawerOpen} onClose={toggleDrawer(false)}>
-        <Box
-          role="presentation"
-          onClick={toggleDrawer(false)}
-          onKeyDown={toggleDrawer(false)}
-          sx={{ width: 250 }}
-        >
+        <Box role="presentation" onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)} sx={{ width: 250 }}>
           <List>
             {drawerMenuItems.map((item, index) => (
               <React.Fragment key={index}>

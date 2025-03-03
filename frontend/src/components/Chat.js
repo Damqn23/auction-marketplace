@@ -57,9 +57,8 @@ const Chat = () => {
   // 2. Open WebSocket connection for real-time chat
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    ws.current = new WebSocket(
-      `${protocol}://localhost:8000/ws/chat/${chatRoomName}/`
-    );
+    const wsUrl = `${protocol}://${process.env.REACT_APP_WEBSOCKET_URL}/ws/chat/${chatRoomName}/`;
+    ws.current = new WebSocket(wsUrl);
 
     ws.current.onopen = () => console.log("WebSocket connected");
     ws.current.onmessage = (e) => {
