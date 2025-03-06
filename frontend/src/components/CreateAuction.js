@@ -1,20 +1,24 @@
 import React, { useState, useEffect, useContext } from "react";
-import { createAuctionItem } from "../services/auctionService";
 import { useNavigate, Link } from "react-router-dom";
-import { toast } from "react-toastify";
-import { UserContext } from "../contexts/UserContext";
-import { getAllCategories } from "../services/categoryService";
 import {
-  Paper,
+  Box,
   Typography,
   TextField,
   Button,
   CircularProgress,
-  Box,
   MenuItem,
+  Stepper,
+  Step,
+  StepLabel,
+  Paper,
   Divider,
 } from "@mui/material";
 import { keyframes } from "@emotion/react";
+import { toast } from "react-toastify";
+
+import { createAuctionItem } from "../services/auctionService";
+import { getAllCategories } from "../services/categoryService";
+import { UserContext } from "../contexts/UserContext";
 
 const fadeInScale = keyframes`
   from {
@@ -28,95 +32,120 @@ const fadeInScale = keyframes`
 `;
 
 const CreateAuction = () => {
-  // Basic fields
+  // ------------------ States ------------------
+  const [activeStep, setActiveStep] = useState(0);
+
+  // Basic info
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [startingBid, setStartingBid] = useState("");
-  const [buyNowPrice, setBuyNowPrice] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
 
-  // Additional details
-  const [condition, setCondition] = useState("");
-  const [location, setLocation] = useState("");
-
-  // Auction duration (in hours)
+  // Pricing
+  const [startingBid, setStartingBid] = useState("");
+  const [buyNowPrice, setBuyNowPrice] = useState("");
   const [duration, setDuration] = useState("1");
 
-  // Images
+  // Condition & Images
+  const [condition, setCondition] = useState("");
+  const [location, setLocation] = useState("");
   const [images, setImages] = useState([]);
 
-  // Other state
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  // Other
   const [categories, setCategories] = useState([]);
-
-  // New state for cities
   const [cities, setCities] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
 
-  const handleImageChange = (e) => {
-    const filesArray = Array.from(e.target.files);
-    setImages(filesArray);
+  // ------------------ Stepper Logic ------------------
+  const steps = [
+    "Basic Info",
+    "Pricing & Duration",
+    "Condition & Images",
+    "Review & Create",
+  ];
+
+  const handleNext = () => {
+    setErrorMsg("");
+    // Optional: you could validate step-by-step before moving on
+    if (activeStep === 0) {
+      // Basic info validation
+      if (!title || !description || !selectedCategory) {
+        setErrorMsg("Please fill out all required fields.");
+        return;
+      }
+    } else if (activeStep === 1) {
+      // Pricing validation
+      if (!startingBid || !duration) {
+        setErrorMsg("Please fill out the required pricing fields.");
+        return;
+      }
+      // If buyNowPrice is set, ensure it’s higher than startingBid
+      if (buyNowPrice && parseFloat(buyNowPrice) <= parseFloat(startingBid)) {
+        setErrorMsg("Buy Now price must be higher than the starting bid.");
+        return;
+      }
+    } else if (activeStep === 2) {
+      // Condition & location validation
+      if (!condition || !location) {
+        setErrorMsg("Please select condition and location.");
+        return;
+      }
+      // images are optional, no check needed
+    }
+    setActiveStep((prev) => prev + 1);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage("");
+  const handleBack = () => {
+    setErrorMsg("");
+    setActiveStep((prev) => prev - 1);
+  };
+
+  // ------------------ Final Submit ------------------
+  const handleSubmit = async () => {
     setLoading(true);
-
-    // Validate: if buyNowPrice is set, it must be higher than startingBid
-    if (buyNowPrice && parseFloat(buyNowPrice) <= parseFloat(startingBid)) {
-      setMessage("Buy Now price must be higher than the starting bid.");
-      setLoading(false);
-      return;
-    }
-    if (!selectedCategory) {
-      setMessage("Category selection is required.");
-      setLoading(false);
-      return;
-    }
-
-    // Compute end time based on current time plus selected duration (in hours)
-    const now = new Date();
-    now.setHours(now.getHours() + parseInt(duration, 10));
-    const computedEndTime = now.toISOString();
-
-    // Build FormData
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("starting_bid", startingBid);
-    formData.append("buy_now_price", buyNowPrice);
-    formData.append("end_time", computedEndTime);
-    formData.append("category", selectedCategory);
-    formData.append("condition", condition);
-    formData.append("location", location);
-
-    images.forEach((imageFile) => {
-      formData.append("images", imageFile);
-    });
+    setErrorMsg("");
 
     try {
+      // Compute end time
+      const now = new Date();
+      now.setHours(now.getHours() + parseInt(duration, 10));
+      const computedEndTime = now.toISOString();
+
+      // Build FormData
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("starting_bid", startingBid);
+      formData.append("buy_now_price", buyNowPrice);
+      formData.append("end_time", computedEndTime);
+      formData.append("category", selectedCategory);
+      formData.append("condition", condition);
+      formData.append("location", location);
+
+      images.forEach((imgFile) => {
+        formData.append("images", imgFile);
+      });
+
       await createAuctionItem(formData);
-      toast.success("Auction item created successfully!");
-      navigate("/");
+      toast.success("Auction created successfully!");
+      navigate("/"); // redirect to home or anywhere
     } catch (err) {
-      setMessage("Error creating auction item");
-      console.error("Error:", err);
-      toast.error("Failed to create auction item. Please try again.");
+      console.error(err);
+      toast.error("Failed to create auction. Please try again.");
     }
 
     setLoading(false);
   };
 
-  // Fetch categories on component mount
+  // ------------------ Load Categories & Cities ------------------
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const categoriesData = await getAllCategories();
-        setCategories(categoriesData);
+        const catData = await getAllCategories();
+        setCategories(catData);
       } catch (error) {
         console.error("Failed to load categories:", error);
       }
@@ -124,224 +153,270 @@ const CreateAuction = () => {
     fetchCategories();
   }, []);
 
-  // Fetch Bulgarian cities from the local bg.json file
-  // Fetch Bulgarian cities from the local bg.json file
-useEffect(() => {
-  fetch("/data/bg.json")
-    .then((res) => res.json())
-    .then((data) => {
-      // Sort the data alphabetically by the "city" field
-      const sortedCities = data.sort((a, b) =>
-        a.city.localeCompare(b.city)
-      );
-      setCities(sortedCities);
-    })
-    .catch((error) => console.error("Error fetching cities:", error));
-}, []);
+  useEffect(() => {
+    // Load Bulgarian cities or any other city data
+    fetch("/data/bg.json")
+      .then((res) => res.json())
+      .then((data) => {
+        const sorted = data.sort((a, b) => a.city.localeCompare(b.city));
+        setCities(sorted);
+      })
+      .catch((error) => console.error("Error fetching cities:", error));
+  }, []);
 
+  // ------------------ Step Content ------------------
+  const renderStepContent = (stepIndex) => {
+    switch (stepIndex) {
+      case 0:
+        return (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <TextField
+              label="Title"
+              variant="outlined"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Description"
+              variant="outlined"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              multiline
+              rows={3}
+              fullWidth
+              required
+            />
+            <TextField
+              select
+              label="Category"
+              variant="outlined"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              fullWidth
+              required
+            >
+              <MenuItem value="">-- Select Category --</MenuItem>
+              {categories.map((cat) => (
+                <MenuItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+        );
+      case 1:
+        return (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <TextField
+              label="Starting Bid"
+              variant="outlined"
+              type="number"
+              value={startingBid}
+              onChange={(e) => setStartingBid(e.target.value)}
+              required
+              fullWidth
+              inputProps={{ min: "0", step: "0.01" }}
+            />
+            <TextField
+              label="Buy Now Price (Optional)"
+              variant="outlined"
+              type="number"
+              value={buyNowPrice}
+              onChange={(e) => setBuyNowPrice(e.target.value)}
+              fullWidth
+              inputProps={{
+                min: parseFloat(startingBid) + 0.01 || 0,
+                step: "0.01",
+              }}
+            />
+            <TextField
+              select
+              label="Auction Duration (Hours)"
+              variant="outlined"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              required
+              fullWidth
+            >
+              <MenuItem value="1">1 Hour</MenuItem>
+              <MenuItem value="3">3 Hours</MenuItem>
+              <MenuItem value="6">6 Hours</MenuItem>
+              <MenuItem value="12">12 Hours</MenuItem>
+              <MenuItem value="24">24 Hours</MenuItem>
+            </TextField>
+          </Box>
+        );
+      case 2:
+        return (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <TextField
+              select
+              label="Condition"
+              variant="outlined"
+              value={condition}
+              onChange={(e) => setCondition(e.target.value)}
+              fullWidth
+              required
+            >
+              <MenuItem value="">-- Select Condition --</MenuItem>
+              <MenuItem value="New">New</MenuItem>
+              <MenuItem value="Used">Used</MenuItem>
+              <MenuItem value="Refurbished">Refurbished</MenuItem>
+            </TextField>
+            <TextField
+              select
+              label="Location"
+              variant="outlined"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              fullWidth
+              required
+            >
+              <MenuItem value="">-- Select City --</MenuItem>
+              {cities.map((c) => (
+                <MenuItem key={c.city} value={c.city}>
+                  {c.city}
+                </MenuItem>
+              ))}
+            </TextField>
+            <Box>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                Upload Images (optional)
+              </Typography>
+              <Button variant="outlined" component="label">
+                Select Images
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files);
+                    setImages(files);
+                  }}
+                />
+              </Button>
+              {images.length > 0 && (
+                <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                  {images.length} image(s) selected
+                </Typography>
+              )}
+            </Box>
+          </Box>
+        );
+      case 3:
+        // Review & Create
+        return (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              Review Your Auction
+            </Typography>
+            <Divider />
+            <Typography variant="body1">
+              <strong>Title:</strong> {title}
+            </Typography>
+            <Typography variant="body1">
+              <strong>Description:</strong> {description}
+            </Typography>
+            <Typography variant="body1">
+              <strong>Category:</strong>{" "}
+              {categories.find((cat) => cat.id === Number(selectedCategory))
+                ?.name || "(None)"}
+            </Typography>
+            <Divider />
+            <Typography variant="body1">
+              <strong>Starting Bid:</strong> ${startingBid}
+            </Typography>
+            <Typography variant="body1">
+              <strong>Buy Now Price:</strong>{" "}
+              {buyNowPrice ? `$${buyNowPrice}` : "N/A"}
+            </Typography>
+            <Typography variant="body1">
+              <strong>Duration (hrs):</strong> {duration}
+            </Typography>
+            <Divider />
+            <Typography variant="body1">
+              <strong>Condition:</strong> {condition}
+            </Typography>
+            <Typography variant="body1">
+              <strong>Location:</strong> {location}
+            </Typography>
+            <Typography variant="body1">
+              <strong>Images:</strong> {images.length} file(s) selected
+            </Typography>
+          </Box>
+        );
+      default:
+        return <Typography>Unknown step</Typography>;
+    }
+  };
 
   return (
     <Box
       sx={{
-        display: "flex",
-        justifyContent: "center",
-        p: 3,
-        background: "linear-gradient(135deg, #dfe9f3, #ffffff)",
         minHeight: "100vh",
+        p: 3,
+        background: "linear-gradient(135deg, #f0f4f8, #ffffff)",
       }}
     >
       <Paper
         elevation={4}
         sx={{
-          width: "100%",
-          maxWidth: "650px",
-          p: 4,
+          maxWidth: 700,
+          mx: "auto",
+          p: 3,
           borderRadius: 2,
           animation: `${fadeInScale} 0.6s ease-in-out`,
-          backgroundColor: "rgba(255,255,255,0.98)",
         }}
       >
         <Typography
           variant="h4"
-          component="h2"
-          gutterBottom
-          sx={{ textAlign: "center", mb: 3, fontWeight: "bold", color: "#333" }}
+          sx={{ textAlign: "center", mb: 2, fontWeight: "bold" }}
         >
-          Create New Auction Listing
+          Create New Auction
         </Typography>
 
-        {message && (
+        {/* Stepper */}
+        <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
+          {steps.map((label, index) => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+
+        {/* Error message */}
+        {errorMsg && (
           <Typography variant="body1" color="error" sx={{ mb: 2 }}>
-            {message}
+            {errorMsg}
           </Typography>
         )}
 
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          encType="multipart/form-data"
-          sx={{ display: "flex", flexDirection: "column", gap: 2 }}
-        >
-          {/* Title */}
-          <TextField
-            label="Title"
-            variant="outlined"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            fullWidth
-            required
-          />
+        {/* Step content */}
+        <Box sx={{ mb: 3 }}>{renderStepContent(activeStep)}</Box>
 
-          {/* Description */}
-          <TextField
-            label="Description"
+        {/* Navigation Buttons */}
+        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Button
+            disabled={activeStep === 0}
+            onClick={handleBack}
             variant="outlined"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            multiline
-            rows={4}
-            fullWidth
-            required
-          />
-
-          <Divider sx={{ my: 2 }} />
-
-          {/* Starting Bid */}
-          <TextField
-            label="Starting Bid"
-            variant="outlined"
-            type="number"
-            value={startingBid}
-            onChange={(e) => setStartingBid(e.target.value)}
-            required
-            fullWidth
-            inputProps={{ min: "0", step: "0.01" }}
-          />
-
-          {/* Auction Duration */}
-          <TextField
-            select
-            label="Auction Duration (hours)"
-            variant="outlined"
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            required
-            fullWidth
           >
-            <MenuItem value="1">1 Hour</MenuItem>
-            <MenuItem value="3">3 Hours</MenuItem>
-            <MenuItem value="6">6 Hours</MenuItem>
-            <MenuItem value="12">12 Hours</MenuItem>
-          </TextField>
+            Back
+          </Button>
 
-          <Divider sx={{ my: 2 }} />
-
-          {/* Additional Details */}
-          <TextField
-            label="Condition"
-            variant="outlined"
-            select
-            value={condition}
-            onChange={(e) => setCondition(e.target.value)}
-            fullWidth
-            required
-          >
-            <MenuItem value="">Select condition</MenuItem>
-            <MenuItem value="New">New</MenuItem>
-            <MenuItem value="Used">Used</MenuItem>
-            <MenuItem value="Refurbished">Refurbished</MenuItem>
-          </TextField>
-
-          {/* Location (Select from Bulgarian cities) */}
-          <TextField
-            select
-            label="Location"
-            variant="outlined"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            fullWidth
-            required
-            helperText="Select your city/region"
-          >
-            <MenuItem value="">
-              <em>Select City</em>
-            </MenuItem>
-            {cities.map((city) => (
-              <MenuItem key={city.city} value={city.city}>
-                {city.city}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          <Divider sx={{ my: 2 }} />
-
-          {/* Images */}
-          <Box>
-            <Typography variant="body1" gutterBottom>
-              Upload Images (optional, multiple allowed):
-            </Typography>
-            <Button variant="outlined" component="label">
-              Select Images
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                hidden
-                onChange={handleImageChange}
-              />
+          {activeStep < steps.length - 1 ? (
+            <Button variant="contained" onClick={handleNext}>
+              Next
             </Button>
-            {images.length > 0 && (
-              <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                {images.length} image(s) selected
-              </Typography>
-            )}
-          </Box>
-
-          {/* Buy Now Price (Optional) */}
-          <TextField
-            label="Buy Now Price (Optional)"
-            variant="outlined"
-            type="number"
-            value={buyNowPrice}
-            onChange={(e) => setBuyNowPrice(e.target.value)}
-            fullWidth
-            inputProps={{
-              min: parseFloat(startingBid) + 0.01 || 0,
-              step: "0.01",
-            }}
-          />
-
-          {/* Category */}
-          <TextField
-            select
-            label="Category"
-            variant="outlined"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            SelectProps={{ native: true }}
-            fullWidth
-            required
-          >
-            <option value=""></option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </TextField>
-
-          {/* Submit Button */}
-          <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
+          ) : (
             <Button
-              type="submit"
               variant="contained"
               color="primary"
               disabled={loading}
-              sx={{
-                textTransform: "none",
-                fontSize: "1rem",
-                py: 1.5,
-              }}
+              onClick={handleSubmit}
             >
               {loading ? (
                 <CircularProgress size={24} sx={{ color: "#fff" }} />
@@ -349,14 +424,12 @@ useEffect(() => {
                 "Create Auction"
               )}
             </Button>
-          </Box>
+          )}
         </Box>
 
+        {/* Back to Auction List */}
         <Box sx={{ mt: 2, textAlign: "center" }}>
-          <Link
-            to="/"
-            style={{ textDecoration: "none", color: "#1976d2", fontWeight: 500 }}
-          >
+          <Link to="/" style={{ textDecoration: "none", color: "#1976d2" }}>
             Back to Auction List
           </Link>
         </Box>

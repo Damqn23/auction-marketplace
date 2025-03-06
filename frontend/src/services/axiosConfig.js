@@ -35,7 +35,7 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: check for 401 and attempt refresh
+// Response interceptor: check for 401 and attempt refresh if we actually have a token
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -43,9 +43,16 @@ axiosInstance.interceptors.response.use(
 
     // Only handle 401 once per request
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Check if we actually have a token to refresh
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        // No token means user is logged out. Skip refresh entirely.
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
-      // If we're already refreshing, queue the request to be retried once done
+      // If we're already refreshing, queue this request until done
       if (isRefreshing) {
         return new Promise((resolve) => {
           subscribeTokenRefresh((newToken) => {

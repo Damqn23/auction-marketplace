@@ -210,6 +210,7 @@ class DashboardStatsView(APIView):
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = [AllowAny]
 
 
 class UserBidsView(APIView):

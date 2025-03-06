@@ -1,34 +1,56 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { getMessages, markAsRead, getUnreadMessages } from "../services/auctionService";
-import { UserContext } from "../contexts/UserContext";
 import {
   Box,
   Typography,
   TextField,
-  Button,
+  IconButton,
 } from "@mui/material";
+import SendIcon from "@mui/icons-material/Send";
+import InsertEmoticonIcon from "@mui/icons-material/InsertEmoticon";
+import EmojiPicker from "emoji-picker-react";
+
+import {
+  getMessages,
+  markAsRead,
+  getUnreadMessages,
+} from "../services/auctionService";
+import { UserContext } from "../contexts/UserContext";
+
+function formatMessageDate(timestamp) {
+  const messageDate = new Date(timestamp);
+  const now = new Date();
+  if (messageDate.toDateString() === now.toDateString()) {
+    return "Today";
+  }
+  return messageDate.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+}
 
 const Chat = () => {
-  const { ownerUsername } = useParams(); // The "other" user's username
+  const { ownerUsername } = useParams();
+  const { user, setUnreadCount } = useContext(UserContext);
+
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const { user, setUnreadCount } = useContext(UserContext);
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
   const messagesEndRef = useRef(null);
   const ws = useRef(null);
 
-  // Generate a stable room name so both participants connect to the same room
+  // Determine room name
   const chatRoomName =
     user.username < ownerUsername
       ? user.username + "_" + ownerUsername
       : ownerUsername + "_" + user.username;
 
+  // Scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // 1. Load previous messages via REST API
+  // 1) Load messages via REST
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -36,14 +58,10 @@ const Chat = () => {
         setMessages(response);
         setLoading(false);
 
-        // Mark them as read
         await markAsRead(ownerUsername);
-
-        // Update unread count
         const unreadResponse = await getUnreadMessages();
         setUnreadCount(unreadResponse.unread_count);
 
-        // Scroll down
         scrollToBottom();
       } catch (error) {
         console.error("Error fetching messages", error);
@@ -54,92 +72,135 @@ const Chat = () => {
     fetchData();
   }, [ownerUsername, setUnreadCount]);
 
-  // 2. Open WebSocket connection for real-time chat
+  // 2) Open WebSocket
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     const wsUrl = `${protocol}://${process.env.REACT_APP_WEBSOCKET_URL}/ws/chat/${chatRoomName}/`;
     ws.current = new WebSocket(wsUrl);
 
-    ws.current.onopen = () => console.log("WebSocket connected");
+    ws.current.onopen = () => {
+      console.log("WebSocket connected");
+    };
+
     ws.current.onmessage = (e) => {
       const data = JSON.parse(e.data);
-      // Append the incoming message to state
-      setMessages((prev) => [...prev, data]);
-      scrollToBottom();
+
+      if (data.type === "chat_message") {
+        // Append the new message
+        setMessages((prev) => [...prev, data]);
+        scrollToBottom();
+      } else if (data.type === "typing") {
+        // Only show typing if it's from the OTHER user
+        if (data.sender !== user.username) {
+          setOtherUserTyping(true);
+          setTimeout(() => setOtherUserTyping(false), 3000);
+        }
+      }
     };
-    ws.current.onclose = () => console.log("WebSocket disconnected");
+
+    ws.current.onclose = () => {
+      console.log("WebSocket disconnected");
+    };
 
     return () => {
       ws.current.close();
     };
-  }, [chatRoomName]);
+  }, [chatRoomName, user.username]);
 
-  // 3. Send message via WebSocket
+  // 3) Scroll to bottom whenever messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // 4) Send a chat message
   const handleSendMessage = () => {
     const trimmed = newMessage.trim();
-    if (!trimmed) return; // Avoid sending empty messages
+    if (!trimmed) return;
 
-    // Prepare the message payload (include 'recipient')
     const messageData = {
+      type: "chat_message",
       message: trimmed,
       sender: user.username,
-      recipient: ownerUsername, // <-- This is critical to store in DB
+      recipient: ownerUsername,
+      timestamp: new Date().toISOString(),
     };
 
-    // Send the message if the WebSocket is open
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify(messageData));
+      setNewMessage("");
     } else {
       console.error("WebSocket is not connected.");
     }
-    setNewMessage("");
   };
 
+  // 5) Send "typing" event on text change
+  const handleTyping = (e) => {
+    setNewMessage(e.target.value);
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      const typingData = {
+        type: "typing",
+        sender: user.username,
+        recipient: ownerUsername,
+      };
+      ws.current.send(JSON.stringify(typingData));
+    }
+  };
+
+  // 6) Emoji picker
+  const onEmojiClick = (emojiData) => {
+    setNewMessage((prev) => prev + emojiData.emoji);
+  };
+
+  // If still loading
   if (loading) {
     return (
-      <Box sx={{ color: "#fff", fontSize: "1.2rem", textAlign: "center", p: 3 }}>
-        Loading chat...
+      <Box sx={{ textAlign: "center", mt: 4 }}>
+        <Typography>Loading chat...</Typography>
       </Box>
     );
   }
 
+  let currentDay = null;
+
   return (
     <Box
       sx={{
-        p: 4,
-        maxWidth: "800px",
-        mx: "auto",
-        my: 4,
-        background: "linear-gradient(135deg, #6e7fce, #4a90e2)",
-        borderRadius: 3,
-        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)",
-        color: "#fff",
+        height: "calc(100vh - 64px)",
+        display: "flex",
+        flexDirection: "column",
+        backgroundImage: 'url("https://www.toptal.com/designers/subtlepatterns/patterns/diagmonds.png")',
+        backgroundRepeat: "repeat",
+        backgroundSize: "auto",
       }}
     >
-      <Typography
-        variant="h2"
-        sx={{
-          textAlign: "center",
-          fontSize: "2rem",
-          fontWeight: 600,
-          mb: 2,
-          textShadow: "2px 2px 5px rgba(0, 0, 0, 0.1)",
-        }}
-      >
-        Chat with {ownerUsername}
-      </Typography>
-
-      {/* Messages List */}
+      {/* Top Bar */}
       <Box
         sx={{
-          height: { xs: 300, md: 400 },
+          background: "linear-gradient(45deg, #2196F3, #64B5F6)",
+          color: "#fff",
+          py: 2,
+          textAlign: "center",
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: "bold",
+            letterSpacing: 1,
+            textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+          }}
+        >
+          Chat with {ownerUsername}
+        </Typography>
+      </Box>
+
+      {/* Messages Container */}
+      <Box
+        sx={{
+          flex: 1,
           overflowY: "auto",
-          mb: 3,
           p: 2,
-          backgroundColor: "#fff",
-          borderRadius: 2,
-          boxShadow: "inset 0 2px 8px rgba(0, 0, 0, 0.1)",
-          color: "#333",
+          backgroundColor: "rgba(255, 255, 255, 0.7)",
           display: "flex",
           flexDirection: "column",
         }}
@@ -147,104 +208,169 @@ const Chat = () => {
         {messages.length === 0 ? (
           <Typography
             variant="body1"
-            sx={{
-              fontStyle: "italic",
-              color: "#ccc",
-              textAlign: "center",
-              mt: 2,
-            }}
+            sx={{ fontStyle: "italic", color: "#666", textAlign: "center", mt: 2 }}
           >
             No messages yet.
           </Typography>
         ) : (
           messages.map((msg, index) => {
-            const isSentByCurrentUser = msg.sender === user.username;
+            const isCurrentUser = msg.sender === user.username;
+            const messageDay = msg.timestamp
+              ? new Date(msg.timestamp).toDateString()
+              : null;
+
+            let showDateHeader = false;
+            if (messageDay && messageDay !== currentDay) {
+              showDateHeader = true;
+              currentDay = messageDay;
+            }
+
             return (
-              <Box
-                key={index}
-                sx={{
-                  alignSelf: isSentByCurrentUser ? "flex-end" : "flex-start",
-                  mb: 2,
-                  p: 1.5,
-                  borderRadius: 2,
-                  backgroundColor: isSentByCurrentUser ? "#d1f8d1" : "#fff9c4",
-                  color: "inherit",
-                  maxWidth: "70%",
-                  textAlign: isSentByCurrentUser ? "right" : "left",
-                }}
-              >
-                <Typography variant="subtitle2" component="span">
-                  {msg.sender}
-                </Typography>
-                <Typography variant="body1" sx={{ my: 0.5 }}>
-                  {msg.message}
-                </Typography>
-                <Typography
-                  variant="caption"
+              <React.Fragment key={index}>
+                {/* Date Header */}
+                {showDateHeader && msg.timestamp && (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      textAlign: "center",
+                      mt: 2,
+                      mb: 1,
+                      color: "#888",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {formatMessageDate(msg.timestamp)}
+                  </Typography>
+                )}
+
+                {/* Message Bubble */}
+                <Box
                   sx={{
-                    fontSize: "0.75rem",
-                    color: "#666",
-                    display: "block",
-                    textAlign: "right",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: isCurrentUser ? "flex-end" : "flex-start",
+                    mb: 1.5,
                   }}
                 >
-                  {msg.timestamp
-                    ? new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : ""}
-                </Typography>
-              </Box>
+                  <Box
+                    sx={{
+                      maxWidth: "75%",
+                      p: 1.5,
+                      borderRadius: 3,
+                      fontSize: "1rem",
+                      boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                      backgroundColor: isCurrentUser ? "#1976D2" : "#fff",
+                      color: isCurrentUser ? "#fff" : "#333",
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: "bold",
+                        mb: 0.5,
+                        color: isCurrentUser ? "#fff" : "#333",
+                      }}
+                    >
+                      {msg.sender}
+                    </Typography>
+                    <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+                      {msg.message}
+                    </Typography>
+                    {msg.timestamp && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          display: "block",
+                          textAlign: "right",
+                          color: isCurrentUser
+                            ? "rgba(255,255,255,0.8)"
+                            : "#777",
+                          mt: 0.5,
+                          fontSize: "0.8rem",
+                        }}
+                      >
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              </React.Fragment>
             );
           })
         )}
         <Box ref={messagesEndRef} />
+
+        {/* Typing Indicator */}
+        {otherUserTyping && (
+          <Typography
+            variant="body2"
+            sx={{ fontStyle: "italic", color: "#666", mt: 1, textAlign: "left" }}
+          >
+            {ownerUsername} is typing...
+          </Typography>
+        )}
       </Box>
 
-      {/* Message Input & Send Button */}
+      {/* Input Area (Footer) */}
       <Box
         sx={{
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
-          mt: 2,
+          p: 1,
+          borderTop: "1px solid #ddd",
+          backgroundColor: "#fff",
+          position: "relative",
         }}
       >
+        {/* Emoji Picker Toggle */}
+        <IconButton onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+          <InsertEmoticonIcon sx={{ color: "#1976D2" }} />
+        </IconButton>
+
+        {showEmojiPicker && (
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: "60px",
+              left: "10px",
+              zIndex: 10,
+            }}
+          >
+            <EmojiPicker onEmojiClick={onEmojiClick} />
+          </Box>
+        )}
+
         <TextField
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type your message..."
-          multiline
-          rows={3}
           fullWidth
+          multiline
+          maxRows={3}
+          placeholder="Type a message..."
+          value={newMessage}
+          onChange={handleTyping}
           sx={{
-            mb: 2,
-            backgroundColor: "#f5f5f5",
-            borderRadius: 1,
+            mx: 1,
             "& .MuiOutlinedInput-root": {
-              "& fieldset": { borderColor: "#ccc" },
-              "&:hover fieldset": { borderColor: "#4a90e2" },
-              "&.Mui-focused fieldset": { borderColor: "#4a90e2" },
+              borderRadius: 3,
+              backgroundColor: "#f9f9f9",
             },
           }}
         />
-        <Button
+
+        <IconButton
           onClick={handleSendMessage}
-          variant="contained"
           sx={{
-            backgroundColor: "#4a90e2",
+            backgroundColor: "#1976D2",
             color: "#fff",
-            px: 3,
-            py: 1.5,
-            borderRadius: 3,
-            textTransform: "none",
-            transition: "background-color 0.3s ease",
-            "&:hover": { backgroundColor: "#357ab7" },
+            "&:hover": {
+              backgroundColor: "#1565C0",
+            },
           }}
         >
-          Send
-        </Button>
+          <SendIcon />
+        </IconButton>
       </Box>
     </Box>
   );

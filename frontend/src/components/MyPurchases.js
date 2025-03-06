@@ -14,6 +14,7 @@ import {
   Container,
   CircularProgress,
   Box,
+  Pagination,
 } from "@mui/material";
 import { keyframes } from "@emotion/react";
 
@@ -32,6 +33,8 @@ const MyPurchases = () => {
   const [purchasedItems, setPurchasedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 6;
   const navigate = useNavigate();
 
   // Separate function so we can call it on mount & on retry
@@ -49,10 +52,11 @@ const MyPurchases = () => {
       if (items.length === 0) {
         toast.warn("No purchases found.");
       }
+      // Sort by newest purchase (using end_time)
+      items.sort((a, b) => new Date(b.end_time) - new Date(a.end_time));
       setPurchasedItems(items);
     } catch (err) {
       console.error("Error fetching purchases:", err);
-      // Provide a more detailed error or fallback
       const detail = err.response?.data?.detail || "Failed to load your purchases.";
       setError(detail);
       toast.error(detail);
@@ -62,7 +66,6 @@ const MyPurchases = () => {
   };
 
   useEffect(() => {
-    // Only fetch if user is logged in
     if (!user) {
       setLoading(false);
       setError("You must be logged in to view your purchases.");
@@ -75,7 +78,6 @@ const MyPurchases = () => {
     try {
       await markAsReceived(itemId);
       toast.success("Item marked as received!");
-      // Update local state
       setPurchasedItems((prev) =>
         prev.map((item) =>
           item.id === itemId ? { ...item, shipping_status: "received" } : item
@@ -87,23 +89,14 @@ const MyPurchases = () => {
     }
   };
 
-  // If still loading, show spinner
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "60vh",
-        }}
-      >
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
         <CircularProgress />
       </Box>
     );
   }
 
-  // If there's an error, display it + a Retry button
   if (error) {
     return (
       <Box sx={{ textAlign: "center", mt: 4 }}>
@@ -117,7 +110,6 @@ const MyPurchases = () => {
     );
   }
 
-  // If no items
   if (!Array.isArray(purchasedItems) || purchasedItems.length === 0) {
     return (
       <Typography variant="body1" align="center" sx={{ mt: 2 }}>
@@ -135,6 +127,10 @@ const MyPurchases = () => {
     }
     return "https://via.placeholder.com/250?text=No+Image";
   };
+
+  // Pagination logic
+  const paginatedItems = purchasedItems.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const pageCount = Math.ceil(purchasedItems.length / itemsPerPage);
 
   return (
     <Container
@@ -166,26 +162,23 @@ const MyPurchases = () => {
         </Link>
       </Box>
 
-      <Grid container spacing={3}>
-        {purchasedItems.map((item) => {
+      <Grid container spacing={2}>
+        {paginatedItems.map((item) => {
           const imageUrl = getImageUrl(item);
           return (
-            <Grid item xs={12} md={6} lg={4} key={item.id}>
+            <Grid item xs={12} sm={6} md={4} key={item.id}>
               <Card
                 sx={{
                   backgroundColor: "#fff",
-                  color: "#333",
                   borderRadius: "8px",
-                  border: "1px solid #444",
-                  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                  boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
                   overflow: "hidden",
                   display: "flex",
                   flexDirection: "column",
-                  height: "100%",
                   transition: "transform 0.3s ease, box-shadow 0.3s ease",
                   "&:hover": {
-                    transform: "translateY(-5px) scale(1.02)",
-                    boxShadow: "0 8px 16px rgba(0, 0, 0, 0.2)",
+                    transform: "translateY(-3px)",
+                    boxShadow: "0px 4px 8px rgba(0,0,0,0.15)",
                   },
                 }}
               >
@@ -193,7 +186,7 @@ const MyPurchases = () => {
                   {imageUrl ? (
                     <CardMedia
                       component="img"
-                      height="250"
+                      height="200"
                       image={imageUrl}
                       alt={item.title}
                       sx={{
@@ -204,7 +197,7 @@ const MyPurchases = () => {
                   ) : (
                     <Box
                       sx={{
-                        height: "250px",
+                        height: "200px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -215,27 +208,22 @@ const MyPurchases = () => {
                         textAlign: "center",
                       }}
                     >
-                      <Typography variant="h4" sx={{ fontSize: "1.75rem", fontWeight: "bold", m: 0 }}>
+                      <Typography variant="h5" sx={{ fontWeight: "bold", m: 0 }}>
                         {item.title}
                       </Typography>
                     </Box>
                   )}
                 </Link>
-                <CardContent
-                  sx={{
-                    p: 2,
-                    animation: `${slideUp} 0.5s ease-out`,
-                  }}
-                >
+                <CardContent sx={{ p: 1.5, animation: `${slideUp} 0.5s ease-out` }}>
                   <Link to={`/auction/${item.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="subtitle1" gutterBottom>
                       {item.title}
                     </Typography>
                   </Link>
-                  <Typography variant="body2" color="text.secondary" paragraph>
+                  <Typography variant="body2" color="text.secondary" noWrap>
                     {item.description}
                   </Typography>
-                  <Typography variant="body1">
+                  <Typography variant="body2">
                     <strong>Bought Price:</strong> $
                     {item.current_bid ? item.current_bid : item.buy_now_price}
                   </Typography>
@@ -244,7 +232,7 @@ const MyPurchases = () => {
                   </Typography>
                   <Typography variant="body2">
                     <strong>Bought On:</strong>{" "}
-                    {moment(item.end_time).format("MMMM Do YYYY, h:mm:ss a")}
+                    {moment(item.end_time).format("MMMM Do YYYY, h:mm a")}
                   </Typography>
                   {item.owner?.username && (
                     <Typography variant="body2">
@@ -252,38 +240,37 @@ const MyPurchases = () => {
                     </Typography>
                   )}
 
-                  {/* Indicate how it was purchased */}
                   {item.buy_now_buyer && item.buy_now_buyer.id === user.id ? (
-                    <Typography variant="body1" color="secondary" sx={{ mt: 1 }}>
+                    <Typography variant="body2" color="secondary" sx={{ mt: 1 }}>
                       Purchased via Buy Now
                     </Typography>
                   ) : (
-                    <Typography variant="body1" color="primary" sx={{ mt: 1 }}>
+                    <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
                       Won via Bidding
                     </Typography>
                   )}
 
-                  {/* Chat with Seller button */}
                   {item.owner?.username && (
                     <Button
                       variant="contained"
                       color="primary"
-                      sx={{ mt: 2, mr: 1 }}
+                      size="small"
+                      sx={{ mt: 1, mr: 1 }}
                       onClick={() => navigate(`/chat/${item.owner.username}`)}
                     >
-                      Chat with Seller
+                      Chat
                     </Button>
                   )}
 
-                  {/* Mark as Received button (if shipped) */}
                   {item.shipping_status === "shipped" && (
                     <Button
                       variant="contained"
                       color="success"
-                      sx={{ mt: 2 }}
+                      size="small"
+                      sx={{ mt: 1 }}
                       onClick={() => handleMarkReceived(item.id)}
                     >
-                      Mark as Received
+                      Mark Received
                     </Button>
                   )}
                 </CardContent>
@@ -292,6 +279,14 @@ const MyPurchases = () => {
           );
         })}
       </Grid>
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+        <Pagination
+          count={pageCount}
+          page={page}
+          onChange={(event, value) => setPage(value)}
+          color="primary"
+        />
+      </Box>
     </Container>
   );
 };

@@ -7,54 +7,81 @@ from .models import ChatMessage  # <-- Import your ChatMessage model
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Extract room name from the URL route.
+        # Extract the room_name from the URL
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
         self.room_group_name = f"chat_{self.room_name}"
 
-        # Join the group corresponding to the room.
+        # Join the group
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        # Leave the group when the socket disconnects.
+        # Leave the group
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
-    # Called when a message is received from the WebSocket.
     async def receive(self, text_data):
         data = json.loads(text_data)
-        message = data.get("message")
-        sender = data.get("sender")
-        recipient = data.get("recipient")  # We'll pass this from the frontend
+        msg_type = data.get("type", "chat_message")
 
-        # 1) Save to DB if both sender & recipient exist
-        if sender and recipient:
-            sender_user = await sync_to_async(User.objects.get)(username=sender)
-            recipient_user = await sync_to_async(User.objects.get)(username=recipient)
-            await sync_to_async(ChatMessage.objects.create)(
-                sender=sender_user, recipient=recipient_user, message=message
+        if msg_type == "chat_message":
+            message = data.get("message")
+            sender = data.get("sender")
+            recipient = data.get("recipient")
+
+            # Only save to DB if we have a real message
+            if message and sender and recipient:
+                sender_user = await sync_to_async(User.objects.get)(username=sender)
+                recipient_user = await sync_to_async(User.objects.get)(
+                    username=recipient
+                )
+                await sync_to_async(ChatMessage.objects.create)(
+                    sender=sender_user, recipient=recipient_user, message=message
+                )
+
+            # Broadcast to group
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "chat_message_event",
+                    "message": message,
+                    "sender": sender,
+                },
             )
 
-        # 2) Broadcast the message to the room group so everyone in it sees the new message.
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "chat_message",
-                "message": message,
-                "sender": sender,
-            },
-        )
+        elif msg_type == "typing":
+            # The user is typing
+            sender = data.get("sender")
+            # Broadcast a "typing" event to the group
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "typing_event",
+                    "sender": sender,
+                },
+            )
+        else:
+            # Unknown type
+            pass
 
-    # Called when a message is sent to the group.
-    async def chat_message(self, event):
-        message = event["message"]
-        sender = event["sender"]
-
-        # Send the message to the WebSocket.
+    async def chat_message_event(self, event):
+        # Called when the group sends a "chat_message_event"
         await self.send(
             text_data=json.dumps(
                 {
-                    "message": message,
-                    "sender": sender,
+                    "type": "chat_message",
+                    "message": event["message"],
+                    "sender": event["sender"],
+                }
+            )
+        )
+
+    async def typing_event(self, event):
+        # Called when the group sends a "typing_event"
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "typing",
+                    "sender": event["sender"],
                 }
             )
         )

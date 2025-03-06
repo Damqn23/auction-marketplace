@@ -12,6 +12,7 @@ import {
   Grid,
   Container,
   Box,
+  Pagination,
 } from "@mui/material";
 import { keyframes } from "@emotion/react";
 import { Link } from "react-router-dom";
@@ -31,6 +32,8 @@ const MyAuctions = () => {
   const [auctions, setAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 6;
 
   // Separate fetch function so we can reuse on "Retry"
   const fetchMyAuctionsData = async () => {
@@ -42,12 +45,8 @@ const MyAuctions = () => {
         setError("Unexpected data format received.");
         return;
       }
-      // Safe sorting by created_at (if it exists)
-      data.sort((a, b) => {
-        const dateA = new Date(a.created_at || 0);
-        const dateB = new Date(b.created_at || 0);
-        return dateB - dateA;
-      });
+      // Sort by newest based on created_at
+      data.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
       setAuctions(data);
     } catch (err) {
       console.error("Failed to load auctions:", err);
@@ -60,7 +59,6 @@ const MyAuctions = () => {
   };
 
   useEffect(() => {
-    // Only fetch if user is logged in
     if (!user) {
       setLoading(false);
       setError("You must be logged in to view your auctions.");
@@ -73,12 +71,9 @@ const MyAuctions = () => {
     try {
       await markAsShipped(auctionId);
       toast.success("Item marked as shipped!");
-      // Update local state so shipping_status changes
       setAuctions((prev) =>
         prev.map((auction) =>
-          auction.id === auctionId
-            ? { ...auction, shipping_status: "shipped" }
-            : auction
+          auction.id === auctionId ? { ...auction, shipping_status: "shipped" } : auction
         )
       );
     } catch (error) {
@@ -121,6 +116,10 @@ const MyAuctions = () => {
     );
   }
 
+  // Pagination logic
+  const paginatedAuctions = auctions.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const pageCount = Math.ceil(auctions.length / itemsPerPage);
+
   return (
     <Container
       maxWidth="lg"
@@ -144,137 +143,125 @@ const MyAuctions = () => {
         My Auctions
       </Typography>
       {auctions.length > 0 ? (
-        <Grid container spacing={3} sx={{ mt: 2 }}>
-          {auctions.map((auction) => (
-            <Grid item xs={12} sm={6} md={4} key={auction.id}>
-              <Card
-                sx={{
-                  background: "#fff",
-                  borderRadius: "10px",
-                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                  overflow: "hidden",
-                  position: "relative",
-                  "&:hover": {
-                    transform: "translateY(-5px) scale(1.02)",
-                    boxShadow: "0 8px 16px rgba(0, 0, 0, 0.2)",
-                  },
-                }}
-              >
-                {/* Image Section */}
-                {auction.images && auction.images.length > 0 ? (
-                  <CardMedia
-                    component="img"
-                    height="250"
-                    image={auction.images[0].image}
-                    alt={auction.title}
-                    sx={{
-                      transition: "transform 0.3s ease",
-                      "&:hover": { transform: "scale(1.05)" },
-                    }}
-                  />
-                ) : (
-                  <Box
-                    sx={{
-                      height: "250px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: "linear-gradient(135deg, #6a11cb, #2575fc)",
-                      color: "#fff",
-                      fontWeight: "bold",
-                      fontSize: "1.25rem",
-                      textAlign: "center",
-                    }}
-                  >
-                    <Typography variant="body2" color="textSecondary">
-                      No image available
+        <>
+          <Grid container spacing={2} sx={{ mt: 2 }}>
+            {paginatedAuctions.map((auction) => (
+              <Grid item xs={12} sm={6} md={4} key={auction.id}>
+                <Card
+                  sx={{
+                    background: "#fff",
+                    borderRadius: "8px",
+                    boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
+                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                    overflow: "hidden",
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: "0px 4px 8px rgba(0,0,0,0.15)",
+                    },
+                  }}
+                >
+                  {auction.images && auction.images.length > 0 ? (
+                    <CardMedia
+                      component="img"
+                      height="200"
+                      image={auction.images[0].image}
+                      alt={auction.title}
+                      sx={{
+                        transition: "transform 0.3s ease",
+                        "&:hover": { transform: "scale(1.05)" },
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        height: "200px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "linear-gradient(135deg, #6a11cb, #2575fc)",
+                        color: "#fff",
+                        fontWeight: "bold",
+                        fontSize: "1rem",
+                        textAlign: "center",
+                      }}
+                    >
+                      <Typography variant="body2" color="textSecondary">
+                        No image available
+                      </Typography>
+                    </Box>
+                  )}
+
+                  <CardContent sx={{ p: 1.5, animation: `${slideUp} 0.5s ease-out` }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1, color: "#333" }}>
+                      {auction.title}
                     </Typography>
-                  </Box>
-                )}
+                    <Typography variant="body2" color="textSecondary" noWrap sx={{ mb: 1 }}>
+                      {auction.description.length > 100
+                        ? `${auction.description.substring(0, 100)}...`
+                        : auction.description}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 0.5, fontSize: "0.9rem", color: "#555" }}>
+                      <strong>Starting Bid:</strong> ${auction.starting_bid}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 0.5, fontSize: "0.9rem", color: "#555" }}>
+                      <strong>Current Bid:</strong> ${auction.current_bid || "N/A"}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        mb: 1,
+                        fontSize: "0.9rem",
+                        fontWeight: "bold",
+                        color: auction.status === "active" ? "primary.main" : "error.main",
+                      }}
+                    >
+                      <strong>Status:</strong> {auction.status}
+                    </Typography>
 
-                <CardContent sx={{ p: 2, animation: `${slideUp} 0.5s ease-out` }}>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontSize: "18px",
-                      fontWeight: "bold",
-                      color: "#333",
-                      mb: 1,
-                    }}
-                  >
-                    {auction.title}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="textSecondary"
-                    sx={{ mb: 1, fontSize: "0.9rem" }}
-                  >
-                    {auction.description.length > 100
-                      ? `${auction.description.substring(0, 100)}...`
-                      : auction.description}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{ mb: 0.5, fontSize: "0.9rem", color: "#555" }}
-                  >
-                    <strong>Starting Bid:</strong> ${auction.starting_bid}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{ mb: 0.5, fontSize: "0.9rem", color: "#555" }}
-                  >
-                    <strong>Current Bid:</strong> ${auction.current_bid || "N/A"}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      mb: 1,
-                      fontSize: "0.9rem",
-                      fontWeight: "bold",
-                      color:
-                        auction.status === "active" ? "primary.main" : "error.main",
-                    }}
-                  >
-                    <strong>Status:</strong> {auction.status}
-                  </Typography>
-
-                  {/* Mark as Shipped button (seller only) */}
-                  {auction.status === "closed" &&
-                    auction.shipping_status === "not_shipped" && (
+                    {auction.status === "closed" && auction.shipping_status === "not_shipped" && (
                       <Button
                         variant="contained"
                         color="secondary"
+                        size="small"
                         sx={{ mt: 1 }}
                         onClick={() => handleMarkShipped(auction.id)}
                       >
-                        Mark as Shipped
+                        Mark Shipped
                       </Button>
                     )}
 
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    component={Link}
-                    to={`/auction/${auction.id}`}
-                    sx={{
-                      mt: 2,
-                      textTransform: "none",
-                      fontSize: "14px",
-                      transition: "background-color 0.3s ease, transform 0.3s ease",
-                      "&:hover": {
-                        backgroundColor: "primary.dark",
-                        transform: "scale(1.02)",
-                      },
-                    }}
-                  >
-                    View Auction
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      component={Link}
+                      to={`/auction/${auction.id}`}
+                      sx={{
+                        mt: 1,
+                        textTransform: "none",
+                        fontSize: "0.8rem",
+                        transition: "background-color 0.3s ease, transform 0.3s ease",
+                        "&:hover": {
+                          backgroundColor: "primary.dark",
+                          transform: "scale(1.02)",
+                        },
+                      }}
+                    >
+                      View Auction
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+            <Pagination
+              count={pageCount}
+              page={page}
+              onChange={(event, value) => setPage(value)}
+              color="primary"
+            />
+          </Box>
+        </>
       ) : (
         <Typography variant="body1" sx={{ mt: 3, textAlign: "center", color: "#777" }}>
           You have not posted any auctions yet.
