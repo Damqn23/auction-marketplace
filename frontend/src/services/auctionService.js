@@ -31,6 +31,27 @@ export const searchAuctionItems = async (query, category) => {
 };
 
 
+export const markAsShipped = async (id) => {
+    try {
+      const response = await axiosInstance.post(`auction-items/${id}/mark_shipped/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error marking item as shipped:', error);
+      throw error;
+    }
+  };
+  
+export const markAsReceived = async (id) => {
+    try {
+      const response = await axiosInstance.post(`auction-items/${id}/mark_received/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error marking item as received:', error);
+      throw error;
+    }
+  };
+  
+
 // Get auction item by ID
 export const getAuctionItem = async (id) => {
     try {

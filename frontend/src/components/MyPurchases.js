@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { getMyPurchases } from "../services/auctionService";
+import { getMyPurchases, markAsReceived } from "../services/auctionService";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
 import moment from "moment";
@@ -17,7 +17,6 @@ import {
 } from "@mui/material";
 import { keyframes } from "@emotion/react";
 
-// Keyframe animations
 const fadeIn = keyframes`
   from { opacity: 0; }
   to { opacity: 1; }
@@ -35,52 +34,60 @@ const MyPurchases = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Helper function to get the image URL.
-  // It checks item.images, then item.image, then item.auction.images.
-  // If none found, it returns a placeholder URL.
-  const getImageUrl = (item) => {
-    if (item.images && item.images.length > 0 && item.images[0].image) {
-      return item.images[0].image;
-    }
-    if (item.image) {
-      return item.image;
-    }
-    if (item.auction && item.auction.images && item.auction.images.length > 0 && item.auction.images[0].image) {
-      return item.auction.images[0].image;
-    }
-    return "https://via.placeholder.com/250?text=No+Image";
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchPurchasedItems();
-    } else {
-      setLoading(false);
-      setPurchasedItems([]);
-    }
-  }, [user]);
-
+  // Separate function so we can call it on mount & on retry
   const fetchPurchasedItems = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const response = await getMyPurchases();
-      console.log("My Purchases API Response:", response);
+      // Safely parse data
       const items =
         (response?.data && Array.isArray(response.data) && response.data) ||
         (Array.isArray(response) && response) ||
         [];
+
       if (items.length === 0) {
         toast.warn("No purchases found.");
       }
       setPurchasedItems(items);
     } catch (err) {
       console.error("Error fetching purchases:", err);
-      setError("Failed to load your purchases.");
-      toast.error("Failed to load your purchases.");
+      // Provide a more detailed error or fallback
+      const detail = err.response?.data?.detail || "Failed to load your purchases.";
+      setError(detail);
+      toast.error(detail);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    // Only fetch if user is logged in
+    if (!user) {
+      setLoading(false);
+      setError("You must be logged in to view your purchases.");
+      return;
+    }
+    fetchPurchasedItems();
+  }, [user]);
+
+  const handleMarkReceived = async (itemId) => {
+    try {
+      await markAsReceived(itemId);
+      toast.success("Item marked as received!");
+      // Update local state
+      setPurchasedItems((prev) =>
+        prev.map((item) =>
+          item.id === itemId ? { ...item, shipping_status: "received" } : item
+        )
+      );
+    } catch (error) {
+      console.error("Error marking item as received:", error);
+      toast.error(error.response?.data?.detail || "Error marking as received");
+    }
+  };
+
+  // If still loading, show spinner
   if (loading) {
     return (
       <Box
@@ -96,29 +103,38 @@ const MyPurchases = () => {
     );
   }
 
+  // If there's an error, display it + a Retry button
   if (error) {
     return (
-      <Typography variant="body1" color="error" align="center" sx={{ mt: 2 }}>
-        {error}
-      </Typography>
+      <Box sx={{ textAlign: "center", mt: 4 }}>
+        <Typography variant="body1" color="error" sx={{ mb: 2 }}>
+          {error}
+        </Typography>
+        <Button variant="contained" onClick={fetchPurchasedItems}>
+          Retry
+        </Button>
+      </Box>
     );
   }
 
-  if (!Array.isArray(purchasedItems)) {
-    return (
-      <Typography variant="body1" color="error" align="center" sx={{ mt: 2 }}>
-        Unexpected data format received.
-      </Typography>
-    );
-  }
-
-  if (purchasedItems.length === 0) {
+  // If no items
+  if (!Array.isArray(purchasedItems) || purchasedItems.length === 0) {
     return (
       <Typography variant="body1" align="center" sx={{ mt: 2 }}>
         You have not purchased any items yet.
       </Typography>
     );
   }
+
+  const getImageUrl = (item) => {
+    if (item.images && item.images.length > 0 && item.images[0].image) {
+      return item.images[0].image;
+    }
+    if (item.image) {
+      return item.image;
+    }
+    return "https://via.placeholder.com/250?text=No+Image";
+  };
 
   return (
     <Container
@@ -173,7 +189,6 @@ const MyPurchases = () => {
                   },
                 }}
               >
-                {/* Make the image clickable by wrapping it in a Link */}
                 <Link to={`/auction/${item.id}`} style={{ textDecoration: "none" }}>
                   {imageUrl ? (
                     <CardMedia
@@ -193,22 +208,14 @@ const MyPurchases = () => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        background:
-                          "linear-gradient(135deg, #6a11cb, #2575fc)",
+                        background: "linear-gradient(135deg, #6a11cb, #2575fc)",
                         borderRadius: "8px 8px 0 0",
                         color: "#fff",
                         p: 1,
                         textAlign: "center",
                       }}
                     >
-                      <Typography
-                        variant="h4"
-                        sx={{
-                          fontSize: "1.75rem",
-                          fontWeight: "bold",
-                          m: 0,
-                        }}
-                      >
+                      <Typography variant="h4" sx={{ fontSize: "1.75rem", fontWeight: "bold", m: 0 }}>
                         {item.title}
                       </Typography>
                     </Box>
@@ -220,10 +227,7 @@ const MyPurchases = () => {
                     animation: `${slideUp} 0.5s ease-out`,
                   }}
                 >
-                  <Link
-                    to={`/auction/${item.id}`}
-                    style={{ textDecoration: "none", color: "inherit" }}
-                  >
+                  <Link to={`/auction/${item.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                     <Typography variant="h6" gutterBottom>
                       {item.title}
                     </Typography>
@@ -232,10 +236,8 @@ const MyPurchases = () => {
                     {item.description}
                   </Typography>
                   <Typography variant="body1">
-                    <strong>Bought Price:</strong>{" "}
-                    {item.current_bid
-                      ? `$${item.current_bid}`
-                      : `$${item.buy_now_price}`}
+                    <strong>Bought Price:</strong> $
+                    {item.current_bid ? item.current_bid : item.buy_now_price}
                   </Typography>
                   <Typography variant="body2">
                     <strong>Status:</strong> {item.status}
@@ -249,6 +251,8 @@ const MyPurchases = () => {
                       <strong>Seller:</strong> {item.owner.username}
                     </Typography>
                   )}
+
+                  {/* Indicate how it was purchased */}
                   {item.buy_now_buyer && item.buy_now_buyer.id === user.id ? (
                     <Typography variant="body1" color="secondary" sx={{ mt: 1 }}>
                       Purchased via Buy Now
@@ -258,14 +262,28 @@ const MyPurchases = () => {
                       Won via Bidding
                     </Typography>
                   )}
+
+                  {/* Chat with Seller button */}
                   {item.owner?.username && (
                     <Button
                       variant="contained"
                       color="primary"
-                      sx={{ mt: 2 }}
+                      sx={{ mt: 2, mr: 1 }}
                       onClick={() => navigate(`/chat/${item.owner.username}`)}
                     >
                       Chat with Seller
+                    </Button>
+                  )}
+
+                  {/* Mark as Received button (if shipped) */}
+                  {item.shipping_status === "shipped" && (
+                    <Button
+                      variant="contained"
+                      color="success"
+                      sx={{ mt: 2 }}
+                      onClick={() => handleMarkReceived(item.id)}
+                    >
+                      Mark as Received
                     </Button>
                   )}
                 </CardContent>

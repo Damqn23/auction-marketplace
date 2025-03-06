@@ -69,6 +69,16 @@ class AuctionItem(models.Model):
         ("cancelled", "Cancelled"),
     ]
 
+    SHIPPING_STATUS_CHOICES = [
+        ("not_shipped", "Not Shipped"),
+        ("shipped", "Shipped"),
+        ("received", "Received"),
+    ]
+
+    shipping_status = models.CharField(
+        max_length=20, choices=SHIPPING_STATUS_CHOICES, default="not_shipped"
+    )
+    verified = models.BooleanField(default=False)
     title = models.CharField(max_length=100)
     description = models.TextField()
     starting_bid = models.DecimalField(max_digits=10, decimal_places=2)

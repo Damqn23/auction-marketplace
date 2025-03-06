@@ -122,8 +122,16 @@ class AuctionItemSerializer(serializers.ModelSerializer):
             "category_data",
             "condition",
             "location",
+            "shipping_status",
+            "verified",
         ]
-        read_only_fields = ["status", "buy_now_buyer", "winner"]
+        read_only_fields = [
+            "status",
+            "buy_now_buyer",
+            "winner",
+            "shipping_status",
+            "verified",
+        ]
 
     def validate(self, data):
         """

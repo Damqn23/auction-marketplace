@@ -277,7 +277,7 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         current_time = timezone.now()
 
-        # Auto-close auctions that have ended but are still active.
+        # 1) Auto-close ended auctions that are still "active"
         ended_auctions = AuctionItem.objects.filter(
             status="active", end_time__lte=current_time
         )
@@ -288,48 +288,53 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
             auction.status = "closed"
             auction.save()
 
-        # Now return active auctions (which haven't ended yet)
-        queryset = AuctionItem.objects.filter(
-            status="active", end_time__gt=current_time
-        )
-
-        # --- Filtering ---
-        min_price = self.request.query_params.get("min_price")
-        max_price = self.request.query_params.get("max_price")
-        condition = self.request.query_params.get("condition")
-        location = self.request.query_params.get("location")
-        category = self.request.query_params.get("category")
-        q = self.request.query_params.get("q")
-
-        if q:
-            queryset = queryset.filter(
-                Q(title__icontains=q) | Q(description__icontains=q)
+        # 2) If this is a "list" action (GET /auction-items/), show only active items
+        if self.action == "list":
+            queryset = AuctionItem.objects.filter(
+                status="active", end_time__gt=current_time
             )
-        if min_price:
-            queryset = queryset.filter(starting_bid__gte=Decimal(min_price))
-        if max_price:
-            queryset = queryset.filter(starting_bid__lte=Decimal(max_price))
-        if condition:
-            queryset = queryset.filter(condition__iexact=condition)
-        if location:
-            queryset = queryset.filter(location__icontains=location)
-        if category:
-            queryset = queryset.filter(category__name__icontains=category)
 
-        # --- Sorting ---
-        sort_by = self.request.query_params.get(
-            "sort_by", "newest"
-        )  # Default to 'newest'
-        if sort_by == "newest":
-            queryset = queryset.order_by("-created_at")
-        elif sort_by == "ending_soon":
-            queryset = queryset.order_by("end_time")
-        elif sort_by == "highest_bid":
-            queryset = queryset.order_by("-current_bid")
-        elif sort_by == "lowest_price":
-            queryset = queryset.order_by("starting_bid")
+            # --- Filtering ---
+            min_price = self.request.query_params.get("min_price")
+            max_price = self.request.query_params.get("max_price")
+            condition = self.request.query_params.get("condition")
+            location = self.request.query_params.get("location")
+            category = self.request.query_params.get("category")
+            q = self.request.query_params.get("q")
 
-        return queryset
+            if q:
+                queryset = queryset.filter(
+                    Q(title__icontains=q) | Q(description__icontains=q)
+                )
+            if min_price:
+                queryset = queryset.filter(starting_bid__gte=Decimal(min_price))
+            if max_price:
+                queryset = queryset.filter(starting_bid__lte=Decimal(max_price))
+            if condition:
+                queryset = queryset.filter(condition__iexact=condition)
+            if location:
+                queryset = queryset.filter(location__icontains=location)
+            if category:
+                queryset = queryset.filter(category__name__icontains=category)
+
+            # --- Sorting ---
+            sort_by = self.request.query_params.get(
+                "sort_by", "newest"
+            )  # Default to 'newest'
+            if sort_by == "newest":
+                queryset = queryset.order_by("-created_at")
+            elif sort_by == "ending_soon":
+                queryset = queryset.order_by("end_time")
+            elif sort_by == "highest_bid":
+                queryset = queryset.order_by("-current_bid")
+            elif sort_by == "lowest_price":
+                queryset = queryset.order_by("starting_bid")
+
+            return queryset
+
+        # 3) For detail actions (retrieve, update, mark_shipped, mark_received, etc.), return *all* items
+        #    so we can find closed items as well.
+        return AuctionItem.objects.all()
 
     @action(
         detail=False,
@@ -421,6 +426,87 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
                 AuctionImage.objects.create(auction_item=auction_item, image=image)
 
         return super().update(request, *args, **kwargs)
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    def mark_shipped(self, request, pk=None):
+        """
+        Seller marks the item as shipped.
+        """
+        item = self.get_object()
+
+        # Check if current user is the owner (seller)
+        if item.owner != request.user:
+            return Response({"detail": "Only the seller can mark shipped."}, status=403)
+
+        # The item must be sold (status="closed") and not already shipped
+        if item.status != "closed":
+            return Response(
+                {"detail": "Item must be closed (sold) to mark shipped."}, status=400
+            )
+        if item.shipping_status != "not_shipped":
+            return Response(
+                {"detail": "Item is already shipped or received."}, status=400
+            )
+
+        # Update shipping status
+        item.shipping_status = "shipped"
+        item.save()
+
+        return Response({"detail": "Item marked as shipped."}, status=200)
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    def mark_received(self, request, pk=None):
+        """
+        Buyer marks the item as received.
+        """
+        item = self.get_object()
+
+        # Check if the current user is the buyer (winner or buy_now_buyer)
+        buyer = item.winner or item.buy_now_buyer
+        if buyer != request.user:
+            return Response({"detail": "Only the buyer can mark received."}, status=403)
+
+        # Must already be shipped
+        if item.shipping_status != "shipped":
+            return Response(
+                {"detail": "Cannot mark received unless the item is shipped."},
+                status=400,
+            )
+
+        # Mark as received
+        item.shipping_status = "received"
+        item.save()
+
+        # Now credit the seller's account (minus platform fee)
+        seller = item.owner
+        total_price = item.current_bid or item.buy_now_price
+        if not total_price:
+            return Response(
+                {"detail": "No sale price found for this item."}, status=400
+            )
+
+        platform_fee = (Decimal("0.10") * total_price).quantize(
+            Decimal("0.01")
+        )  # 10% fee
+        seller_amount = total_price - platform_fee
+
+        with transaction.atomic():
+            # Update seller's balance
+            seller.account.balance += seller_amount
+            seller.account.save()
+
+            # Record a transaction for clarity
+            Transaction.objects.create(
+                user=seller,
+                transaction_type="seller_payment",
+                amount=seller_amount,
+                status="completed",
+                description=f"Payment for AuctionItem {item.id} minus fee of {platform_fee}.",
+            )
+
+        return Response(
+            {"detail": "Item marked as received. Seller has been credited."}, status=200
+        )
 
     @action(
         detail=True,

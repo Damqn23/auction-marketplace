@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { getMyAuctions } from "../services/auctionService";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState, useContext } from "react";
+import { getMyAuctions, markAsShipped } from "../services/auctionService";
+import { UserContext } from "../contexts/UserContext";
+import { toast } from "react-toastify";
 import {
   CircularProgress,
   Card,
@@ -13,8 +14,8 @@ import {
   Box,
 } from "@mui/material";
 import { keyframes } from "@emotion/react";
+import { Link } from "react-router-dom";
 
-// Animation keyframes
 const fadeIn = keyframes`
   from { opacity: 0; }
   to { opacity: 1; }
@@ -26,32 +27,65 @@ const slideUp = keyframes`
 `;
 
 const MyAuctions = () => {
+  const { user } = useContext(UserContext);
   const [auctions, setAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchMyAuctions = async () => {
-      try {
-        const data = await getMyAuctions();
-        if (Array.isArray(data)) {
-          // Sort auctions by creation date (assumes each auction has a 'created_at' property)
-          const sortedData = data.sort(
-            (a, b) => new Date(b.created_at) - new Date(a.created_at)
-          );
-          setAuctions(sortedData);
-        } else {
-          setError("Unexpected data format received.");
-        }
-      } catch (err) {
-        setError("Failed to load auctions.");
-      } finally {
-        setLoading(false);
+  // Separate fetch function so we can reuse on "Retry"
+  const fetchMyAuctionsData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getMyAuctions();
+      if (!Array.isArray(data)) {
+        setError("Unexpected data format received.");
+        return;
       }
-    };
+      // Safe sorting by created_at (if it exists)
+      data.sort((a, b) => {
+        const dateA = new Date(a.created_at || 0);
+        const dateB = new Date(b.created_at || 0);
+        return dateB - dateA;
+      });
+      setAuctions(data);
+    } catch (err) {
+      console.error("Failed to load auctions:", err);
+      const detail = err.response?.data?.detail || "Failed to load auctions.";
+      setError(detail);
+      toast.error(detail);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchMyAuctions();
-  }, []);
+  useEffect(() => {
+    // Only fetch if user is logged in
+    if (!user) {
+      setLoading(false);
+      setError("You must be logged in to view your auctions.");
+      return;
+    }
+    fetchMyAuctionsData();
+  }, [user]);
+
+  const handleMarkShipped = async (auctionId) => {
+    try {
+      await markAsShipped(auctionId);
+      toast.success("Item marked as shipped!");
+      // Update local state so shipping_status changes
+      setAuctions((prev) =>
+        prev.map((auction) =>
+          auction.id === auctionId
+            ? { ...auction, shipping_status: "shipped" }
+            : auction
+        )
+      );
+    } catch (error) {
+      console.error("Error marking item as shipped:", error);
+      toast.error(error.response?.data?.detail || "Error marking as shipped");
+    }
+  };
 
   if (loading) {
     return (
@@ -76,13 +110,14 @@ const MyAuctions = () => {
 
   if (error) {
     return (
-      <Typography
-        variant="body1"
-        color="error"
-        sx={{ mt: 2, textAlign: "center" }}
-      >
-        {error}
-      </Typography>
+      <Box sx={{ textAlign: "center", mt: 4 }}>
+        <Typography variant="body1" color="error" sx={{ mb: 2 }}>
+          {error}
+        </Typography>
+        <Button variant="contained" onClick={fetchMyAuctionsData}>
+          Retry
+        </Button>
+      </Box>
     );
   }
 
@@ -145,8 +180,7 @@ const MyAuctions = () => {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      background:
-                        "linear-gradient(135deg, #6a11cb, #2575fc)",
+                      background: "linear-gradient(135deg, #6a11cb, #2575fc)",
                       color: "#fff",
                       fontWeight: "bold",
                       fontSize: "1.25rem",
@@ -198,11 +232,26 @@ const MyAuctions = () => {
                       mb: 1,
                       fontSize: "0.9rem",
                       fontWeight: "bold",
-                      color: auction.status === "active" ? "primary.main" : "error.main",
+                      color:
+                        auction.status === "active" ? "primary.main" : "error.main",
                     }}
                   >
                     <strong>Status:</strong> {auction.status}
                   </Typography>
+
+                  {/* Mark as Shipped button (seller only) */}
+                  {auction.status === "closed" &&
+                    auction.shipping_status === "not_shipped" && (
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        sx={{ mt: 1 }}
+                        onClick={() => handleMarkShipped(auction.id)}
+                      >
+                        Mark as Shipped
+                      </Button>
+                    )}
+
                   <Button
                     variant="outlined"
                     color="primary"
@@ -227,10 +276,7 @@ const MyAuctions = () => {
           ))}
         </Grid>
       ) : (
-        <Typography
-          variant="body1"
-          sx={{ mt: 3, textAlign: "center", color: "#777" }}
-        >
+        <Typography variant="body1" sx={{ mt: 3, textAlign: "center", color: "#777" }}>
           You have not posted any auctions yet.
         </Typography>
       )}
