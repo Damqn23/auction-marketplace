@@ -165,14 +165,24 @@ const Chat = () => {
   return (
     <Box
       sx={{
-        height: "calc(100vh - 64px)",
-        display: "flex",
-        flexDirection: "column",
-        backgroundImage: 'url("https://www.toptal.com/designers/subtlepatterns/patterns/diagmonds.png")',
-        backgroundRepeat: "repeat",
-        backgroundSize: "auto",
+        maxWidth: 1200,
+        mx: "auto",
+        p: { xs: 1, sm: 2 },
+        mt: { xs: '64px', sm: '72px' },
+        pt: { xs: 2, sm: 3 },
       }}
     >
+      <Typography
+        variant="h4"
+        sx={{
+          mb: 3,
+          fontWeight: "bold",
+          color: "primary.main",
+        }}
+      >
+        Your Chats
+      </Typography>
+      
       {/* Top Bar */}
       <Box
         sx={{

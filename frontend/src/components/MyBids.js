@@ -206,18 +206,20 @@ const MyBids = () => {
   return (
     <Box
       sx={{
-        maxWidth: "1200px",
+        maxWidth: 1200,
         mx: "auto",
-        p: 2,
-        backgroundColor: "#f9f9f9",
-        borderRadius: 2,
-        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-        animation: `${fadeIn} 1s ease-in-out`,
+        p: { xs: 1, sm: 2 },
+        mt: { xs: '64px', sm: '72px' },
+        pt: { xs: 2, sm: 3 },
       }}
     >
       <Typography
-        variant="h3"
-        sx={{ textAlign: "center", fontSize: "2.5rem", mb: 2, color: "#333" }}
+        variant="h4"
+        sx={{
+          mb: 3,
+          fontWeight: "bold",
+          color: "primary.main",
+        }}
       >
         My Bids
       </Typography>

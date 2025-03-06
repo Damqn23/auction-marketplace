@@ -1,70 +1,152 @@
-import React from "react";
-import { Modal, Box, Typography, Button } from "@mui/material";
-import PropTypes from "prop-types";
-import { keyframes } from "@emotion/react";
+import React from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
+  Box,
+  IconButton,
+  useTheme,
+  Slide,
+  Fade,
+  styled,
+} from '@mui/material';
+import { Close as CloseIcon, ShoppingCart, CheckCircle } from '@mui/icons-material';
+import { keyframes } from '@emotion/react';
 
-// Optional: a subtle fade-in animation for the modal content
-const fadeIn = keyframes`
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+const slideUp = keyframes`
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 `;
 
-const modalStyle = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 400,
-  bgcolor: "background.paper",
-  border: "2px solid #000",
-  borderRadius: 2,
-  boxShadow: 24,
-  p: 4,
-  animation: `${fadeIn} 0.5s ease-out`,
-};
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiDialog-paper': {
+    borderRadius: 16,
+    padding: theme.spacing(2),
+    boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+    background: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(10px)',
+    animation: `${slideUp} 0.3s ease-out`,
+  },
+}));
 
-const BuyNowModal = ({ open, handleClose, handleConfirm, buyNowPrice }) => {
+const StyledButton = styled(Button)(({ theme }) => ({
+  borderRadius: 30,
+  padding: '10px 24px',
+  textTransform: 'none',
+  fontSize: '1rem',
+  transition: 'all 0.3s ease',
+  '&.MuiButton-containedPrimary': {
+    background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
+    },
+  },
+  '&.MuiButton-outlined': {
+    borderColor: theme.palette.grey[300],
+    '&:hover': {
+      backgroundColor: theme.palette.grey[50],
+    },
+  },
+}));
+
+const BuyNowModal = ({ open, onClose, onConfirm, item }) => {
+  const theme = useTheme();
+
+  if (!item) return null;
+
   return (
-    <Modal
+    <StyledDialog
       open={open}
-      onClose={handleClose}
-      aria-labelledby="buy-now-modal-title"
-      aria-describedby="buy-now-modal-description"
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      TransitionComponent={Slide}
+      TransitionProps={{ direction: 'up' }}
     >
-      <Box sx={modalStyle}>
-        <Typography id="buy-now-modal-title" variant="h6" component="h2">
-          Confirm Purchase
-        </Typography>
-        <Typography id="buy-now-modal-description" sx={{ mt: 2 }}>
-          Are you sure you want to buy this item for ${buyNowPrice}?
-        </Typography>
-        <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end" }}>
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={handleConfirm}
-            sx={{ mr: 2, textTransform: "none" }}
-          >
-            Yes, Buy Now
-          </Button>
-          <Button
+      <Box sx={{ position: 'relative' }}>
+        <IconButton
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: -8,
+            top: -8,
+            color: theme.palette.grey[500],
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+        
+        <DialogTitle sx={{ textAlign: 'center', pt: 2 }}>
+          <Fade in timeout={500}>
+            <ShoppingCart
+              sx={{
+                fontSize: 48,
+                color: theme.palette.primary.main,
+                mb: 2,
+              }}
+            />
+          </Fade>
+          <Typography variant="h5" component="div" fontWeight="bold">
+            Confirm Purchase
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent>
+          <Box sx={{ textAlign: 'center', my: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              {item.title}
+            </Typography>
+            <Typography variant="body1" color="text.secondary" paragraph>
+              Are you sure you want to buy this item now?
+            </Typography>
+            <Typography
+              variant="h4"
+              color="primary"
+              fontWeight="bold"
+              sx={{
+                mt: 3,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1,
+              }}
+            >
+              ${item.buy_now_price}
+              <CheckCircle
+                sx={{
+                  fontSize: 28,
+                  color: theme.palette.success.main,
+                  ml: 1,
+                }}
+              />
+            </Typography>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ justifyContent: 'center', gap: 2, pb: 3 }}>
+          <StyledButton
             variant="outlined"
-            onClick={handleClose}
-            sx={{ textTransform: "none" }}
+            onClick={onClose}
+            sx={{ minWidth: 120 }}
           >
             Cancel
-          </Button>
-        </Box>
+          </StyledButton>
+          <StyledButton
+            variant="contained"
+            color="primary"
+            onClick={onConfirm}
+            sx={{ minWidth: 120 }}
+          >
+            Buy Now
+          </StyledButton>
+        </DialogActions>
       </Box>
-    </Modal>
+    </StyledDialog>
   );
-};
-
-BuyNowModal.propTypes = {
-  open: PropTypes.bool.isRequired,
-  handleClose: PropTypes.func.isRequired,
-  handleConfirm: PropTypes.func.isRequired,
-  buyNowPrice: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 };
 
 export default BuyNowModal;

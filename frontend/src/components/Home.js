@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllCategories } from "../services/categoryService";
 import {
@@ -9,12 +9,15 @@ import {
   Box,
   Card,
   CardContent,
+  CircularProgress,
+  Alert,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 import { keyframes } from "@emotion/react";
 import { icons } from "./CategoryIcons";
 import { useInView } from "react-intersection-observer";
-
-import { MenuBook, Create, EmojiNature } from "@mui/icons-material";
+import { Search, MenuBook, Create, EmojiNature, People, Gavel, EmojiEvents, LocalOffer } from "@mui/icons-material";
 
 import Slider from "react-slick"; 
 import "slick-carousel/slick/slick.css";
@@ -39,8 +42,27 @@ const popUp = keyframes`
   to { opacity: 1; transform: translateY(0); }
 `;
 
-// Intersection Observer helper for reveal animations
-const AnimatedBox = ({ children, delay = "0s", ...props }) => {
+// Add new animations
+const floatAnimation = keyframes`
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+`;
+
+const gradientOverlay = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+`;
+
+// Add new animation for counter
+const countUp = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+// Memoized AnimatedBox component
+const AnimatedBox = memo(({ children, delay = "0s", ...props }) => {
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.15 });
   return (
     <Box
@@ -55,26 +77,139 @@ const AnimatedBox = ({ children, delay = "0s", ...props }) => {
       {children}
     </Box>
   );
-};
+});
+
+// Add new component for animated counter
+const AnimatedCounter = memo(({ value, label, icon: Icon }) => {
+  const [count, setCount] = useState(0);
+  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.5 });
+
+  useEffect(() => {
+    if (inView) {
+      const duration = 2000; // 2 seconds
+      const steps = 60;
+      const increment = value / steps;
+      let current = 0;
+
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= value) {
+          setCount(value);
+          clearInterval(timer);
+        } else {
+          setCount(Math.floor(current));
+        }
+      }, duration / steps);
+
+      return () => clearInterval(timer);
+    }
+  }, [inView, value]);
+
+  return (
+    <Box
+      ref={ref}
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        p: 2,
+        opacity: inView ? 1 : 0,
+        transform: inView ? "translateY(0)" : "translateY(20px)",
+        transition: "all 0.8s ease",
+      }}
+    >
+      <Icon sx={{ fontSize: 40, color: "primary.main", mb: 1 }} />
+      <Typography
+        variant="h3"
+        sx={{
+          fontWeight: "bold",
+          color: "primary.main",
+          animation: `${countUp} 0.5s ease-out`,
+        }}
+      >
+        {count.toLocaleString()}+
+      </Typography>
+      <Typography
+        variant="subtitle1"
+        sx={{
+          color: "text.secondary",
+          textAlign: "center",
+        }}
+      >
+        {label}
+      </Typography>
+    </Box>
+  );
+});
+
+// Loading component
+const LoadingState = () => (
+  <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '200px',
+    }}
+  >
+    <CircularProgress />
+  </Box>
+);
+
+// Error component
+const ErrorState = ({ message }) => (
+  <Box sx={{ p: 3, textAlign: 'center' }}>
+    <Alert severity="error" sx={{ maxWidth: 600, mx: 'auto' }}>
+      {message}
+    </Alert>
+  </Box>
+);
 
 const Home = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [showAll, setShowAll] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Memoized category click handler
+  const handleCategoryClick = useCallback((catName) => {
+    navigate(`/auction-list?category=${encodeURIComponent(catName)}`);
+  }, [navigate]);
 
   // Fetch categories on mount
   useEffect(() => {
-    getAllCategories()
-      .then((data) => setCategories(data))
-      .catch((err) => console.error("Error fetching categories:", err));
+    const fetchCategories = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await getAllCategories();
+        setCategories(data);
+      } catch (err) {
+        setError("Failed to load categories. Please try again later.");
+        console.error("Error fetching categories:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategories();
   }, []);
 
-  // If still loading or empty
+  // If loading
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  // If error
+  if (error) {
+    return <ErrorState message={error} />;
+  }
+
+  // If no categories
   if (!categories.length) {
     return (
-      <Typography sx={{ p: 2, textAlign: "center" }}>
-        Loading categories...
-      </Typography>
+      <ErrorState message="No categories available at the moment. Please check back later." />
     );
   }
 
@@ -105,10 +240,6 @@ const Home = () => {
     ],
   };
 
-  const handleCategoryClick = (catName) => {
-    navigate(`/auction-list?category=${encodeURIComponent(catName)}`);
-  };
-
   return (
     <Box sx={{ overflowY: "auto", minHeight: "100vh", backgroundColor: "background.default" }}>
       {/* ---------- HERO SECTION ---------- */}
@@ -125,7 +256,7 @@ const Home = () => {
           animation: `${gradientAnimation} 15s ease infinite`,
         }}
       >
-        {/* Background Image Overlay */}
+        {/* Background Image Overlay with Pattern */}
         <Box
           sx={{
             position: "absolute",
@@ -136,7 +267,19 @@ const Home = () => {
             backgroundImage: 'url(/images/gavel-3577258_1280.jpg)',
             backgroundSize: "cover",
             backgroundPosition: "center",
+            backgroundAttachment: "fixed", // Parallax effect
             opacity: 0.35,
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0)",
+              backgroundSize: "40px 40px",
+              opacity: 0.5,
+            }
           }}
         />
         <Container maxWidth="md" sx={{ position: "relative", zIndex: 2 }}>
@@ -144,10 +287,11 @@ const Home = () => {
             <Typography
               variant="h2"
               sx={{
-                fontSize: { xs: "2rem", md: "3rem" },
+                fontSize: { xs: "2rem", md: "3.5rem" },
                 fontWeight: "bold",
                 mb: 2,
                 animation: `${textGlow} 3s ease-in-out infinite alternate`,
+                textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
               }}
             >
               Discover Unique Auctions
@@ -160,6 +304,7 @@ const Home = () => {
                 fontSize: { xs: "1.1rem", md: "1.5rem" },
                 mb: 4,
                 fontWeight: 300,
+                textShadow: "1px 1px 2px rgba(0,0,0,0.3)",
               }}
             >
               Find that perfect piece from a wide range of categories.
@@ -178,10 +323,11 @@ const Home = () => {
                 borderRadius: "30px",
                 textTransform: "none",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                transition: "background-color 0.3s ease, transform 0.3s ease",
+                transition: "all 0.3s ease",
                 "&:hover": {
                   backgroundColor: "secondary.dark",
                   transform: "scale(1.05)",
+                  boxShadow: "0 6px 16px rgba(0,0,0,0.2)",
                 },
               }}
             >
@@ -191,6 +337,49 @@ const Home = () => {
         </Container>
       </Box>
 
+      {/* ---------- STATISTICS SECTION ---------- */}
+      <Container maxWidth="lg" sx={{ py: 6, mt: -4, position: "relative", zIndex: 2 }}>
+        <Box
+          sx={{
+            backgroundColor: "background.paper",
+            borderRadius: "16px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+            p: 4,
+          }}
+        >
+          <Grid container spacing={4} justifyContent="center">
+            <Grid item xs={6} md={3}>
+              <AnimatedCounter
+                value={10000}
+                label="Active Users"
+                icon={People}
+              />
+            </Grid>
+            <Grid item xs={6} md={3}>
+              <AnimatedCounter
+                value={5000}
+                label="Active Auctions"
+                icon={Gavel}
+              />
+            </Grid>
+            <Grid item xs={6} md={3}>
+              <AnimatedCounter
+                value={25000}
+                label="Items Sold"
+                icon={EmojiEvents}
+              />
+            </Grid>
+            <Grid item xs={6} md={3}>
+              <AnimatedCounter
+                value={1000000}
+                label="Total Bids"
+                icon={LocalOffer}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+      </Container>
+
       {/* ---------- CATEGORIES AREA ---------- */}
       <Container maxWidth="lg" sx={{ py: 8 }}>
         <AnimatedBox>
@@ -199,7 +388,7 @@ const Home = () => {
             align="center"
             gutterBottom
             sx={{
-              mb: 4,
+              mb: 6,
               fontWeight: "bold",
               color: "primary.main",
               fontSize: { xs: "1.75rem", md: "2.5rem" },
@@ -208,12 +397,13 @@ const Home = () => {
                 content: '""',
                 width: 80,
                 height: 4,
-                background: "primary.main",
+                background: "linear-gradient(90deg, #ff6ec4, #7873f5)",
+                backgroundSize: "200% 200%",
+                animation: `${gradientOverlay} 3s ease infinite`,
                 display: "block",
                 mx: "auto",
                 borderRadius: 2,
                 mt: 1,
-                animation: `${popUp} 2s ease-out`,
               },
             }}
           >
@@ -238,7 +428,7 @@ const Home = () => {
                     onClick={() => handleCategoryClick(cat.name)}
                     sx={{
                       cursor: "pointer",
-                      transition: "transform 0.3s ease",
+                      transition: "all 0.3s ease",
                       "&:hover": { transform: "translateY(-5px)" },
                     }}
                   >
@@ -249,10 +439,29 @@ const Home = () => {
                           p: { xs: 2, md: 3 },
                           boxShadow: 3,
                           textAlign: "center",
-                          transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                          position: "relative",
+                          overflow: "hidden",
+                          transition: "all 0.3s ease",
+                          "&::before": {
+                            content: '""',
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: "linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0))",
+                            opacity: 0,
+                            transition: "opacity 0.3s ease",
+                          },
                           "&:hover": {
                             transform: "translateY(-5px) scale(1.03)",
                             boxShadow: "0 8px 20px rgba(0, 0, 0, 0.2)",
+                            "&::before": {
+                              opacity: 1,
+                            },
+                            "& .MuiSvgIcon-root": {
+                              animation: `${floatAnimation} 2s ease-in-out infinite`,
+                            },
                           },
                         }}
                       >
@@ -264,11 +473,21 @@ const Home = () => {
                           }}
                         >
                           <IconComponent
-                            sx={{ fontSize: "50px", color: "primary.main", mb: 2 }}
+                            sx={{
+                              fontSize: "50px",
+                              color: "primary.main",
+                              mb: 2,
+                              transition: "all 0.3s ease",
+                            }}
                           />
                           <Typography
                             variant="subtitle1"
-                            sx={{ fontSize: "1.2rem", fontWeight: 500, color: "primary.main" }}
+                            sx={{
+                              fontSize: "1.2rem",
+                              fontWeight: 500,
+                              color: "primary.main",
+                              transition: "color 0.3s ease",
+                            }}
                           >
                             {cat.name}
                           </Typography>
@@ -364,13 +583,16 @@ const Home = () => {
               px: 4,
               py: 1,
               borderRadius: "25px",
-              backgroundColor: "primary.main",
+              background: "linear-gradient(45deg, #ff6ec4, #7873f5)",
+              backgroundSize: "200% 200%",
+              animation: `${gradientOverlay} 3s ease infinite`,
               color: "#fff",
               fontSize: "1rem",
               textTransform: "none",
-              transition: "background-color 0.3s ease",
+              transition: "all 0.3s ease",
               "&:hover": {
-                backgroundColor: "primary.dark",
+                transform: "scale(1.05)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
               },
             }}
           >
@@ -386,24 +608,24 @@ const Home = () => {
             backgroundImage: 'url(/images/money-2180330_1280.jpg)',
             backgroundSize: "cover",
             backgroundPosition: "center",
+            backgroundAttachment: "fixed", // Parallax effect
             height: { xs: "300px", md: "500px" },
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
             position: "relative",
             mt: 8,
-          }}
-        >
-          <Box
-            sx={{
+            "&::before": {
+              content: '""',
               position: "absolute",
               top: 0,
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.4)",
-            }}
-          />
+              background: "linear-gradient(45deg, rgba(0,0,0,0.7), rgba(0,0,0,0.3))",
+            }
+          }}
+        >
           <Box sx={{ position: "relative", zIndex: 2, textAlign: "center", px: 2 }}>
             <Typography
               variant="h3"
@@ -413,6 +635,7 @@ const Home = () => {
                 textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
                 fontSize: { xs: "1.8rem", md: "3rem" },
                 mb: 1,
+                animation: `${textGlow} 3s ease-in-out infinite alternate`,
               }}
             >
               Starting from just $0.01!
@@ -440,6 +663,7 @@ const Home = () => {
           backgroundColor: "#f5f5f5",
           mt: 8,
           borderRadius: "12px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
         }}
       >
         <AnimatedBox>
@@ -447,7 +671,24 @@ const Home = () => {
             variant="h4"
             align="center"
             gutterBottom
-            sx={{ color: "primary.main", fontWeight: "bold", mb: 4 }}
+            sx={{
+              color: "primary.main",
+              fontWeight: "bold",
+              mb: 6,
+              position: "relative",
+              "&::after": {
+                content: '""',
+                width: 80,
+                height: 4,
+                background: "linear-gradient(90deg, #ff6ec4, #7873f5)",
+                backgroundSize: "200% 200%",
+                animation: `${gradientOverlay} 3s ease infinite`,
+                display: "block",
+                mx: "auto",
+                borderRadius: 2,
+                mt: 1,
+              },
+            }}
           >
             How It Works
           </Typography>
@@ -455,8 +696,31 @@ const Home = () => {
         <Grid container spacing={4}>
           <Grid item xs={12} md={4}>
             <AnimatedBox delay="0.2s">
-              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <MenuBook sx={{ fontSize: 80, color: "primary.main", mb: 2 }} />
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  p: 3,
+                  borderRadius: "12px",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-5px)",
+                    backgroundColor: "rgba(255,255,255,0.5)",
+                  },
+                }}
+              >
+                <MenuBook
+                  sx={{
+                    fontSize: 80,
+                    color: "primary.main",
+                    mb: 2,
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                />
                 <Typography
                   variant="h6"
                   sx={{ fontWeight: "bold", color: "primary.main", mb: 1 }}
@@ -508,17 +772,19 @@ const Home = () => {
               variant="contained"
               onClick={() => navigate("/auction-list")}
               sx={{
-                backgroundColor: "secondary.main",
-                color: "primary.contrastText",
+                background: "linear-gradient(45deg, #ff6ec4, #7873f5)",
+                backgroundSize: "200% 200%",
+                animation: `${gradientOverlay} 3s ease infinite`,
+                color: "#fff",
                 fontSize: "1.1rem",
                 py: 1.5,
                 px: 4,
                 borderRadius: "30px",
                 textTransform: "none",
-                transition: "background-color 0.3s ease, transform 0.3s ease",
+                transition: "all 0.3s ease",
                 "&:hover": {
-                  backgroundColor: "secondary.dark",
                   transform: "scale(1.05)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
                 },
               }}
             >
@@ -531,10 +797,12 @@ const Home = () => {
       {/* ---------- FOOTER ---------- */}
       <Box
         sx={{
-          backgroundColor: "primary.main",
+          background: "linear-gradient(45deg, #ff6ec4, #7873f5)",
+          backgroundSize: "200% 200%",
+          animation: `${gradientOverlay} 3s ease infinite`,
           color: "#fff",
           textAlign: "center",
-          py: 2,
+          py: 3,
           mt: 8,
         }}
       >

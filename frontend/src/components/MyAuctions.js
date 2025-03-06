@@ -121,23 +121,21 @@ const MyAuctions = () => {
   const pageCount = Math.ceil(auctions.length / itemsPerPage);
 
   return (
-    <Container
-      maxWidth="lg"
+    <Box
       sx={{
-        p: 2,
-        backgroundColor: "#f5f5f5",
-        minHeight: "100vh",
-        animation: `${fadeIn} 1s ease-in-out`,
+        maxWidth: 1200,
+        mx: "auto",
+        p: { xs: 1, sm: 2 },
+        mt: { xs: '64px', sm: '72px' },
+        pt: { xs: 2, sm: 3 },
       }}
     >
       <Typography
         variant="h4"
         sx={{
-          textAlign: "center",
-          mb: 2,
+          mb: 3,
           fontWeight: "bold",
-          color: "#333",
-          textShadow: "1px 1px 3px rgba(0, 0, 0, 0.1)",
+          color: "primary.main",
         }}
       >
         My Auctions
@@ -267,7 +265,7 @@ const MyAuctions = () => {
           You have not posted any auctions yet.
         </Typography>
       )}
-    </Container>
+    </Box>
   );
 };
 

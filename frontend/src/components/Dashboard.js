@@ -110,16 +110,25 @@ const Dashboard = () => {
   return (
     <Box
       sx={{
-        p: 3,
         maxWidth: 1200,
-        mx: 'auto',
+        mx: "auto",
+        p: { xs: 1, sm: 2 },
+        mt: { xs: '64px', sm: '72px' },
+        pt: { xs: 2, sm: 3 },
         background: 'linear-gradient(135deg, #f0f4f8, #d9e2ec)',
         borderRadius: 2,
         boxShadow: 3,
         mb: 4,
       }}
     >
-      <Typography variant="h4" gutterBottom sx={{ color: '#333', mb: 3 }}>
+      <Typography
+        variant="h4"
+        sx={{
+          mb: 3,
+          fontWeight: "bold",
+          color: "primary.main",
+        }}
+      >
         Dashboard
       </Typography>
 

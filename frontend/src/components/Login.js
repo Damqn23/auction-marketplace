@@ -1,168 +1,209 @@
-import React, { useState, useContext } from "react";
-import { loginUser } from "../services/authService";
-import { useNavigate, Link } from "react-router-dom";
-import { toast } from "react-toastify";
-import { UserContext } from "../contexts/UserContext";
-import { getCurrentUser } from "../services/userService";
+import React, { useState, useContext } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import {
-  Paper,
-  Typography,
-  TextField,
-  Button,
   Box,
-} from "@mui/material";
-import { keyframes } from "@emotion/react";
+  Button,
+  TextField,
+  Typography,
+  Paper,
+  InputAdornment,
+  IconButton,
+  Fade,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
+import { Visibility, VisibilityOff, Person, Lock } from '@mui/icons-material';
+import { loginUser } from '../services/authService';
+import { getCurrentUser } from '../services/userService';
+import { UserContext } from '../contexts/UserContext';
+import { toast } from 'react-toastify';
+import { keyframes } from '@emotion/react';
 
-const fadeInScale = keyframes`
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 `;
 
-const Login = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: theme.spacing(3),
+  maxWidth: 400,
+  width: '100%',
+  borderRadius: 16,
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+  animation: `${fadeIn} 0.5s ease-out`,
+  background: 'rgba(255, 255, 255, 0.9)',
+  backdropFilter: 'blur(10px)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+}));
 
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 12,
+    transition: 'all 0.3s ease',
+    '&:hover': {
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+    },
+    '&.Mui-focused': {
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+    },
+  },
+}));
+
+const StyledButton = styled(Button)(({ theme }) => ({
+  borderRadius: 12,
+  padding: '12px 32px',
+  fontSize: '1rem',
+  textTransform: 'none',
+  transition: 'all 0.3s ease',
+  background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)',
+  },
+}));
+
+const Login = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [showPassword, setShowPassword] = useState(false);
   const { setUser } = useContext(UserContext);
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+  });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-
     try {
-      await loginUser(username, password);
-      toast.success("Logged in successfully!");
+      const response = await loginUser(formData.username, formData.password);
+      localStorage.setItem('access_token', response.access);
+      localStorage.setItem('refresh_token', response.refresh);
+      
+      // Fetch user data and update context
       const userData = await getCurrentUser();
       setUser(userData);
-      navigate("/");
-    } catch (err) {
-      console.error("Login error:", err);
-      setError("Invalid username or password.");
-      toast.error("Login failed. Please check your credentials.");
+      
+      toast.success('Login successful!');
+      navigate('/');
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || 'Login failed. Please try again.');
     }
   };
 
   return (
     <Box
       sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        p: 2,
-        background: "linear-gradient(135deg, #dfe9f3, #ffffff)",
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: theme.spacing(2),
+        background: 'linear-gradient(135deg, #6B73FF 0%, #000DFF 100%)',
+        mt: '-64px', // Compensate for navbar
       }}
     >
-      <Paper
-        elevation={4}
-        sx={{
-          width: "100%",
-          maxWidth: "400px",
-          p: 4,
-          borderRadius: 2,
-          animation: `${fadeInScale} 0.6s ease-in-out`,
-          backgroundColor: "rgba(255, 255, 255, 0.98)",
-        }}
-      >
-        <Typography
-          variant="h4"
-          component="h2"
-          gutterBottom
-          sx={{
-            textAlign: "center",
-            mb: 3,
-            fontWeight: "bold",
-            color: "#333",
-          }}
-        >
-          Login
-        </Typography>
-
-        {error && (
-          <Typography variant="body1" color="error" sx={{ mb: 2 }}>
-            {error}
-          </Typography>
-        )}
-
-        <Box component="form" onSubmit={handleSubmit} noValidate>
-          <Box mb={2}>
-            <TextField
-              label="Username"
-              variant="outlined"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              fullWidth
-              required
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": { borderColor: "#1976d2" },
-                  "&:hover fieldset": { borderColor: "#115293" },
-                  "&.Mui-focused fieldset": { borderColor: "#0d47a1" },
-                },
-              }}
-            />
-          </Box>
-
-          <Box mb={2}>
-            <TextField
-              label="Password"
-              variant="outlined"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              fullWidth
-              required
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": { borderColor: "#1976d2" },
-                  "&:hover fieldset": { borderColor: "#115293" },
-                  "&.Mui-focused fieldset": { borderColor: "#0d47a1" },
-                },
-              }}
-            />
-          </Box>
-
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            disableElevation
+      <Fade in timeout={500}>
+        <StyledPaper elevation={3}>
+          <Typography
+            variant="h4"
+            component="h1"
             sx={{
-              mt: 2,
-              textTransform: "none",
-              fontSize: "1rem",
-              py: 1.5,
-              transition: "background-color 0.3s ease, transform 0.3s ease",
-              "&:hover": {
-                backgroundColor: "#0d47a1",
-                transform: "scale(1.02)",
-              },
+              fontWeight: 700,
+              color: theme.palette.primary.main,
+              textAlign: 'center',
+              mb: 1,
             }}
           >
-            Login
-          </Button>
-        </Box>
-
-        <Typography variant="body2" sx={{ mt: 2, textAlign: "center" }}>
-          Don't have an account?{" "}
-          <Link
-            to="/register"
-            style={{ color: "#1976d2", textDecoration: "none", fontWeight: 500 }}
+            Welcome Back
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              color: theme.palette.text.secondary,
+              textAlign: 'center',
+              mb: 3,
+            }}
           >
-            Register here
-          </Link>
-          .
-        </Typography>
-      </Paper>
+            Please sign in to continue
+          </Typography>
+          <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <StyledTextField
+                fullWidth
+                name="username"
+                label="Username"
+                value={formData.username}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Person color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <StyledTextField
+                fullWidth
+                name="password"
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock color="action" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <StyledButton
+                type="submit"
+                fullWidth
+                variant="contained"
+                size="large"
+              >
+                Sign In
+              </StyledButton>
+            </Box>
+          </form>
+          <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
+            Don't have an account?{' '}
+            <Link
+              to="/register"
+              style={{
+                color: theme.palette.primary.main,
+                textDecoration: 'none',
+                fontWeight: 600,
+              }}
+            >
+              Sign Up
+            </Link>
+          </Typography>
+        </StyledPaper>
+      </Fade>
     </Box>
   );
 };

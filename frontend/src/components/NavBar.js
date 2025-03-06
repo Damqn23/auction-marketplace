@@ -12,18 +12,49 @@ import {
   List,
   ListItem,
   ListItemText,
+  ListItemIcon,
   Divider,
   Box,
   TextField,
   Badge,
   Button,
+  Avatar,
+  Menu,
+  MenuItem,
+  Tooltip,
+  Fade,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
 import ChatIcon from "@mui/icons-material/Chat";
+import AccountCircle from "@mui/icons-material/AccountCircle";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import GavelIcon from "@mui/icons-material/Gavel";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import LogoutIcon from "@mui/icons-material/Logout";
+import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { keyframes } from "@emotion/react";
+
+// Add new animations
+const slideIn = keyframes`
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+`;
+
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const pulse = keyframes`
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+`;
 
 const gradientAnimation = keyframes`
   0% { background-position: 0% 50%; }
@@ -43,6 +74,10 @@ const NavBar = () => {
   const [balance, setBalance] = useState(null); // actual balance from backend
   const [displayedBalance, setDisplayedBalance] = useState(null); // animated display value
   const prevBalanceRef = useRef(null); // to store the previous balance value
+
+  // Add new state for user menu
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [notificationsAnchor, setNotificationsAnchor] = useState(null);
 
   // Fetch unread messages on login
   useEffect(() => {
@@ -187,41 +222,104 @@ const NavBar = () => {
   const drawerMenuItems = isDesktop && user ? secondaryActions : mobileMenuItems;
   const drawerAnchor = user && isDesktop ? "right" : "left";
 
+  const handleUserMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleNotificationsOpen = (event) => {
+    setNotificationsAnchor(event.currentTarget);
+  };
+
+  const handleNotificationsClose = () => {
+    setNotificationsAnchor(null);
+  };
+
   return (
     <AppBar
-      position="static"
+      position="fixed"
       sx={{
         background: "linear-gradient(45deg, #ff6ec4, #7873f5, #24c6dc, #514a9d)",
         backgroundSize: "400% 400%",
         animation: `${gradientAnimation} 15s ease infinite`,
-        padding: "10px 20px",
-        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+        boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+        backdropFilter: "blur(10px)",
+        backgroundColor: "rgba(255, 255, 255, 0.1)",
       }}
     >
-      <Toolbar sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Toolbar sx={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        alignItems: "center",
+        minHeight: "64px !important",
+        px: { xs: 2, md: 4 }
+      }}>
         {/* Left Section */}
         <Box sx={{ display: "flex", alignItems: "center" }}>
           {!isDesktop && (
-            <IconButton
-              edge="start"
-              color="inherit"
-              aria-label="menu"
-              onClick={toggleDrawer(true)}
-              sx={{ mr: 1, color: "#ffffff" }}
-            >
-              <MenuIcon />
-            </IconButton>
+            <>
+              <IconButton
+                edge="start"
+                color="inherit"
+                aria-label="menu"
+                onClick={toggleDrawer(true)}
+                sx={{ 
+                  mr: 1, 
+                  color: "#ffffff",
+                  "&:hover": {
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  }
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
+              {user && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    borderRadius: '20px',
+                    padding: '4px 12px',
+                    mr: 1,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                  }}
+                >
+                  <AccountBalanceWalletIcon sx={{ color: '#ffffff', fontSize: '0.9rem' }} />
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#ffffff',
+                      fontWeight: 'bold',
+                      textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    ${displayedBalance || '0.00'}
+                  </Typography>
+                </Box>
+              )}
+            </>
           )}
           <Typography
             variant="h6"
             component={NavLink}
             to="/"
             sx={{
-              color: "#ffeb3b",
+              color: "#ffffff",
               textDecoration: "none",
               fontWeight: "bold",
-              fontSize: "1.5rem",
-              "&:hover": { color: "#ffe082" },
+              fontSize: { xs: "1.1rem", sm: "1.5rem" },
+              textShadow: "2px 2px 4px rgba(0,0,0,0.2)",
+              transition: "all 0.3s ease",
+              "&:hover": { 
+                color: "#ffffff",
+                textShadow: "2px 2px 8px rgba(255,255,255,0.5)",
+              },
             }}
           >
             Auction Marketplace
@@ -229,7 +327,12 @@ const NavBar = () => {
         </Box>
 
         {/* Middle: Search Bar */}
-        <Box sx={{ flex: 1, maxWidth: "500px", mx: 2 }}>
+        <Box sx={{ 
+          flex: 1, 
+          maxWidth: "500px", 
+          mx: 2,
+          display: { xs: "none", md: "block" }
+        }}>
           <TextField
             placeholder="Search items..."
             size="small"
@@ -239,84 +342,358 @@ const NavBar = () => {
             onKeyDown={handleSearch}
             fullWidth
             InputProps={{
+              startAdornment: (
+                <SearchIcon sx={{ color: "text.secondary", mr: 1 }} />
+              ),
               endAdornment: (
-                <IconButton onClick={handleSearchButtonClick} aria-label="search">
+                <IconButton 
+                  onClick={handleSearchButtonClick} 
+                  aria-label="search"
+                  sx={{
+                    color: "primary.main",
+                    "&:hover": {
+                      backgroundColor: "rgba(0, 0, 0, 0.04)",
+                    }
+                  }}
+                >
                   <SearchIcon />
                 </IconButton>
               ),
             }}
             sx={{
-              backgroundColor: "#ffffff",
-              borderRadius: "4px",
+              backgroundColor: "rgba(255, 255, 255, 0.9)",
+              borderRadius: "25px",
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: "transparent",
+                },
+                "&:hover fieldset": {
+                  borderColor: "transparent",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "transparent",
+                },
+              },
+              "& .MuiOutlinedInput-input": {
+                padding: "8px 14px",
+              },
             }}
           />
         </Box>
 
-        {/* Right Section (Desktop) */}
-        {isDesktop && user && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            {displayedBalance !== null && (
-              <Typography variant="body1" sx={{ color: "#fff" }}>
-                Balance: ${displayedBalance}
-              </Typography>
-            )}
-            <Button variant="contained" color="warning" onClick={() => navigate("/deposit")}>
-              Deposit
-            </Button>
-            <Button variant="contained" color="secondary" onClick={() => navigate("/create")}>
-              Create Auction
-            </Button>
-            <IconButton color="inherit" onClick={() => navigate("/chat")}>
-              <Badge badgeContent={unreadCount > 9 ? "9+" : unreadCount} color="error">
-                <ChatIcon />
-              </Badge>
-            </IconButton>
-            <IconButton color="inherit" onClick={toggleDrawer(true)}>
-              <MenuIcon />
-            </IconButton>
-          </Box>
-        )}
+        {/* Right Section */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {isDesktop && user && (
+            <>
+              {/* Balance Display */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  borderRadius: '20px',
+                  padding: '6px 16px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                }}
+              >
+                <AccountBalanceWalletIcon sx={{ color: '#ffffff' }} />
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    color: '#ffffff',
+                    fontWeight: 'bold',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  }}
+                >
+                  ${displayedBalance || '0.00'}
+                </Typography>
+              </Box>
 
-        {isDesktop && !user && (
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <IconButton color="inherit" onClick={toggleDrawer(true)}>
-              <MenuIcon />
-            </IconButton>
-          </Box>
-        )}
+              <Tooltip title="Create Auction" TransitionComponent={Fade}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={() => navigate("/create")}
+                  sx={{
+                    borderRadius: "20px",
+                    textTransform: "none",
+                    px: 2,
+                    py: 1,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    },
+                  }}
+                >
+                  Create Auction
+                </Button>
+              </Tooltip>
+
+              <Tooltip title="Messages" TransitionComponent={Fade}>
+                <IconButton
+                  color="inherit"
+                  onClick={() => navigate("/chat")}
+                  sx={{
+                    color: "#ffffff",
+                    "&:hover": {
+                      backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    }
+                  }}
+                >
+                  <Badge badgeContent={unreadCount} color="error">
+                    <ChatIcon />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip title="Notifications" TransitionComponent={Fade}>
+                <IconButton
+                  color="inherit"
+                  onClick={handleNotificationsOpen}
+                  sx={{
+                    color: "#ffffff",
+                    "&:hover": {
+                      backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    }
+                  }}
+                >
+                  <Badge badgeContent={4} color="error">
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip title="Account" TransitionComponent={Fade}>
+                <IconButton
+                  onClick={handleUserMenuOpen}
+                  sx={{
+                    color: "#ffffff",
+                    "&:hover": {
+                      backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    }
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      bgcolor: "secondary.main",
+                      "&:hover": {
+                        animation: `${pulse} 1s ease-in-out`,
+                      }
+                    }}
+                  >
+                    {user.username.charAt(0).toUpperCase()}
+                  </Avatar>
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
+
+          {!user && (
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Button
+                variant="outlined"
+                color="inherit"
+                onClick={() => navigate("/login")}
+                sx={{
+                  borderRadius: "20px",
+                  textTransform: "none",
+                  borderColor: "rgba(255, 255, 255, 0.5)",
+                  "&:hover": {
+                    borderColor: "#ffffff",
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  }
+                }}
+              >
+                Login
+              </Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={() => navigate("/register")}
+                sx={{
+                  borderRadius: "20px",
+                  textTransform: "none",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  }
+                }}
+              >
+                Register
+              </Button>
+            </Box>
+          )}
+        </Box>
       </Toolbar>
 
-      {/* Drawer for mobile or secondary actions */}
-      <Drawer anchor={drawerAnchor} open={drawerOpen} onClose={toggleDrawer(false)}>
-        <Box role="presentation" onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)} sx={{ width: 250 }}>
+      {/* User Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleUserMenuClose}
+        TransitionComponent={Fade}
+        PaperProps={{
+          sx: {
+            mt: 1.5,
+            borderRadius: 2,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            minWidth: 200,
+          }
+        }}
+      >
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <Avatar
+              sx={{
+                width: 40,
+                height: 40,
+                bgcolor: 'primary.main',
+              }}
+            >
+              {user?.username?.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box>
+              <Typography variant="subtitle1" fontWeight="bold">
+                {user?.username}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Balance: ${displayedBalance || '0.00'}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+        <MenuItem onClick={() => { navigate("/dashboard"); handleUserMenuClose(); }}>
+          <ListItemIcon>
+            <AccountCircle fontSize="small" />
+          </ListItemIcon>
+          Dashboard
+        </MenuItem>
+        <MenuItem onClick={() => { navigate("/my-bids"); handleUserMenuClose(); }}>
+          <ListItemIcon>
+            <GavelIcon fontSize="small" />
+          </ListItemIcon>
+          My Bids
+        </MenuItem>
+        <MenuItem onClick={() => { navigate("/my-auctions"); handleUserMenuClose(); }}>
+          <ListItemIcon>
+            <EmojiEventsIcon fontSize="small" />
+          </ListItemIcon>
+          My Auctions
+        </MenuItem>
+        <MenuItem onClick={() => { navigate("/my-purchases"); handleUserMenuClose(); }}>
+          <ListItemIcon>
+            <ShoppingBagIcon fontSize="small" />
+          </ListItemIcon>
+          My Purchases
+        </MenuItem>
+        <MenuItem onClick={() => { navigate("/favorites"); handleUserMenuClose(); }}>
+          <ListItemIcon>
+            <FavoriteIcon fontSize="small" />
+          </ListItemIcon>
+          Favorites
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={() => { handleLogout(); handleUserMenuClose(); }}>
+          <ListItemIcon>
+            <LogoutIcon fontSize="small" />
+          </ListItemIcon>
+          Logout
+        </MenuItem>
+      </Menu>
+
+      {/* Notifications Menu */}
+      <Menu
+        anchorEl={notificationsAnchor}
+        open={Boolean(notificationsAnchor)}
+        onClose={handleNotificationsClose}
+        TransitionComponent={Fade}
+        PaperProps={{
+          sx: {
+            mt: 1.5,
+            borderRadius: "12px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+            minWidth: 300,
+          }
+        }}
+      >
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+          <Typography variant="h6">Notifications</Typography>
+        </Box>
+        <MenuItem>
+          <ListItemText
+            primary="New bid on your auction"
+            secondary="2 minutes ago"
+          />
+        </MenuItem>
+        <MenuItem>
+          <ListItemText
+            primary="Auction ending soon"
+            secondary="1 hour ago"
+          />
+        </MenuItem>
+        <MenuItem>
+          <ListItemText
+            primary="You won an auction!"
+            secondary="3 hours ago"
+          />
+        </MenuItem>
+        <Divider />
+        <MenuItem>
+          <ListItemText
+            primary="View all notifications"
+            sx={{ textAlign: "center" }}
+          />
+        </MenuItem>
+      </Menu>
+
+      {/* Mobile Drawer */}
+      <Drawer
+        anchor={drawerAnchor}
+        open={drawerOpen}
+        onClose={toggleDrawer(false)}
+        PaperProps={{
+          sx: {
+            width: { xs: "80%", sm: 300 },
+            borderRadius: "0 12px 12px 0",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+          }
+        }}
+      >
+        <Box sx={{ p: 2 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Menu
+          </Typography>
+          <Divider sx={{ mb: 2 }} />
           <List>
             {drawerMenuItems.map((item, index) => (
-              <React.Fragment key={index}>
-                <ListItem
-                  button
-                  component={item.link ? NavLink : "div"}
-                  to={item.link || undefined}
-                  onClick={item.action || undefined}
-                >
-                  <ListItemText primary={item.text} />
-                  {item.badge && (
-                    <Box
-                      sx={{
-                        backgroundColor: "#e53935",
-                        color: "white",
-                        borderRadius: "50%",
-                        px: "6px",
-                        py: "2px",
-                        fontSize: "0.75rem",
-                        ml: 1,
-                      }}
-                    >
-                      {item.badge > 9 ? "9+" : item.badge}
-                    </Box>
-                  )}
-                </ListItem>
-                {index < drawerMenuItems.length - 1 && <Divider />}
-              </React.Fragment>
+              <ListItem
+                key={index}
+                button
+                onClick={() => {
+                  if (item.action) {
+                    item.action();
+                  } else if (item.link) {
+                    navigate(item.link);
+                  }
+                  toggleDrawer(false)();
+                }}
+                sx={{
+                  borderRadius: "8px",
+                  mb: 1,
+                  "&:hover": {
+                    backgroundColor: "rgba(0, 0, 0, 0.04)",
+                  }
+                }}
+              >
+                {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}
+                <ListItemText primary={item.text} />
+              </ListItem>
             ))}
           </List>
         </Box>

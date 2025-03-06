@@ -126,22 +126,44 @@ const Favorites = () => {
   }
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: "auto", p: 2 }}>
+    <Box
+      sx={{
+        maxWidth: 1200,
+        mx: "auto",
+        p: { xs: 1, sm: 2 },
+        mt: { xs: '64px', sm: '72px' },
+        pt: { xs: 2, sm: 3 },
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f0f4f8 0%, #f7f9fc 100%)',
+      }}
+    >
       <Typography
         variant="h4"
         sx={{
-          textAlign: "center",
           mb: 3,
           fontWeight: "bold",
+          color: "primary.main",
+          textShadow: '0 2px 4px rgba(0,0,0,0.05)',
         }}
       >
-        Your Favorites
+        Favorite Items
       </Typography>
 
       {favorites.length === 0 ? (
-        <Typography variant="body1" textAlign="center">
-          No favorites yet.
-        </Typography>
+        <Box
+          sx={{
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: 2,
+            p: 4,
+            textAlign: "center",
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+          }}
+        >
+          <Typography variant="body1">
+            No favorites yet.
+          </Typography>
+        </Box>
       ) : (
         <Box>
           {favorites.map((fav) => {
@@ -169,13 +191,18 @@ const Favorites = () => {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  border: "1px solid #ddd",
+                  border: "1px solid rgba(0,0,0,0.1)",
                   borderRadius: 2,
                   mb: 2,
                   p: 2,
                   cursor: "pointer",
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  transition: 'all 0.2s ease-in-out',
                   "&:hover": {
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    transform: 'translateY(-2px)',
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                   },
                 }}
               >

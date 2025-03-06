@@ -51,117 +51,137 @@ const ChatList = () => {
     );
 
   return (
-    <Paper
-      elevation={3}
+    <Box
       sx={{
-        p: 3,
-        maxWidth: "800px",
+        maxWidth: 1200,
         mx: "auto",
-        my: 4,
-        backgroundColor: "#fff",
-        borderRadius: 2,
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+        p: { xs: 1, sm: 2 },
+        mt: { xs: '64px', sm: '72px' },
+        pt: { xs: 2, sm: 3 },
       }}
     >
       <Typography
-        variant="h5"
+        variant="h4"
         sx={{
-          mb: 2,
-          color: "#283593",
-          fontWeight: 700,
-          textAlign: "center",
+          mb: 3,
+          fontWeight: "bold",
+          color: "primary.main",
         }}
       >
-        Your Chats
+        Messages
       </Typography>
-      <Divider />
-      <List
+      <Paper
+        elevation={3}
         sx={{
-          maxHeight: "600px",
-          overflowY: "auto",
-          p: 0,
+          p: 3,
+          maxWidth: "800px",
+          mx: "auto",
+          my: 4,
+          backgroundColor: "#fff",
+          borderRadius: 2,
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
         }}
       >
-        {chats.length === 0 ? (
-          <Typography
-            variant="body1"
-            sx={{
-              textAlign: "center",
-              color: "#888",
-              mt: 2,
-              fontSize: "1rem",
-            }}
-          >
-            No conversations yet. Start chatting now!
-          </Typography>
-        ) : (
-          chats.map((chat, index) => (
-            <Link
-              to={`/chat/${chat.owner}`}
-              key={index}
-              style={{ textDecoration: "none", color: "inherit" }}
+        <Typography
+          variant="h5"
+          sx={{
+            mb: 2,
+            color: "#283593",
+            fontWeight: 700,
+            textAlign: "center",
+          }}
+        >
+          Your Chats
+        </Typography>
+        <Divider />
+        <List
+          sx={{
+            maxHeight: "600px",
+            overflowY: "auto",
+            p: 0,
+          }}
+        >
+          {chats.length === 0 ? (
+            <Typography
+              variant="body1"
+              sx={{
+                textAlign: "center",
+                color: "#888",
+                mt: 2,
+                fontSize: "1rem",
+              }}
             >
-              <ListItem
-                button
-                sx={{
-                  transition: "background-color 0.3s ease",
-                  "&:hover": { backgroundColor: "#f1f1f1" },
-                }}
+              No conversations yet. Start chatting now!
+            </Typography>
+          ) : (
+            chats.map((chat, index) => (
+              <Link
+                to={`/chat/${chat.owner}`}
+                key={index}
+                style={{ textDecoration: "none", color: "inherit" }}
               >
-                <ListItemAvatar>
-                  <Badge
-                    badgeContent={chat.unreadCount > 9 ? "9+" : chat.unreadCount}
-                    color="error"
-                    invisible={chat.unreadCount === 0}
-                    anchorOrigin={{
-                      vertical: "top",
-                      horizontal: "right",
-                    }}
-                  >
-                    <Avatar alt={chat.owner} src={chat.avatarUrl}>
-                      {chat.owner.charAt(0).toUpperCase()}
-                    </Avatar>
-                  </Badge>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={
-                    <Typography
-                      variant="subtitle1"
-                      sx={{
-                        color: "#283593",
-                        fontWeight: 600,
-                        fontSize: { xs: "1rem", sm: "1.1rem" },
-                      }}
-                    >
-                      {chat.owner}
-                    </Typography>
-                  }
-                  secondary={
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#555",
-                        fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                        mt: 0.5,
-                      }}
-                    >
-                      {chat.lastMessage}
-                    </Typography>
-                  }
-                />
-                <ChatIcon
+                <ListItem
+                  button
                   sx={{
-                    color: "#1976d2",
-                    display: { xs: "none", sm: "block" },
+                    transition: "background-color 0.3s ease",
+                    "&:hover": { backgroundColor: "#f1f1f1" },
                   }}
-                />
-              </ListItem>
-              <Divider />
-            </Link>
-          ))
-        )}
-      </List>
-    </Paper>
+                >
+                  <ListItemAvatar>
+                    <Badge
+                      badgeContent={chat.unreadCount > 9 ? "9+" : chat.unreadCount}
+                      color="error"
+                      invisible={chat.unreadCount === 0}
+                      anchorOrigin={{
+                        vertical: "top",
+                        horizontal: "right",
+                      }}
+                    >
+                      <Avatar alt={chat.owner} src={chat.avatarUrl}>
+                        {chat.owner.charAt(0).toUpperCase()}
+                      </Avatar>
+                    </Badge>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
+                      <Typography
+                        variant="subtitle1"
+                        sx={{
+                          color: "#283593",
+                          fontWeight: 600,
+                          fontSize: { xs: "1rem", sm: "1.1rem" },
+                        }}
+                      >
+                        {chat.owner}
+                      </Typography>
+                    }
+                    secondary={
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "#555",
+                          fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                          mt: 0.5,
+                        }}
+                      >
+                        {chat.lastMessage}
+                      </Typography>
+                    }
+                  />
+                  <ChatIcon
+                    sx={{
+                      color: "#1976d2",
+                      display: { xs: "none", sm: "block" },
+                    }}
+                  />
+                </ListItem>
+                <Divider />
+              </Link>
+            ))
+          )}
+        </List>
+      </Paper>
+    </Box>
   );
 };
 

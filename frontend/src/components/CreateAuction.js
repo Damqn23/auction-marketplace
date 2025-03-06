@@ -82,7 +82,7 @@ const CreateAuction = () => {
         setErrorMsg("Please fill out the required pricing fields.");
         return;
       }
-      // If buyNowPrice is set, ensure it’s higher than startingBid
+      // If buyNowPrice is set, ensure it's higher than startingBid
       if (buyNowPrice && parseFloat(buyNowPrice) <= parseFloat(startingBid)) {
         setErrorMsg("Buy Now price must be higher than the starting bid.");
         return;
@@ -358,7 +358,9 @@ const CreateAuction = () => {
       sx={{
         minHeight: "100vh",
         p: 3,
-        background: "linear-gradient(135deg, #f0f4f8, #ffffff)",
+        background: "linear-gradient(135deg, #f0f4f8 0%, #f7f9fc 100%)",
+        mt: { xs: '64px', sm: '72px' },
+        pt: { xs: 2, sm: 3 },
       }}
     >
       <Paper
@@ -369,6 +371,9 @@ const CreateAuction = () => {
           p: 3,
           borderRadius: 2,
           animation: `${fadeInScale} 0.6s ease-in-out`,
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
         }}
       >
         <Typography

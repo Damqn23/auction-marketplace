@@ -124,7 +124,7 @@ const UpdateAuction = () => {
             Update Auction Item
           </Typography>
           <Typography variant="body1">
-            This auction has bids or is already ended, so you can’t add images.
+            This auction has bids or is already ended, so you can't add images.
           </Typography>
           <Box mt={2}>
             <Button
@@ -141,7 +141,17 @@ const UpdateAuction = () => {
   }
 
   return (
-    <Box sx={{ display: "flex", justifyContent: "center", mt: 4, p: 2 }}>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        mt: { xs: '64px', sm: '72px' },
+        pt: { xs: 2, sm: 3 },
+        p: 2,
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f0f4f8 0%, #f7f9fc 100%)',
+      }}
+    >
       <Paper
         elevation={3}
         sx={{
@@ -150,6 +160,9 @@ const UpdateAuction = () => {
           width: "100%",
           borderRadius: 2,
           animation: `${fadeIn} 0.8s ease-in-out`,
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
         }}
       >
         <Typography variant="h4" gutterBottom>

@@ -133,16 +133,26 @@ const MyPurchases = () => {
   const pageCount = Math.ceil(purchasedItems.length / itemsPerPage);
 
   return (
-    <Container
-      maxWidth="lg"
+    <Box
       sx={{
-        p: 2,
-        maxWidth: "1200px",
-        margin: "auto",
-        backgroundColor: "#fafafa",
-        animation: `${fadeIn} 1s ease-in-out`,
+        maxWidth: 1200,
+        mx: "auto",
+        p: { xs: 1, sm: 2 },
+        mt: { xs: '64px', sm: '72px' },
+        pt: { xs: 2, sm: 3 },
       }}
     >
+      <Typography
+        variant="h4"
+        sx={{
+          mb: 3,
+          fontWeight: "bold",
+          color: "primary.main",
+        }}
+      >
+        My Purchases
+      </Typography>
+
       <Box
         sx={{
           display: "flex",
@@ -152,9 +162,6 @@ const MyPurchases = () => {
           flexDirection: { xs: "column", sm: "row" },
         }}
       >
-        <Typography variant="h4" component="h2" gutterBottom>
-          My Purchases
-        </Typography>
         <Link to="/" style={{ textDecoration: "none" }}>
           <Button variant="contained" color="primary">
             Back to Auction List
@@ -287,7 +294,7 @@ const MyPurchases = () => {
           color="primary"
         />
       </Box>
-    </Container>
+    </Box>
   );
 };
 
