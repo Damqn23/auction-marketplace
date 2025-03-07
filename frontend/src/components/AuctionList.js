@@ -1,5 +1,5 @@
-import React, { useContext, useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import React, { useContext, useState, useEffect, useRef, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -24,6 +24,7 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
+  CircularProgress,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import SortIcon from "@mui/icons-material/Sort";
@@ -38,6 +39,7 @@ import { UserContext } from "../contexts/UserContext";
 import CountdownTimer from "./CountdownTimer";
 import BuyNowModal from "./BuyNowModal";
 import FavoriteButton from "./FavoriteButton";
+import QuickPreviewModal from './QuickPreviewModal';
 
 // Add animations
 const fadeIn = keyframes`
@@ -84,20 +86,31 @@ const AuctionList = () => {
     queryFn: getAllCategories,
   });
 
-  const { data: auctionItems, isLoading, isError } = useQuery({
+  const { data: auctionItems, isLoading, isError, hasNextPage, fetchNextPage } = useInfiniteQuery({
     queryKey: ["auctionItems", query, appliedFilters, sortBy],
-    queryFn: () => {
+    queryFn: ({ pageParam = 1 }) => {
       // If user typed something, do fuzzy search:
       if (query) {
         return searchAuctionItems(query, appliedFilters.category);
       } else {
         // No query? Then just do the normal listing
-        const params = { ...appliedFilters, sort_by: sortBy };
+        const params = { ...appliedFilters, sort_by: sortBy, page: pageParam };
         return getAllAuctionItems(params);
       }
     },
     refetchInterval: 5000,
     onError: () => toast.error("Failed to load auction items."),
+    getNextPageParam: (lastPage) => {
+      if (!lastPage?.meta) return undefined;
+      
+      const { current_page, per_page, total } = lastPage.meta;
+      const totalPages = Math.ceil(total / per_page);
+      
+      if (current_page < totalPages) {
+        return current_page + 1;
+      }
+      return undefined;
+    },
   });
 
   // ----- Bulgarian cities (for Location filter) -----
@@ -176,7 +189,20 @@ const AuctionList = () => {
     queryClient.invalidateQueries(["auctionItems"]);
   };
 
-  // Loading skeleton component
+  // Infinite scroll setup
+  const observer = useRef();
+  const lastAuctionRef = useCallback(node => {
+    if (isLoading) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasNextPage) {
+        fetchNextPage();
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [isLoading, hasNextPage, fetchNextPage]);
+
+  // Skeleton loading component
   const LoadingSkeleton = () => (
     <Grid container spacing={2}>
       {[1, 2, 3, 4, 5, 6].map((item) => (
@@ -230,25 +256,40 @@ const AuctionList = () => {
     </Box>
   );
 
-  // Loading/Error states with new UI
-  if (isLoading) {
-    return <LoadingSkeleton />;
-  }
-  if (isError) {
-    return (
-      <Box sx={{ p: 4, textAlign: 'center' }}>
-        <Typography variant="h5" color="error" gutterBottom>
-          Failed to load auction items
-        </Typography>
-        <Button
-          variant="contained"
-          onClick={() => queryClient.invalidateQueries(["auctionItems"])}
-        >
-          Try Again
-        </Button>
-      </Box>
-    );
-  }
+  // Mobile gesture controls
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  const handleTouchStart = (e) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe && !filterAnchorEl) {
+      handleFilterClick();
+    } else if (isRightSwipe && filterAnchorEl) {
+      handleFilterClose();
+    }
+  };
+
+  const [previewItem, setPreviewItem] = useState(null);
+
+  const handleItemClick = (item) => {
+    setPreviewItem(item);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewItem(null);
+  };
 
   return (
     <Box
@@ -257,8 +298,13 @@ const AuctionList = () => {
         mt: { xs: '64px', sm: '72px' },
         pt: { xs: 2, sm: 3 },
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #f0f4f8 0%, #f7f9fc 100%)',
+        background: theme.palette.mode === 'light' 
+          ? 'linear-gradient(135deg, #f0f4f8 0%, #f7f9fc 100%)'
+          : 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Top Bar (Filters + Sort) */}
       <Box
@@ -313,127 +359,147 @@ const AuctionList = () => {
       </Box>
 
       {/* Auction Items Grid */}
-      {Array.isArray(auctionItems) && auctionItems.length > 0 ? (
+      {auctionItems?.pages?.length > 0 ? (
         <Grid container spacing={2}>
-          {auctionItems.map((item, index) => {
-            const isNotOwner = user && item.owner && user.username !== item.owner.username;
-            const canBid = isNotOwner && item.status === "active" && !item.buy_now_buyer;
-            const canBuyNow = isNotOwner && item.status === "active" && item.buy_now_price && !item.buy_now_buyer;
-            const minBid = item.current_bid ? parseFloat(item.current_bid) : parseFloat(item.starting_bid);
-            const minIncrement = minBid * 0.02;
-            const minRequiredBid = (minBid + minIncrement).toFixed(2);
+          {auctionItems.pages.map((page, pageIndex) => (
+            <React.Fragment key={pageIndex}>
+              {page.items?.map((item, index) => {
+                const isNotOwner = user && item.owner && user.username !== item.owner.username;
+                const canBid = isNotOwner && item.status === "active" && !item.buy_now_buyer;
+                const canBuyNow = isNotOwner && item.status === "active" && item.buy_now_price && !item.buy_now_buyer;
+                const minBid = item.current_bid ? parseFloat(item.current_bid) : parseFloat(item.starting_bid);
+                const minIncrement = minBid * 0.02;
+                const minRequiredBid = (minBid + minIncrement).toFixed(2);
+                const isLastElement = pageIndex === auctionItems.pages.length - 1 && index === page.items.length - 1;
 
-            return (
-              <Grid item xs={12} sm={6} md={4} key={item.id}>
-                <Fade in timeout={300} style={{ transitionDelay: `${index * 50}ms` }}>
-                  <Card
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                      },
-                    }}
+                return (
+                  <Grid 
+                    item 
+                    xs={12} 
+                    sm={6} 
+                    md={4} 
+                    key={item.id}
+                    ref={isLastElement ? lastAuctionRef : null}
                   >
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={item.images?.[0]?.image || '/placeholder.jpg'}
-                      alt={item.title}
-                      sx={{
-                        objectFit: 'cover',
-                        cursor: 'pointer',
-                        '&:hover': {
-                          animation: `${pulse} 1s ease-in-out`,
-                        },
-                      }}
-                      onClick={() => navigate(`/auction/${item.id}`)}
-                    />
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                        <Typography variant="h6" component="h2" noWrap>
-                          {item.title}
-                        </Typography>
-                        <FavoriteButton auctionId={item.id} />
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        {item.description?.substring(0, 100)}...
-                      </Typography>
-                      <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        <Chip
-                          label={item.status}
-                          color={item.status === 'active' ? 'success' : 'default'}
-                          size="small"
+                    <Fade in timeout={300} style={{ transitionDelay: `${index * 50}ms` }}>
+                      <Card
+                        sx={{
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          transition: 'transform 0.2s, box-shadow 0.2s',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                          },
+                        }}
+                        onClick={() => handleItemClick(item)}
+                      >
+                        <CardMedia
+                          component="img"
+                          height="200"
+                          image={item.images?.[0]?.image || '/placeholder.jpg'}
+                          alt={item.title}
+                          sx={{
+                            objectFit: 'cover',
+                            cursor: 'pointer',
+                            '&:hover': {
+                              animation: `${pulse} 1s ease-in-out`,
+                            },
+                          }}
                         />
-                        {item.buy_now_price && (
-                          <Chip
-                            label="Buy Now Available"
-                            color="primary"
-                            size="small"
-                          />
-                        )}
-                      </Box>
-                    </CardContent>
-                    <Divider />
-                    <CardActions sx={{ p: 2, pt: 1 }}>
-                      <Box sx={{ width: '100%' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="subtitle2" color="text.secondary">
-                            Current Bid
+                        <CardContent sx={{ flexGrow: 1 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                            <Typography variant="h6" component="h2" noWrap>
+                              {item.title}
+                            </Typography>
+                            <FavoriteButton auctionId={item.id} />
+                          </Box>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            {item.description?.substring(0, 100)}...
                           </Typography>
-                          <Typography variant="h6" color="primary">
-                            ${item.current_bid || item.starting_bid}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          {canBid && (
-                            <TextField
+                          <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            <Chip
+                              label={item.status}
+                              color={item.status === 'active' ? 'success' : 'default'}
                               size="small"
-                              type="number"
-                              placeholder={`Min: $${minRequiredBid}`}
-                              value={bidAmounts[item.id] || ''}
-                              onChange={(e) => setBidAmounts({ ...bidAmounts, [item.id]: e.target.value })}
-                              sx={{ flex: 1 }}
                             />
-                          )}
-                          {canBid && (
-                            <Button
-                              variant="contained"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePlaceBid(item.id);
-                              }}
-                              disabled={bidMutation.isLoading}
-                            >
-                              Bid
-                            </Button>
-                          )}
-                          {canBuyNow && (
-                            <Button
-                              variant="outlined"
-                              color="primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openBuyNowModal(item);
-                              }}
-                            >
-                              Buy Now
-                            </Button>
-                          )}
-                        </Box>
-                      </Box>
-                    </CardActions>
-                  </Card>
-                </Fade>
-              </Grid>
-            );
-          })}
+                            {item.buy_now_price && (
+                              <Chip
+                                label="Buy Now Available"
+                                color="primary"
+                                size="small"
+                              />
+                            )}
+                          </Box>
+                        </CardContent>
+                        <Divider />
+                        <CardActions sx={{ p: 2, pt: 1 }}>
+                          <Box sx={{ width: '100%' }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                              <Typography variant="subtitle2" color="text.secondary">
+                                Current Bid
+                              </Typography>
+                              <Typography variant="h6" color="primary">
+                                ${item.current_bid || item.starting_bid}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              {canBid && (
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  placeholder={`Min: $${minRequiredBid}`}
+                                  value={bidAmounts[item.id] || ''}
+                                  onChange={(e) => setBidAmounts({ ...bidAmounts, [item.id]: e.target.value })}
+                                  sx={{ flex: 1 }}
+                                />
+                              )}
+                              {canBid && (
+                                <Button
+                                  variant="contained"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handlePlaceBid(item.id);
+                                  }}
+                                  disabled={bidMutation.isLoading}
+                                >
+                                  Bid
+                                </Button>
+                              )}
+                              {canBuyNow && (
+                                <Button
+                                  variant="outlined"
+                                  color="primary"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openBuyNowModal(item);
+                                  }}
+                                >
+                                  Buy Now
+                                </Button>
+                              )}
+                            </Box>
+                          </Box>
+                        </CardActions>
+                      </Card>
+                    </Fade>
+                  </Grid>
+                );
+              })}
+            </React.Fragment>
+          ))}
         </Grid>
       ) : (
         <EmptyState />
+      )}
+
+      {/* Loading indicator */}
+      {isLoading && <LoadingSkeleton />}
+      {hasNextPage && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <CircularProgress />
+        </Box>
       )}
 
       {/* Filter Menu */}
@@ -559,6 +625,13 @@ const AuctionList = () => {
         onClose={closeBuyNowModal}
         onConfirm={handleConfirmBuyNow}
         item={selectedItem}
+      />
+
+      {/* Quick Preview Modal */}
+      <QuickPreviewModal
+        open={Boolean(previewItem)}
+        onClose={handleClosePreview}
+        item={previewItem}
       />
     </Box>
   );

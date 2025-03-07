@@ -62,7 +62,7 @@ const gradientAnimation = keyframes`
   100% { background-position: 0% 50%; }
 `;
 
-const NavBar = () => {
+const NavBar = ({ toggleColorMode, mode }) => {
   const { user, setUser, unreadCount, setUnreadCount } = useContext(UserContext);
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -242,12 +242,16 @@ const NavBar = () => {
     <AppBar
       position="fixed"
       sx={{
-        background: "linear-gradient(45deg, #ff6ec4, #7873f5, #24c6dc, #514a9d)",
+        background: mode === 'light' 
+          ? "linear-gradient(45deg, #ff6ec4, #7873f5, #24c6dc, #514a9d)"
+          : "linear-gradient(45deg, #2c3e50, #3498db, #2980b9, #1abc9c)",
         backgroundSize: "400% 400%",
         animation: `${gradientAnimation} 15s ease infinite`,
         boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
         backdropFilter: "blur(10px)",
-        backgroundColor: "rgba(255, 255, 255, 0.1)",
+        backgroundColor: mode === 'light' 
+          ? "rgba(255, 255, 255, 0.1)"
+          : "rgba(18, 18, 18, 0.1)",
       }}
     >
       <Toolbar sx={{ 
@@ -410,6 +414,29 @@ const NavBar = () => {
                   ${displayedBalance || '0.00'}
                 </Typography>
               </Box>
+
+              {/* Deposit Button */}
+              <Tooltip title="Deposit Money" TransitionComponent={Fade}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={() => navigate("/deposit")}
+                  startIcon={<AccountBalanceWalletIcon />}
+                  sx={{
+                    borderRadius: "20px",
+                    textTransform: "none",
+                    px: 2,
+                    py: 1,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    },
+                  }}
+                >
+                  Deposit
+                </Button>
+              </Tooltip>
 
               <Tooltip title="Create Auction" TransitionComponent={Fade}>
                 <Button
