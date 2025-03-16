@@ -11,7 +11,14 @@ export const getAllAuctionItems = async (filters = {}) => {
     try {
         const params = new URLSearchParams(filters).toString();
         const response = await axiosInstance.get(`auction-items/?${params}`);
-        return response.data.results || response.data;
+        return {
+            items: response.data.results || response.data,
+            meta: {
+                current_page: response.data.current_page || 1,
+                per_page: response.data.per_page || 10,
+                total: response.data.total || response.data.length,
+            }
+        };
     } catch (error) {
         console.error('Error fetching auction items:', error);
         throw error;
@@ -23,7 +30,14 @@ export const searchAuctionItems = async (query, category) => {
         const response = await axiosInstance.get(
             `auction-items/search/?q=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`
         );
-        return response.data;
+        return {
+            items: response.data.results || response.data,
+            meta: {
+                current_page: response.data.current_page || 1,
+                per_page: response.data.per_page || 10,
+                total: response.data.total || response.data.length,
+            }
+        };
     } catch (error) {
         console.error('Error searching auction items:', error);
         throw error;

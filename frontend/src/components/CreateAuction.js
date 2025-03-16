@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Box,
   Typography,
@@ -58,6 +59,7 @@ const CreateAuction = () => {
 
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
+  const queryClient = useQueryClient();
 
   // ------------------ Stepper Logic ------------------
   const steps = [
@@ -130,6 +132,19 @@ const CreateAuction = () => {
       });
 
       await createAuctionItem(formData);
+      
+      // Invalidate and refetch all pages of the infinite query
+      await queryClient.invalidateQueries({
+        queryKey: ["auctionItems"],
+        refetchType: 'all'
+      });
+      
+      // Force a reset of the infinite query data
+      queryClient.resetQueries({
+        queryKey: ["auctionItems"],
+        exact: false
+      });
+
       toast.success("Auction created successfully!");
       navigate("/"); // redirect to home or anywhere
     } catch (err) {
