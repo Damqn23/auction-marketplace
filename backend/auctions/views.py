@@ -519,6 +519,18 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         auction_item = self.get_object()
         now = timezone.now()
 
+        last_bid = Bid.objects.filter(
+            auction_item=auction_item, bidder=request.user
+            ).order_by("-timestamp").first()
+
+        if last_bid and (now - last_bid.timestamp).total_seconds() < 30:
+            remaining = 30 - int((now - last_bid.timestamp).total_seconds())
+            return Response(
+                {"detail": f"You must wait {remaining} more seconds before bidding again."},
+                status=400,
+            )
+
+
         if auction_item.end_time <= now:
             highest_bid = auction_item.bids.order_by("-amount").first()
             if highest_bid:

@@ -21,7 +21,15 @@ export const loginUser = async (username, password) => {
 // Function to handle user registration
 export const registerUser = async (userData) => {
     try {
-        const response = await axiosInstance.post('register/', userData);
+        const payload = {
+            username: userData.username,
+            email: userData.email,
+            password: userData.password,
+            password2: userData.confirmPassword, // must match backend
+            first_name: "",  // optional
+            last_name: "",   // optional
+        };
+        const response = await axiosInstance.post("register/", payload);
         return response.data;
     } catch (error) {
         throw error;
