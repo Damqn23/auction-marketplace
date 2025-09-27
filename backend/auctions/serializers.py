@@ -3,7 +3,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from .models import AuctionItem, Bid, AuctionImage, ChatMessage, Category, Favorite
+from .models import AuctionItem, Bid, AuctionImage, ChatMessage, Category, Favorite, Notification
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -206,3 +206,22 @@ class ChatMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatMessage
         fields = ["id", "sender", "recipient", "message", "timestamp", "is_read"]
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    auction_item_title = serializers.CharField(source="auction_item.title", read_only=True)
+    notification_type_display = serializers.CharField(source="get_notification_type_display", read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = [
+            "id", 
+            "notification_type", 
+            "notification_type_display",
+            "title", 
+            "message", 
+            "auction_item", 
+            "auction_item_title",
+            "is_read", 
+            "created_at"
+        ]

@@ -188,3 +188,31 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender.username} to {self.recipient.username} at {self.timestamp}"
+
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ("bid", "New Bid"),
+        ("outbid", "Outbid"),
+        ("won", "Auction Won"),
+        ("ending_soon", "Auction Ending Soon"),
+        ("ended", "Auction Ended"),
+        ("buy_now", "Buy Now Purchase"),
+        ("shipped", "Item Shipped"),
+    ]
+
+    user = models.ForeignKey(User, related_name="notifications", on_delete=models.CASCADE)
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    auction_item = models.ForeignKey(
+        AuctionItem, related_name="notifications", on_delete=models.CASCADE, null=True, blank=True
+    )
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_notification_type_display()} for {self.user.username}: {self.title}"

@@ -6,6 +6,7 @@ from .views import (
     AuctionItemViewSet,
     ChatMessageViewSet,
     CreateDepositPaymentIntentView,
+    NotificationViewSet,
     RegisterView,
     SearchAuctionItemsView,
     StripeWebhookView,
@@ -27,6 +28,7 @@ router.register(r"auction-items", AuctionItemViewSet, basename="auctionitem")
 router.register(r"bids", BidViewSet, basename="bid")
 router.register(r"users", UserViewSet, basename="user")
 router.register(r"chat", ChatMessageViewSet, basename="chat")
+router.register(r"notifications", NotificationViewSet, basename="notification")
 
 urlpatterns = [
     path("", include(router.urls)),

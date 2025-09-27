@@ -30,12 +30,14 @@ from .models import (
     Category,
     ChatMessage,
     Favorite,
+    Notification,
     UserAccount,
     Transaction,
 )
 from .serializers import (
     CategorySerializer,
     ChatMessageSerializer,
+    NotificationSerializer,
     UserSerializer,
     AuctionItemSerializer,
     UserRegistrationSerializer,
@@ -610,6 +612,15 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
                 with transaction.atomic():
                     old_bidder.account.balance += old_amount
                     old_bidder.account.save()
+                    
+                    # Create outbid notification for the old bidder
+                    Notification.objects.create(
+                        user=old_bidder,
+                        notification_type="outbid",
+                        title=f"You have been outbid on \"{auction_item.title}\"",
+                        message=f"Someone placed a higher bid of ${amount}. Current bid is now ${amount}.",
+                        auction_item=auction_item
+                    )
 
                 # Notify the old bidder of their updated balance
                 async_to_sync(channel_layer.group_send)(
@@ -643,6 +654,16 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
                     )
                     auction_item.current_bid = amount
                     auction_item.save()
+                    
+                    # Create notification for the auction owner about new bid
+                    if auction_item.owner != request.user:
+                        Notification.objects.create(
+                            user=auction_item.owner,
+                            notification_type="bid", 
+                            title=f"New bid placed on \"{auction_item.title}\"",
+                            message=f"{request.user.username} placed a bid of ${amount} on your auction.",
+                            auction_item=auction_item
+                        )
 
                 serializer = BidSerializer(new_bid)
                 return Response(serializer.data, status=201)
@@ -679,6 +700,16 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
                     )
                     auction_item.current_bid = amount
                     auction_item.save()
+                    
+                    # Create notification for the auction owner about increased bid
+                    if auction_item.owner != request.user:
+                        Notification.objects.create(
+                            user=auction_item.owner,
+                            notification_type="bid",
+                            title=f"Bid increased on \"{auction_item.title}\"", 
+                            message=f"{request.user.username} increased their bid to ${amount} on your auction.",
+                            auction_item=auction_item
+                        )
 
                 serializer = BidSerializer(new_bid)
                 return Response(serializer.data, status=201)
@@ -703,6 +734,16 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
                 )
                 auction_item.current_bid = amount
                 auction_item.save()
+                
+                # Create notification for the auction owner about new bid
+                if auction_item.owner != request.user:
+                    Notification.objects.create(
+                        user=auction_item.owner,
+                        notification_type="bid",
+                        title=f"New bid placed on \"{auction_item.title}\"",
+                        message=f"{request.user.username} placed a bid of ${amount} on your auction.",
+                        auction_item=auction_item
+                    )
 
             serializer = BidSerializer(new_bid)
             return Response(serializer.data, status=201)
@@ -881,6 +922,41 @@ class BidViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Bid.objects.all()
     serializer_class = BidSerializer
     permission_classes = [IsBidderOrReadOnly]
+
+
+class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for managing user notifications.
+    """
+    
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user)
+    
+    @action(detail=False, methods=["get"])
+    def unread_count(self, request):
+        """Get count of unread notifications for the current user."""
+        count = Notification.objects.filter(user=request.user, is_read=False).count()
+        return Response({"unread_count": count})
+    
+    @action(detail=False, methods=["post"])
+    def mark_all_read(self, request):
+        """Mark all notifications as read for the current user."""
+        updated = Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        return Response({"message": f"{updated} notifications marked as read."})
+    
+    @action(detail=True, methods=["post"])
+    def mark_read(self, request, pk=None):
+        """Mark a specific notification as read."""
+        notification = self.get_object()
+        if notification.user != request.user:
+            return Response({"detail": "Not authorized."}, status=403)
+        
+        notification.is_read = True
+        notification.save()
+        return Response({"message": "Notification marked as read."})
 
 
 class RegisterView(APIView):

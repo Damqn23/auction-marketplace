@@ -3,6 +3,8 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
 import { getUnreadMessages, getUserBalance } from "../services/auctionService";
+import { getUnreadNotificationCount, markAllNotificationsRead, getAllNotifications } from "../services/notificationService";
+import moment from "moment";
 import {
   AppBar,
   Toolbar,
@@ -78,6 +80,10 @@ const NavBar = ({ toggleColorMode, mode }) => {
   // Add new state for user menu
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationsAnchor, setNotificationsAnchor] = useState(null);
+  
+  // Notification states
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
 
   // Fetch unread messages on login
   useEffect(() => {
@@ -118,6 +124,27 @@ const NavBar = ({ toggleColorMode, mode }) => {
       fetchUnreadMessages();
     }
   }, [user, setUnreadCount]);
+
+  // Fetch notifications when user logs in
+  useEffect(() => {
+    if (user) {
+      const fetchNotifications = async () => {
+        try {
+          const countResponse = await getUnreadNotificationCount();
+          setNotificationCount(countResponse.unread_count);
+          
+          const notificationsResponse = await getAllNotifications();
+          setNotifications(notificationsResponse.slice(0, 5)); // Show only recent 5
+        } catch (error) {
+          console.error("Error fetching notifications:", error);
+        }
+      };
+      fetchNotifications();
+    } else {
+      setNotificationCount(0);
+      setNotifications([]);
+    }
+  }, [user]);
 
   // Animation function to update the displayed balance
   const animateBalanceChange = (newBalance) => {
@@ -230,8 +257,22 @@ const NavBar = ({ toggleColorMode, mode }) => {
     setAnchorEl(null);
   };
 
-  const handleNotificationsOpen = (event) => {
+  const handleNotificationsOpen = async (event) => {
     setNotificationsAnchor(event.currentTarget);
+    
+    // Mark all notifications as read when menu opens
+    if (notificationCount > 0) {
+      try {
+        await markAllNotificationsRead();
+        setNotificationCount(0);
+        // Update notifications to show as read
+        setNotifications(prevNotifications => 
+          prevNotifications.map(notification => ({ ...notification, is_read: true }))
+        );
+      } catch (error) {
+        console.error("Error marking notifications as read:", error);
+      }
+    }
   };
 
   const handleNotificationsClose = () => {
@@ -487,7 +528,7 @@ const NavBar = ({ toggleColorMode, mode }) => {
                     }
                   }}
                 >
-                  <Badge badgeContent={4} color="error">
+                  <Badge badgeContent={notificationCount} color="error">
                     <NotificationsIcon />
                   </Badge>
                 </IconButton>
@@ -652,26 +693,29 @@ const NavBar = ({ toggleColorMode, mode }) => {
         <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
           <Typography variant="h6">Notifications</Typography>
         </Box>
-        <MenuItem>
-          <ListItemText
-            primary="New bid on your auction"
-            secondary="2 minutes ago"
-          />
-        </MenuItem>
-        <MenuItem>
-          <ListItemText
-            primary="Auction ending soon"
-            secondary="1 hour ago"
-          />
-        </MenuItem>
-        <MenuItem>
-          <ListItemText
-            primary="You won an auction!"
-            secondary="3 hours ago"
-          />
-        </MenuItem>
+        {notifications.length > 0 ? (
+          notifications.map((notification) => (
+            <MenuItem key={notification.id}>
+              <ListItemText
+                primary={notification.title}
+                secondary={moment(notification.created_at).fromNow()}
+                primaryTypographyProps={{
+                  fontWeight: notification.is_read ? 'normal' : 'bold',
+                }}
+              />
+            </MenuItem>
+          ))
+        ) : (
+          <MenuItem disabled>
+            <ListItemText
+              primary="No notifications"
+              secondary="You're all caught up!"
+              sx={{ textAlign: "center" }}
+            />
+          </MenuItem>
+        )}
         <Divider />
-        <MenuItem>
+        <MenuItem onClick={() => { /* TODO: Navigate to full notifications page */ }}>
           <ListItemText
             primary="View all notifications"
             sx={{ textAlign: "center" }}
