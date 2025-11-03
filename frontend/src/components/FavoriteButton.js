@@ -5,7 +5,9 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import axiosInstance from "../services/axiosConfig";
 
-const FavoriteButton = ({ auctionItemId }) => {
+const FavoriteButton = ({ auctionItemId, auctionId }) => {
+  // Support both prop names (auctionItemId preferred, auctionId as legacy alias)
+  const itemId = auctionItemId ?? auctionId;
   const [favorite, setFavorite] = useState(null);
 
   // Check if the auction item is already favorited by the user
@@ -16,7 +18,7 @@ const FavoriteButton = ({ auctionItemId }) => {
         // Assuming response data is an array of favorites,
         // where each favorite has an auction_item property
         const fav = response.data.find(
-          (f) => f.auction_item.id === auctionItemId
+          (f) => f.auction_item.id === itemId
         );
         setFavorite(fav || null);
       } catch (error) {
@@ -24,7 +26,7 @@ const FavoriteButton = ({ auctionItemId }) => {
       }
     };
     fetchFavorites();
-  }, [auctionItemId]);
+  }, [itemId]);
 
   const handleToggleFavorite = async (e) => {
     e.stopPropagation(); // Prevent event bubbling
@@ -36,7 +38,7 @@ const FavoriteButton = ({ auctionItemId }) => {
       } else {
         // Add favorite
         const response = await axiosInstance.post("/favorites/", {
-          auction_item_id: auctionItemId,
+          auction_item_id: itemId,
         });
         setFavorite(response.data);
       }

@@ -74,8 +74,9 @@ const Chat = () => {
 
   // 2) Open WebSocket
   useEffect(() => {
+    const token = localStorage.getItem("access_token");
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const wsUrl = `${protocol}://${process.env.REACT_APP_WEBSOCKET_URL}/ws/chat/${chatRoomName}/`;
+    const wsUrl = `${protocol}://${process.env.REACT_APP_WEBSOCKET_URL}/ws/chat/${chatRoomName}/?token=${token}`;
     ws.current = new WebSocket(wsUrl);
 
     ws.current.onopen = () => {
@@ -96,6 +97,10 @@ const Chat = () => {
           setTimeout(() => setOtherUserTyping(false), 3000);
         }
       }
+    };
+
+    ws.current.onerror = (error) => {
+      console.error("WebSocket error:", error);
     };
 
     ws.current.onclose = () => {

@@ -1,7 +1,7 @@
 // frontend/src/index.js
 
 import React from "react";
-import ReactDOM from "react-dom";
+import ReactDOM from "react-dom/client";
 import './index.css'; // <--- This is crucial
 import App from "./App";
 import { UserProvider } from "./contexts/UserContext";
@@ -15,9 +15,8 @@ import "react-toastify/dist/ReactToastify.css";
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
 
-
-
-ReactDOM.render(
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <UserProvider>
@@ -29,6 +28,5 @@ ReactDOM.render(
       </UserProvider>
       <ToastContainer />
     </QueryClientProvider>
-  </React.StrictMode>,
-  document.getElementById("root")
+  </React.StrictMode>
 );

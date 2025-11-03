@@ -26,9 +26,12 @@ export const UserProvider = ({ children }) => {
                     setUnreadCount(unreadResponse.unread_count);
                 } catch (error) {
                     console.error('Error fetching user or unread messages:', error);
-                    toast.error('Failed to fetch user data or unread messages.');
+                    // Only show toast if it's not a 401 (which means invalid/expired token)
+                    if (error.response?.status !== 401) {
+                        toast.error('Failed to fetch user data or unread messages.');
+                    }
 
-                    // Optionally, log the user out if fetching fails
+                    // Log the user out if fetching fails
                     localStorage.removeItem('access_token');
                     localStorage.removeItem('refresh_token');
                     setUser(null);

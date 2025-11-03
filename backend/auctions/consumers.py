@@ -7,6 +7,11 @@ from .models import ChatMessage  # <-- Import your ChatMessage model
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        # Check if user is authenticated
+        if self.scope["user"].is_anonymous:
+            await self.close()
+            return
+            
         # Extract the room_name from the URL
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
         self.room_group_name = f"chat_{self.room_name}"

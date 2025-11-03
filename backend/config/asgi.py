@@ -16,10 +16,10 @@ application = ProtocolTypeRouter(
         "http": get_asgi_application(),
         "websocket": URLRouter(
             [
-                # Chat endpoint uses session authentication
+                # Chat endpoint uses JWT authentication
                 re_path(
                     r"^ws/chat/(?P<room_name>\w+)/$",
-                    AuthMiddlewareStack(ChatConsumer.as_asgi()),
+                    JWTAuthMiddleware(ChatConsumer.as_asgi()),
                 ),
                 # Balance endpoint uses JWT authentication via our custom middleware
                 re_path(r"^ws/balance/$", JWTAuthMiddleware(BalanceConsumer.as_asgi())),
