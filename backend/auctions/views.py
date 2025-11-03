@@ -917,11 +917,27 @@ class MyPurchasesView(APIView):
 class BidViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Read-only ViewSet for Bid objects.
+    Lists are restricted to the authenticated user's own bids.
     """
 
-    queryset = Bid.objects.all()
     serializer_class = BidSerializer
-    permission_classes = [IsBidderOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Restrict queryset to current user's bids. Optionally honor a 'bidder'
+        query param only if it matches the authenticated user's id to avoid data leaks.
+        """
+        user = self.request.user
+        qs = Bid.objects.filter(bidder=user).order_by('-timestamp')
+        bidder_param = self.request.query_params.get('bidder')
+        if bidder_param:
+            try:
+                if int(bidder_param) == user.id:
+                    return qs
+            except (TypeError, ValueError):
+                pass
+        return qs
 
 
 class NotificationViewSet(viewsets.ReadOnlyModelViewSet):

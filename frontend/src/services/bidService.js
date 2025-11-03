@@ -1,9 +1,9 @@
 import axiosInstance from './axiosConfig';
 
-// Function to fetch user bids
-export const getUserBids = async (userId) => {
+// Fetch bids for the authenticated user (server-side filtered)
+export const getUserBids = async () => {
     try {
-        const response = await axiosInstance.get(`bids/?bidder=${userId}`); // Adjust endpoint as needed
+        const response = await axiosInstance.get('bids/');
         return response;
     } catch (error) {
         throw error;

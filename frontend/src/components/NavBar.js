@@ -714,13 +714,6 @@ const NavBar = ({ toggleColorMode, mode }) => {
             />
           </MenuItem>
         )}
-        <Divider />
-        <MenuItem onClick={() => { /* TODO: Navigate to full notifications page */ }}>
-          <ListItemText
-            primary="View all notifications"
-            sx={{ textAlign: "center" }}
-          />
-        </MenuItem>
       </Menu>
 
       {/* Mobile Drawer */}

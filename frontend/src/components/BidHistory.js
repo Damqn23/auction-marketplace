@@ -29,7 +29,7 @@ const BidHistory = () => {
 
   const fetchBids = async () => {
     try {
-      const response = await getUserBids(user.id); // Adjust based on your API
+      const response = await getUserBids();
       // Sort bids by timestamp (newest first)
       const sortedBids = response.data.sort(
         (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
