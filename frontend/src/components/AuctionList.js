@@ -452,6 +452,8 @@ const AuctionList = () => {
                                   placeholder={`Min: $${minRequiredBid}`}
                                   value={bidAmounts[item.id] || ''}
                                   onChange={(e) => setBidAmounts({ ...bidAmounts, [item.id]: e.target.value })}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onMouseDown={(e) => e.stopPropagation()}
                                   sx={{ flex: 1 }}
                                 />
                               )}
