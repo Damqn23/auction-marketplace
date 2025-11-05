@@ -518,135 +518,133 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         parser_classes=[JSONParser],
     )
     def bid(self, request, pk=None):
-        auction_item = self.get_object()
-        now = timezone.now()
-
-        last_bid = Bid.objects.filter(
-            auction_item=auction_item, bidder=request.user
-            ).order_by("-timestamp").first()
-
-        if last_bid and (now - last_bid.timestamp).total_seconds() < 30:
-            remaining = 30 - int((now - last_bid.timestamp).total_seconds())
-            return Response(
-                {"detail": f"You must wait {remaining} more seconds before bidding again."},
-                status=400,
-            )
-
-
-        if auction_item.end_time <= now:
-            highest_bid = auction_item.bids.order_by("-amount").first()
-            if highest_bid:
-                auction_item.winner = highest_bid.bidder
-            auction_item.status = "closed"
-            auction_item.save()
-            return Response({"detail": "Bidding is closed for this item."}, status=400)
-        # 1) Basic checks
-        if auction_item.status == "active" and auction_item.end_time <= now:
-            auction_item.status = "closed"
-            auction_item.save()
-            return Response({"detail": "Bidding is closed for this item."}, status=400)
-
-        if auction_item.status != "active":
-            return Response({"detail": "Bidding is closed for this item."}, status=400)
-
-        if auction_item.owner == request.user:
-            return Response(
-                {"detail": "Owners cannot bid on their own items."}, status=403
-            )
-
-        if auction_item.buy_now_buyer is not None:
-            return Response(
-                {"detail": "This item has been purchased via Buy Now."}, status=400
-            )
-
-        amount_str = request.data.get("amount")
-        if not amount_str:
-            return Response({"detail": "Bid amount is required."}, status=400)
-
-        try:
-            amount = Decimal(str(amount_str))
-        except (ValueError, InvalidOperation):
-            return Response({"detail": "Invalid bid amount."}, status=400)
-
-        # 2) Minimum bid checks
-        min_bid = (
-            auction_item.current_bid
-            if auction_item.current_bid
-            else auction_item.starting_bid
-        )
-        min_increment = (min_bid * Decimal("0.02")).quantize(Decimal("0.01"))
-        min_required_bid = (min_bid + min_increment).quantize(Decimal("0.01"))
-
-        if auction_item.buy_now_price and amount >= auction_item.buy_now_price:
-            return Response(
-                {
-                    "detail": f"Bid must be less than Buy Now price of ${auction_item.buy_now_price}."
-                },
-                status=400,
-            )
-
-        if amount < min_required_bid:
-            return Response(
-                {"detail": f"Bid must be at least ${min_required_bid}."},
-                status=400,
-            )
-
-        # 3) Extend auction if < 60 seconds remain
-        time_left = auction_item.end_time - now
-        if time_left.total_seconds() < 60:
-            extension = timedelta(minutes=2)
-            auction_item.end_time = now + extension
-            auction_item.save()
-
-        # 4) Check for an old highest bid
-        old_highest_bid = auction_item.bids.order_by("-amount").first()
         channel_layer = get_channel_layer()
 
-        if old_highest_bid:
-            old_bidder = old_highest_bid.bidder
-            old_amount = old_highest_bid.amount
+        def notify(group_name, payload):
+            transaction.on_commit(
+                lambda: async_to_sync(channel_layer.group_send)(group_name, payload)
+            )
 
-            # If a DIFFERENT user was the old highest bidder
-            if old_bidder != request.user:
-                # Refund the old highest bid to that user
-                with transaction.atomic():
-                    old_bidder.account.balance += old_amount
-                    old_bidder.account.save()
-                    
-                    # Create outbid notification for the old bidder
+        with transaction.atomic():
+            auction_item = (
+                AuctionItem.objects.select_for_update()
+                .select_related("owner")
+                .get(pk=pk)
+            )
+            now = timezone.now()
+
+            last_bid = (
+                Bid.objects.filter(auction_item=auction_item, bidder=request.user)
+                .order_by("-timestamp")
+                .first()
+            )
+
+            if last_bid and (now - last_bid.timestamp).total_seconds() < 30:
+                remaining = 30 - int((now - last_bid.timestamp).total_seconds())
+                return Response(
+                    {
+                        "detail": f"You must wait {remaining} more seconds before bidding again."
+                    },
+                    status=400,
+                )
+
+            # Close if ended
+            if auction_item.end_time <= now:
+                highest_bid = auction_item.bids.order_by("-amount").first()
+                if highest_bid:
+                    auction_item.winner = highest_bid.bidder
+                auction_item.status = "closed"
+                auction_item.save()
+                return Response({"detail": "Bidding is closed for this item."}, status=400)
+
+            if auction_item.status != "active":
+                return Response({"detail": "Bidding is closed for this item."}, status=400)
+
+            if auction_item.owner == request.user:
+                return Response(
+                    {"detail": "Owners cannot bid on their own items."}, status=403
+                )
+
+            if auction_item.buy_now_buyer is not None:
+                return Response(
+                    {"detail": "This item has been purchased via Buy Now."}, status=400
+                )
+
+            amount_str = request.data.get("amount")
+            if not amount_str:
+                return Response({"detail": "Bid amount is required."}, status=400)
+
+            try:
+                amount = Decimal(str(amount_str))
+            except (ValueError, InvalidOperation):
+                return Response({"detail": "Invalid bid amount."}, status=400)
+
+            # Min bid checks, recomputed under lock
+            min_bid = auction_item.current_bid or auction_item.starting_bid
+            min_increment = (min_bid * Decimal("0.02")).quantize(Decimal("0.01"))
+            min_required_bid = (min_bid + min_increment).quantize(Decimal("0.01"))
+
+            if auction_item.buy_now_price and amount >= auction_item.buy_now_price:
+                return Response(
+                    {
+                        "detail": f"Bid must be less than Buy Now price of ${auction_item.buy_now_price}."
+                    },
+                    status=400,
+                )
+
+            if amount < min_required_bid:
+                return Response(
+                    {"detail": f"Bid must be at least ${min_required_bid}."},
+                    status=400,
+                )
+
+            # Anti-sniping: extend under lock
+            time_left = auction_item.end_time - now
+            if time_left.total_seconds() < 60:
+                auction_item.end_time = now + timedelta(minutes=2)
+                auction_item.save()
+
+            old_highest_bid = auction_item.bids.order_by("-amount").first()
+
+            if old_highest_bid:
+                old_bidder = old_highest_bid.bidder
+                old_amount = old_highest_bid.amount
+
+                if old_bidder != request.user:
+                    # Refund old highest bidder
+                    old_account = (
+                        UserAccount.objects.select_for_update().get(user=old_bidder)
+                    )
+                    old_account.balance += old_amount
+                    old_account.save()
+
                     Notification.objects.create(
                         user=old_bidder,
                         notification_type="outbid",
                         title=f"You have been outbid on \"{auction_item.title}\"",
-                        message=f"Someone placed a higher bid of ${amount}. Current bid is now ${amount}.",
-                        auction_item=auction_item
+                        message=(
+                            f"Someone placed a higher bid of ${amount}. Current bid is now ${amount}."
+                        ),
+                        auction_item=auction_item,
                     )
 
-                # Notify the old bidder of their updated balance
-                async_to_sync(channel_layer.group_send)(
-                    f"user_balance_{old_bidder.id}",
-                    {
-                        "type": "balance_update",
-                        "balance": str(old_bidder.account.balance),
-                    },
-                )
+                    notify(
+                        f"user_balance_{old_bidder.id}",
+                        {"type": "balance_update", "balance": str(old_account.balance)},
+                    )
 
-                # Deduct the entire new bid from the new bidder
-                bidder_account = request.user.account
-                if bidder_account.balance < amount:
-                    return Response({"detail": "Insufficient funds."}, status=400)
-
-                with transaction.atomic():
+                    # Deduct entire new bid from new bidder
+                    bidder_account = (
+                        UserAccount.objects.select_for_update().get(user=request.user)
+                    )
+                    if bidder_account.balance < amount:
+                        return Response({"detail": "Insufficient funds."}, status=400)
                     bidder_account.balance -= amount
                     bidder_account.save()
 
-                    # Notify the new bidder of their updated balance
-                    async_to_sync(channel_layer.group_send)(
+                    notify(
                         f"user_balance_{request.user.id}",
-                        {
-                            "type": "balance_update",
-                            "balance": str(bidder_account.balance),
-                        },
+                        {"type": "balance_update", "balance": str(bidder_account.balance)},
                     )
 
                     new_bid = Bid.objects.create(
@@ -654,77 +652,68 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
                     )
                     auction_item.current_bid = amount
                     auction_item.save()
-                    
-                    # Create notification for the auction owner about new bid
-                    if auction_item.owner != request.user:
-                        Notification.objects.create(
-                            user=auction_item.owner,
-                            notification_type="bid", 
-                            title=f"New bid placed on \"{auction_item.title}\"",
-                            message=f"{request.user.username} placed a bid of ${amount} on your auction.",
-                            auction_item=auction_item
-                        )
 
-                serializer = BidSerializer(new_bid)
-                return Response(serializer.data, status=201)
-            else:
-                # The SAME user is increasing their own highest bid
-                difference = amount - old_amount
-                if difference <= 0:
-                    return Response(
-                        {
-                            "detail": "New bid must be higher than your current highest bid."
-                        },
-                        status=400,
-                    )
-
-                bidder_account = request.user.account
-                if bidder_account.balance < difference:
-                    return Response({"detail": "Insufficient funds."}, status=400)
-
-                with transaction.atomic():
-                    bidder_account.balance -= difference
-                    bidder_account.save()
-
-                    # Notify the bidder of their updated balance
-                    async_to_sync(channel_layer.group_send)(
-                        f"user_balance_{request.user.id}",
-                        {
-                            "type": "balance_update",
-                            "balance": str(bidder_account.balance),
-                        },
-                    )
-
-                    new_bid = Bid.objects.create(
-                        auction_item=auction_item, bidder=request.user, amount=amount
-                    )
-                    auction_item.current_bid = amount
-                    auction_item.save()
-                    
-                    # Create notification for the auction owner about increased bid
                     if auction_item.owner != request.user:
                         Notification.objects.create(
                             user=auction_item.owner,
                             notification_type="bid",
-                            title=f"Bid increased on \"{auction_item.title}\"", 
-                            message=f"{request.user.username} increased their bid to ${amount} on your auction.",
-                            auction_item=auction_item
+                            title=f"New bid placed on \"{auction_item.title}\"",
+                            message=f"{request.user.username} placed a bid of ${amount} on your auction.",
+                            auction_item=auction_item,
                         )
 
-                serializer = BidSerializer(new_bid)
-                return Response(serializer.data, status=201)
-        else:
-            # No previous bids – first bid
-            bidder_account = request.user.account
-            if bidder_account.balance < amount:
-                return Response({"detail": "Insufficient funds."}, status=400)
+                    serializer = BidSerializer(new_bid)
+                    return Response(serializer.data, status=201)
+                else:
+                    # Same user increases own highest bid
+                    difference = amount - old_amount
+                    if difference <= 0:
+                        return Response(
+                            {"detail": "New bid must be higher than your current highest bid."},
+                            status=400,
+                        )
 
-            with transaction.atomic():
+                    bidder_account = (
+                        UserAccount.objects.select_for_update().get(user=request.user)
+                    )
+                    if bidder_account.balance < difference:
+                        return Response({"detail": "Insufficient funds."}, status=400)
+                    bidder_account.balance -= difference
+                    bidder_account.save()
+
+                    notify(
+                        f"user_balance_{request.user.id}",
+                        {"type": "balance_update", "balance": str(bidder_account.balance)},
+                    )
+
+                    new_bid = Bid.objects.create(
+                        auction_item=auction_item, bidder=request.user, amount=amount
+                    )
+                    auction_item.current_bid = amount
+                    auction_item.save()
+
+                    if auction_item.owner != request.user:
+                        Notification.objects.create(
+                            user=auction_item.owner,
+                            notification_type="bid",
+                            title=f"Bid increased on \"{auction_item.title}\"",
+                            message=f"{request.user.username} increased their bid to ${amount} on your auction.",
+                            auction_item=auction_item,
+                        )
+
+                    serializer = BidSerializer(new_bid)
+                    return Response(serializer.data, status=201)
+            else:
+                # First bid
+                bidder_account = (
+                    UserAccount.objects.select_for_update().get(user=request.user)
+                )
+                if bidder_account.balance < amount:
+                    return Response({"detail": "Insufficient funds."}, status=400)
                 bidder_account.balance -= amount
                 bidder_account.save()
 
-                # Notify the bidder of their updated balance
-                async_to_sync(channel_layer.group_send)(
+                notify(
                     f"user_balance_{request.user.id}",
                     {"type": "balance_update", "balance": str(bidder_account.balance)},
                 )
@@ -734,19 +723,18 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
                 )
                 auction_item.current_bid = amount
                 auction_item.save()
-                
-                # Create notification for the auction owner about new bid
+
                 if auction_item.owner != request.user:
                     Notification.objects.create(
                         user=auction_item.owner,
                         notification_type="bid",
                         title=f"New bid placed on \"{auction_item.title}\"",
                         message=f"{request.user.username} placed a bid of ${amount} on your auction.",
-                        auction_item=auction_item
+                        auction_item=auction_item,
                     )
 
-            serializer = BidSerializer(new_bid)
-            return Response(serializer.data, status=201)
+                serializer = BidSerializer(new_bid)
+                return Response(serializer.data, status=201)
 
     @action(detail=False, methods=["get"], permission_classes=[AllowAny])
     def search(self, request):
@@ -792,67 +780,76 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
         parser_classes=[JSONParser],
     )
     def buy_now(self, request, pk=None):
-        auction_item = self.get_object()
-
-        if auction_item.status != "active":
-            return Response(
-                {"detail": "Cannot Buy Now on this item as the auction is not active."},
-                status=400,
-            )
-
-        if auction_item.owner == request.user:
-            return Response(
-                {"detail": "Owners cannot Buy Now their own items."}, status=403
-            )
-
-        if auction_item.buy_now_buyer is not None:
-            return Response(
-                {"detail": "This item has already been purchased via Buy Now."},
-                status=400,
-            )
-
-        if not auction_item.buy_now_price:
-            return Response(
-                {"detail": "Buy Now price is not set for this item."}, status=400
-            )
-
-        buyer_account = request.user.account
         channel_layer = get_channel_layer()
 
-        # --- Refund the previous highest bid if it exists and isn't from the buyer ---
-        old_highest_bid = auction_item.bids.order_by("-amount").first()
-        if old_highest_bid and old_highest_bid.bidder != request.user:
-            with transaction.atomic():
-                old_bidder = old_highest_bid.bidder
-                old_amount = old_highest_bid.amount
-                old_bidder.account.balance += old_amount
-                old_bidder.account.save()
-            async_to_sync(channel_layer.group_send)(
-                f"user_balance_{old_bidder.id}",
-                {
-                    "type": "balance_update",
-                    "balance": str(old_bidder.account.balance),
-                },
+        def notify(group_name, payload):
+            transaction.on_commit(
+                lambda: async_to_sync(channel_layer.group_send)(group_name, payload)
             )
 
-        # --- Determine additional amount to charge ---
-        user_bid = (
-            auction_item.bids.filter(bidder=request.user).order_by("-amount").first()
-        )
-        if user_bid and auction_item.current_bid == user_bid.amount:
-            additional_amount = auction_item.buy_now_price - user_bid.amount
-        else:
-            additional_amount = auction_item.buy_now_price
-
-        if buyer_account.balance < additional_amount:
-            return Response({"detail": "Insufficient funds to Buy Now."}, status=400)
-
         with transaction.atomic():
-            # Deduct only the additional amount needed from the buyer
+            auction_item = (
+                AuctionItem.objects.select_for_update()
+                .select_related("owner")
+                .get(pk=pk)
+            )
+
+            if auction_item.status != "active":
+                return Response(
+                    {"detail": "Cannot Buy Now on this item as the auction is not active."},
+                    status=400,
+                )
+
+            if auction_item.owner == request.user:
+                return Response(
+                    {"detail": "Owners cannot Buy Now their own items."}, status=403
+                )
+
+            if auction_item.buy_now_buyer is not None:
+                return Response(
+                    {"detail": "This item has already been purchased via Buy Now."},
+                    status=400,
+                )
+
+            if not auction_item.buy_now_price:
+                return Response(
+                    {"detail": "Buy Now price is not set for this item."}, status=400
+                )
+
+            # Refund previous highest bidder if needed
+            old_highest_bid = auction_item.bids.order_by("-amount").first()
+            if old_highest_bid and old_highest_bid.bidder != request.user:
+                old_bidder = old_highest_bid.bidder
+                old_amount = old_highest_bid.amount
+                old_account = (
+                    UserAccount.objects.select_for_update().get(user=old_bidder)
+                )
+                old_account.balance += old_amount
+                old_account.save()
+                notify(
+                    f"user_balance_{old_bidder.id}",
+                    {"type": "balance_update", "balance": str(old_account.balance)},
+                )
+
+            # Determine additional amount to charge
+            user_bid = (
+                auction_item.bids.filter(bidder=request.user).order_by("-amount").first()
+            )
+            if user_bid and auction_item.current_bid == user_bid.amount:
+                additional_amount = auction_item.buy_now_price - user_bid.amount
+            else:
+                additional_amount = auction_item.buy_now_price
+
+            buyer_account = (
+                UserAccount.objects.select_for_update().get(user=request.user)
+            )
+            if buyer_account.balance < additional_amount:
+                return Response({"detail": "Insufficient funds to Buy Now."}, status=400)
+
+            # Deduct only the additional amount
             buyer_account.balance -= additional_amount
             buyer_account.save()
-
-            async_to_sync(channel_layer.group_send)(
+            notify(
                 f"user_balance_{request.user.id}",
                 {"type": "balance_update", "balance": str(buyer_account.balance)},
             )
@@ -863,14 +860,13 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
             auction_item.end_time = timezone.now()
             auction_item.save()
 
-            # Optionally, update the winner if there are existing bids
             if not auction_item.winner and auction_item.bids.exists():
                 highest_bid = auction_item.bids.order_by("-amount").first()
                 auction_item.winner = highest_bid.bidder
                 auction_item.save()
 
-        serializer = AuctionItemSerializer(auction_item)
-        return Response(serializer.data, status=200)
+            serializer = AuctionItemSerializer(auction_item)
+            return Response(serializer.data, status=200)
 
 
 class FavoriteListCreateAPIView(generics.ListCreateAPIView):

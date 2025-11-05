@@ -87,8 +87,8 @@ const Chat = () => {
       const data = JSON.parse(e.data);
 
       if (data.type === "chat_message") {
-        // Append the new message
-        setMessages((prev) => [...prev, data]);
+        // Append the new message; add a local timestamp for display
+        setMessages((prev) => [...prev, { ...data, timestamp: new Date().toISOString() }]);
         scrollToBottom();
       } else if (data.type === "typing") {
         // Only show typing if it's from the OTHER user
@@ -122,12 +122,10 @@ const Chat = () => {
     const trimmed = newMessage.trim();
     if (!trimmed) return;
 
+    // Minimal payload: server infers sender and recipient based on auth and room
     const messageData = {
       type: "chat_message",
       message: trimmed,
-      sender: user.username,
-      recipient: ownerUsername,
-      timestamp: new Date().toISOString(),
     };
 
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
@@ -142,12 +140,8 @@ const Chat = () => {
   const handleTyping = (e) => {
     setNewMessage(e.target.value);
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      const typingData = {
-        type: "typing",
-        sender: user.username,
-        recipient: ownerUsername,
-      };
-      ws.current.send(JSON.stringify(typingData));
+      // Minimal payload: server derives sender from the authenticated connection
+      ws.current.send(JSON.stringify({ type: "typing" }));
     }
   };
 

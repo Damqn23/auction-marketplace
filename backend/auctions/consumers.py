@@ -11,9 +11,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if self.scope["user"].is_anonymous:
             await self.close()
             return
-            
-        # Extract the room_name from the URL
-        self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
+
+        # Extract and validate room_name from the URL (expected format: "userA_userB")
+        self.room_name = self.scope["url_route"]["kwargs"].get("room_name", "")
+        parts = self.room_name.split("_")
+        if len(parts) != 2:
+            await self.close()
+            return
+
+        self.username = self.scope["user"].username
+        self.participants = set(parts)
+        if self.username not in self.participants:
+            # User is not part of this room
+            await self.close()
+            return
+
+        # Compute the other participant
+        self.other_username = next(iter(self.participants - {self.username}))
+
         self.room_group_name = f"chat_{self.room_name}"
 
         # Join the group
@@ -29,44 +44,50 @@ class ChatConsumer(AsyncWebsocketConsumer):
         msg_type = data.get("type", "chat_message")
 
         if msg_type == "chat_message":
-            message = data.get("message")
-            sender = data.get("sender")
-            recipient = data.get("recipient")
+            message = (data.get("message") or "").strip()
+            if not message:
+                return
 
-            # Only save to DB if we have a real message
-            if message and sender and recipient:
-                sender_user = await sync_to_async(User.objects.get)(username=sender)
-                recipient_user = await sync_to_async(User.objects.get)(
-                    username=recipient
-                )
-                await sync_to_async(ChatMessage.objects.create)(
-                    sender=sender_user, recipient=recipient_user, message=message
-                )
+            # Enforce server-side identity and recipient
+            sender_username = self.username
+            recipient_username = data.get("recipient") or self.other_username
+            if recipient_username != self.other_username:
+                # Prevent sending to users outside this room
+                return
 
-            # Broadcast to group
+            try:
+                sender_user = await sync_to_async(User.objects.get)(username=sender_username)
+                recipient_user = await sync_to_async(User.objects.get)(username=recipient_username)
+            except User.DoesNotExist:
+                return
+
+            # Persist the message
+            await sync_to_async(ChatMessage.objects.create)(
+                sender=sender_user, recipient=recipient_user, message=message
+            )
+
+            # Broadcast to room
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     "type": "chat_message_event",
                     "message": message,
-                    "sender": sender,
+                    "sender": sender_username,
                 },
             )
 
         elif msg_type == "typing":
-            # The user is typing
-            sender = data.get("sender")
-            # Broadcast a "typing" event to the group
+            # Broadcast typing event from authenticated user only
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     "type": "typing_event",
-                    "sender": sender,
+                    "sender": self.username,
                 },
             )
         else:
             # Unknown type
-            pass
+            return
 
     async def chat_message_event(self, event):
         # Called when the group sends a "chat_message_event"
