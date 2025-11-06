@@ -2,10 +2,35 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from .models import ChatMessage  # <-- Import your ChatMessage model
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
+    RATE_LIMITS = {
+        "chat_message": {"count": 5, "window": 5},  # 5 messages per 5 seconds
+        "typing": {"count": 10, "window": 5},       # 10 typing events per 5 seconds
+    }
+
+    async def _rate_limited(self, event_type: str) -> bool:
+        """Return True if the sender is over the rate limit for this room/event."""
+        limits = self.RATE_LIMITS.get(event_type)
+        if not limits:
+            return False
+        key = f"chatrl:{self.room_name}:{self.username}:{event_type}"
+
+        # Use sync cache ops via sync_to_async to avoid blocking
+        current = await sync_to_async(cache.get)(key)
+        if current is None:
+            # Initialize counter with TTL = window
+            await sync_to_async(cache.set)(key, 1, timeout=limits["window"])
+            return False
+        if int(current) >= limits["count"]:
+            return True
+        # Increment, preserving TTL (re-set with same timeout)
+        # Not perfectly atomic on all backends, but sufficient with Redis
+        await sync_to_async(cache.set)(key, int(current) + 1, timeout=limits["window"])
+        return False
     async def connect(self):
         # Check if user is authenticated
         if self.scope["user"].is_anonymous:
@@ -44,6 +69,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         msg_type = data.get("type", "chat_message")
 
         if msg_type == "chat_message":
+            if await self._rate_limited("chat_message"):
+                return  # drop silently
             message = (data.get("message") or "").strip()
             if not message:
                 return
@@ -77,6 +104,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
 
         elif msg_type == "typing":
+            if await self._rate_limited("typing"):
+                return
             # Broadcast typing event from authenticated user only
             await self.channel_layer.group_send(
                 self.room_group_name,

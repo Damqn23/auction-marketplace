@@ -119,6 +119,13 @@ class AuctionItem(models.Model):
     )
     location = models.CharField(max_length=100)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["status", "end_time"]),
+            models.Index(fields=["owner"]),
+            models.Index(fields=["winner"]),
+        ]
+
     @property
     def effective_status(self):
         if self.status == "active" and self.end_time <= timezone.now():
@@ -160,6 +167,10 @@ class Bid(models.Model):
     class Meta:
         ordering = ["-amount", "timestamp"]
         unique_together = ("auction_item", "bidder", "amount")
+        indexes = [
+            models.Index(fields=["auction_item", "amount"]),
+            models.Index(fields=["bidder"]),
+        ]
 
     def __str__(self):
         return f"{self.bidder.username} bid ${self.amount} on {self.auction_item.title}"
@@ -185,6 +196,11 @@ class ChatMessage(models.Model):
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)  # To track if the message is read
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["sender", "recipient", "timestamp"]),
+        ]
 
     def __str__(self):
         return f"Message from {self.sender.username} to {self.recipient.username} at {self.timestamp}"
@@ -213,6 +229,9 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "is_read", "created_at"]),
+        ]
 
     def __str__(self):
         return f"{self.get_notification_type_display()} for {self.user.username}: {self.title}"

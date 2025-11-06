@@ -4,6 +4,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import './index.css'; // <--- This is crucial
 import App from "./App";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { UserProvider } from "./contexts/UserContext";
 import { QueryClientProvider } from "@tanstack/react-query";
 import queryClient from "./queryClient";
@@ -20,11 +21,13 @@ root.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <UserProvider>
-      <ThemeProvider theme={theme}>
-        <NotificationProvider>
-            <App />
-        </NotificationProvider>
-      </ThemeProvider>
+        <ThemeProvider theme={theme}>
+          <NotificationProvider>
+            <ErrorBoundary>
+              <App />
+            </ErrorBoundary>
+          </NotificationProvider>
+        </ThemeProvider>
       </UserProvider>
       <ToastContainer />
     </QueryClientProvider>

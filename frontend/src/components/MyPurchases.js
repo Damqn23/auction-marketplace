@@ -247,7 +247,7 @@ const MyPurchases = () => {
                     </Typography>
                   )}
 
-                  {item.buy_now_buyer && item.buy_now_buyer.id === user.id ? (
+                  {item.buy_now_buyer && user && item.buy_now_buyer.id === user.id ? (
                     <Typography variant="body2" color="secondary" sx={{ mt: 1 }}>
                       Purchased via Buy Now
                     </Typography>
