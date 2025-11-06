@@ -1013,12 +1013,6 @@ class CurrentUserView(generics.RetrieveAPIView):
         return self.request.user
 
 
-class AuctionItemDetailView(generics.RetrieveAPIView):
-    queryset = AuctionItem.objects.all()
-    serializer_class = AuctionItemSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-
 class ChatMessageViewSet(viewsets.ModelViewSet):
     queryset = ChatMessage.objects.all()
     serializer_class = ChatMessageSerializer
@@ -1153,30 +1147,6 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
             )
 
         return Response({"status": f"{updated} messages marked as read."}, status=200)
-
-
-class SearchAuctionItemsView(APIView):
-    """
-    API View to handle searching of Auction Items based on query parameter 'q'.
-    """
-
-    def get(self, request, format=None):
-        query = request.query_params.get("q", "").strip()
-        if not query:
-            return Response(
-                {"detail": "Please provide a search query parameter 'q'."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Filter AuctionItems where 'q' is in title or description, and status is 'active'
-        auction_items = AuctionItem.objects.filter(
-            Q(title__icontains=query) | Q(description__icontains=query), status="active"
-        )
-
-        serializer = AuctionItemSerializer(
-            auction_items, many=True, context={"request": request}
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CreateDepositPaymentIntentView(APIView):
