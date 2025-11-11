@@ -64,8 +64,8 @@ const Dashboard = () => {
     refetchOnWindowFocus: false,
   });
 
-  if (isLoading) return <Typography>Loading dashboard...</Typography>;
-  if (isError) return <Typography>Error loading dashboard stats.</Typography>;
+  if (isLoading) return <Typography>{t('dashboardPage.loading')}</Typography>;
+  if (isError) return <Typography>{t('dashboardPage.error')}</Typography>;
 
   // Prepare data for the line chart
   const lineChartData = {
@@ -131,17 +131,17 @@ const Dashboard = () => {
           color: "primary.main",
         }}
       >
-        Dashboard
+        {t('dashboardPage.title')}
       </Typography>
 
       {/* Summary Cards */}
       <Grid container spacing={2}>
   {[
-    { label: 'Published Auctions', value: data.total_published },
-    { label: 'Active Auctions', value: data.active_auctions },
-    { label: 'Total Revenue', value: `$${(data.total_revenue || 0).toFixed(2)}` },
-    { label: 'Average Bid', value: `$${(data.average_bid || 0).toFixed(2)}` },
-    { label: 'Average Sale', value: `$${(data.average_sale || 0).toFixed(2)}` },
+    { label: t('dashboardPage.cards.published'), value: data.total_published },
+    { label: t('dashboardPage.cards.active'), value: data.active_auctions },
+    { label: t('dashboardPage.cards.revenue'), value: `$${(data.total_revenue || 0).toFixed(2)}` },
+    { label: t('dashboardPage.cards.avgBid'), value: `$${(data.average_bid || 0).toFixed(2)}` },
+    { label: t('dashboardPage.cards.avgSale'), value: `$${(data.average_sale || 0).toFixed(2)}` },
   ].map((item, index) => (
     <Grid item xs={12} sm={6} md={4} key={index}>
       <Card
@@ -179,25 +179,25 @@ const Dashboard = () => {
         }}
       >
         <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel id="period-label">Period</InputLabel>
+          <InputLabel id="period-label">{t('dashboardPage.filters.period')}</InputLabel>
           <Select
             labelId="period-label"
             value={period}
             label={t("dashboardPage.filters.period")} onChange={(e) => setPeriod(e.target.value)}
           >
-            <MenuItem value="week">Week</MenuItem>
-            <MenuItem value="month">Month</MenuItem>
-            <MenuItem value="year">Year</MenuItem>
+            <MenuItem value="week">{t('dashboardPage.filters.week')}</MenuItem>
+            <MenuItem value="month">{t('dashboardPage.filters.month')}</MenuItem>
+            <MenuItem value="year">{t('dashboardPage.filters.year')}</MenuItem>
           </Select>
         </FormControl>
         <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel id="category-label">Category</InputLabel>
+          <InputLabel id="category-label">{t('dashboardPage.filters.category')}</InputLabel>
           <Select
             labelId="category-label"
             value={category}
             label={t("dashboardPage.filters.category")} onChange={(e) => setCategory(e.target.value)}
           >
-            <MenuItem value="">All</MenuItem>
+            <MenuItem value="">{t('dashboardPage.filters.all')}</MenuItem>
             {categoriesData &&
               categoriesData.map((cat) => (
                 <MenuItem key={cat.id} value={cat.name}>
@@ -214,7 +214,7 @@ const Dashboard = () => {
           <Card variant="outlined" sx={{ height: 300, backgroundColor: '#fff', borderRadius: 2 }}>
             <CardContent sx={{ height: '100%', p: 1 }}>
               <Typography variant="h6" gutterBottom>
-                Revenue Over Time
+                {t('dashboardPage.charts.revenueOverTime')}
               </Typography>
               <Box sx={{ height: 'calc(100% - 40px)' }}>
                 <Line data={lineChartData} options={lineChartOptions} />
@@ -226,7 +226,7 @@ const Dashboard = () => {
           <Card variant="outlined" sx={{ height: 300, backgroundColor: '#fff', borderRadius: 2 }}>
             <CardContent sx={{ height: '100%', p: 1 }}>
               <Typography variant="h6" gutterBottom>
-                Expenses by Category
+                {t('dashboardPage.charts.expensesByCategory')}
               </Typography>
               <Box sx={{ height: 'calc(100% - 40px)' }}>
                 <Pie data={pieChartData} options={pieChartOptions} />

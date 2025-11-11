@@ -56,17 +56,17 @@ const MyBids = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["myBids"]);
-      toast.success("Bid placed successfully!");
+      toast.success(t("auction.toasts.bidPlaced"));
     },
     onError: (error) => {
-      toast.error(error?.response?.data?.detail || "Failed to place bid.");
+      toast.error(error?.response?.data?.detail || t("auction.toasts.bidFailed"));
     },
   });
 
   const handlePlaceBid = (auctionId, minRequiredBid) => {
     const amount = parseFloat(bidAmounts[auctionId]);
     if (isNaN(amount)) {
-      toast.error("Please enter a valid bid amount.");
+      toast.error(t("auction.invalidBid"));
       return;
     }
     if (amount < minRequiredBid) {

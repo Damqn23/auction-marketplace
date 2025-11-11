@@ -22,10 +22,6 @@ from .views import (
     FavoriteListCreateAPIView,
     FavoriteDeleteAPIView,
     DashboardStatsView,
-    
-    # --- Unused views removed (logic now in ViewSets) ---
-    # SearchAuctionItemsView  <- REMOVED (search is in AuctionItemViewSet)
-    # AuctionItemDetailView   <- REMOVED (detail is in AuctionItemViewSet)
 )
 
 # 1. ROUTER SETUP
@@ -65,5 +61,4 @@ urlpatterns = [
     path("stripe-webhook/", StripeWebhookView.as_view(), name="stripe-webhook"),
     path("user-balance/", UserBalanceView.as_view(), name="user-balance"),
     
-    # --- ALL THE CONFLICTING PATHS ARE NOW REMOVED ---
 ]
