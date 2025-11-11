@@ -19,6 +19,7 @@ import { getCurrentUser } from '../services/userService';
 import { UserContext } from '../contexts/UserContext';
 import { toast } from 'react-toastify';
 import { keyframes } from '@emotion/react';
+import { useTranslation } from 'react-i18next';
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(-20px); }
@@ -75,6 +76,7 @@ const Login = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [showPassword, setShowPassword] = useState(false);
   const { setUser } = useContext(UserContext);
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -95,10 +97,10 @@ const Login = () => {
       const userData = await getCurrentUser();
       setUser(userData);
       
-      toast.success('Login successful!');
+      toast.success(t('loginPage.success'));
       navigate('/');
     } catch (error) {
-      toast.error(error?.response?.data?.detail || 'Login failed. Please try again.');
+      toast.error(error?.response?.data?.detail || t('loginPage.failed'));
     }
   };
 
@@ -126,7 +128,7 @@ const Login = () => {
               mb: 1,
             }}
           >
-            Welcome Back
+            {t('loginPage.title')}
           </Typography>
           <Typography
             variant="body1"
@@ -136,14 +138,14 @@ const Login = () => {
               mb: 3,
             }}
           >
-            Please sign in to continue
+            {t('loginPage.subtitle')}
           </Typography>
           <form onSubmit={handleSubmit} style={{ width: '100%' }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <StyledTextField
                 fullWidth
                 name="username"
-                label="Username"
+                label={t('loginPage.username')}
                 value={formData.username}
                 onChange={handleChange}
                 InputProps={{
@@ -157,7 +159,7 @@ const Login = () => {
               <StyledTextField
                 fullWidth
                 name="password"
-                label="Password"
+                label={t('loginPage.password')}
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={handleChange}
@@ -185,12 +187,12 @@ const Login = () => {
                 variant="contained"
                 size="large"
               >
-                Sign In
+                {t('loginPage.signIn')}
               </StyledButton>
             </Box>
           </form>
           <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
-            Don't have an account?{' '}
+            {t('loginPage.noAccount')}{' '}
             <Link
               to="/register"
               style={{
@@ -199,7 +201,7 @@ const Login = () => {
                 fontWeight: 600,
               }}
             >
-              Sign Up
+              {t('loginPage.signUp')}
             </Link>
           </Typography>
         </StyledPaper>

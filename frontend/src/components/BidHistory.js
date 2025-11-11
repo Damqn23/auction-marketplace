@@ -3,6 +3,7 @@ import { getUserBids } from "../services/bidService";
 import { UserContext } from "../contexts/UserContext";
 import { toast } from "react-toastify";
 import moment from "moment";
+import { useTranslation } from 'react-i18next';
 import {
   CircularProgress,
   Typography,
@@ -12,6 +13,7 @@ import {
 } from "@mui/material";
 
 const BidHistory = () => {
+  const { t } = useTranslation();
   const { user } = useContext(UserContext);
   const [bids, setBids] = useState([]);
   const [loading, setLoading] = useState(true);

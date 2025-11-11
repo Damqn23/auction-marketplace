@@ -17,6 +17,7 @@ import CountdownTimer from "./CountdownTimer"; // Same component used in Auction
 import BuyNowModal from "./BuyNowModal"; // Same modal used in AuctionList
 import { placeBid, buyNow } from "../services/auctionService";
 import { UserContext } from "../contexts/UserContext";
+import { useTranslation } from 'react-i18next';
 
 /**
  * Helper: get image from item (similar to AuctionList logic).
@@ -32,6 +33,7 @@ const getAuctionImage = (auctionItem) => {
 };
 
 const Favorites = () => {
+  const { t } = useTranslation();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [bidAmounts, setBidAmounts] = useState({});

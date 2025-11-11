@@ -18,6 +18,7 @@ import { keyframes } from "@emotion/react";
 import { icons } from "./CategoryIcons";
 import { useInView } from "react-intersection-observer";
 import { Search, MenuBook, Create, EmojiNature, People, Gavel, EmojiEvents, LocalOffer } from "@mui/icons-material";
+import { useTranslation } from 'react-i18next';
 
 import Slider from "react-slick"; 
 import "slick-carousel/slick/slick.css";
@@ -167,6 +168,7 @@ const ErrorState = ({ message }) => (
 
 const Home = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [categories, setCategories] = useState([]);
   const [showAll, setShowAll] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -186,7 +188,7 @@ const Home = () => {
         const data = await getAllCategories();
         setCategories(data);
       } catch (err) {
-        setError("Failed to load categories. Please try again later.");
+  setError(t("common.error"));
         console.error("Error fetching categories:", err);
       } finally {
         setIsLoading(false);
@@ -209,7 +211,7 @@ const Home = () => {
   // If no categories
   if (!categories.length) {
     return (
-      <ErrorState message="No categories available at the moment. Please check back later." />
+      <ErrorState message={t("home.categories.noCategories", "No categories available at the moment. Please check back later.")} />
     );
   }
 
@@ -294,7 +296,7 @@ const Home = () => {
                 textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
               }}
             >
-              Discover Unique Auctions
+              {t("home.hero.title")}
             </Typography>
           </AnimatedBox>
           <AnimatedBox delay="0.6s">
@@ -307,7 +309,7 @@ const Home = () => {
                 textShadow: "1px 1px 2px rgba(0,0,0,0.3)",
               }}
             >
-              Find that perfect piece from a wide range of categories.
+              {t("home.hero.subtitle")}
             </Typography>
           </AnimatedBox>
           <AnimatedBox delay="0.9s">
@@ -331,7 +333,7 @@ const Home = () => {
                 },
               }}
             >
-              Start Exploring
+              {t("home.hero.cta")}
             </Button>
           </AnimatedBox>
         </Container>
@@ -351,28 +353,28 @@ const Home = () => {
             <Grid item xs={6} md={3}>
               <AnimatedCounter
                 value={10000}
-                label="Active Users"
+                label={t("home.stats.activeUsers")}
                 icon={People}
               />
             </Grid>
             <Grid item xs={6} md={3}>
               <AnimatedCounter
                 value={5000}
-                label="Active Auctions"
+                label={t("home.stats.activeAuctions")}
                 icon={Gavel}
               />
             </Grid>
             <Grid item xs={6} md={3}>
               <AnimatedCounter
                 value={25000}
-                label="Items Sold"
+                label={t("home.stats.itemsSold")}
                 icon={EmojiEvents}
               />
             </Grid>
             <Grid item xs={6} md={3}>
               <AnimatedCounter
                 value={1000000}
-                label="Total Bids"
+                label={t("home.stats.totalBids")}
                 icon={LocalOffer}
               />
             </Grid>
@@ -407,7 +409,7 @@ const Home = () => {
               },
             }}
           >
-            Browse Categories
+            {t("home.categories.title")}
           </Typography>
         </AnimatedBox>
 
@@ -596,7 +598,7 @@ const Home = () => {
               },
             }}
           >
-            {showAll ? "Show Less" : "See All Categories"}
+            {showAll ? t("home.categories.showLess") : t("home.categories.seeAll")}
           </Button>
         </Box>
       </Container>
@@ -638,7 +640,7 @@ const Home = () => {
                 animation: `${textGlow} 3s ease-in-out infinite alternate`,
               }}
             >
-              Starting from just $0.01!
+              {t("home.banner.title")}
             </Typography>
             <Typography
               variant="h6"
@@ -648,7 +650,7 @@ const Home = () => {
                 textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
               }}
             >
-              No matter your budget, you can join an auction and start bidding today.
+              {t("home.banner.subtitle")}
             </Typography>
           </Box>
         </Box>
@@ -690,7 +692,7 @@ const Home = () => {
               },
             }}
           >
-            How It Works
+            {t("home.how.title")}
           </Typography>
         </AnimatedBox>
         <Grid container spacing={4}>
@@ -725,10 +727,10 @@ const Home = () => {
                   variant="h6"
                   sx={{ fontWeight: "bold", color: "primary.main", mb: 1 }}
                 >
-                  Search Auctions
+                  {t("home.how.search")}
                 </Typography>
                 <Typography variant="body2" align="center" sx={{ color: "text.secondary" }}>
-                  Browse through thousands of unique items with ease.
+                  {t("home.how.bodySearch")}
                 </Typography>
               </Box>
             </AnimatedBox>
@@ -741,10 +743,10 @@ const Home = () => {
                   variant="h6"
                   sx={{ fontWeight: "bold", color: "primary.main", mb: 1 }}
                 >
-                  Place Your Bid
+                  {t("home.how.bid")}
                 </Typography>
                 <Typography variant="body2" align="center" sx={{ color: "text.secondary" }}>
-                  Enter competitive bids and secure your chance to win.
+                  {t("home.how.bodyBid")}
                 </Typography>
               </Box>
             </AnimatedBox>
@@ -757,10 +759,10 @@ const Home = () => {
                   variant="h6"
                   sx={{ fontWeight: "bold", color: "primary.main", mb: 1 }}
                 >
-                  Win & Enjoy
+                  {t("home.how.win")}
                 </Typography>
                 <Typography variant="body2" align="center" sx={{ color: "text.secondary" }}>
-                  Celebrate your win and enjoy your prized item.
+                  {t("home.how.bodyWin")}
                 </Typography>
               </Box>
             </AnimatedBox>
@@ -788,7 +790,7 @@ const Home = () => {
                 },
               }}
             >
-              Explore Auctions
+              {t("home.how.explore")}
             </Button>
           </AnimatedBox>
         </Box>
@@ -808,7 +810,7 @@ const Home = () => {
       >
         <Container maxWidth="lg">
           <Typography variant="body1" sx={{ fontSize: "0.9rem" }}>
-            &copy; {new Date().getFullYear()} Auction Platform. All rights reserved.
+            &copy; {new Date().getFullYear()} {t("home.footer.copy")}
           </Typography>
         </Container>
       </Box>

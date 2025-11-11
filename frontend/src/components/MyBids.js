@@ -15,6 +15,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import CountdownTimer from "./CountdownTimer";
 import FavoriteButton from "./FavoriteButton";
+import { useTranslation } from 'react-i18next';
 
 const fadeIn = keyframes`
   from { opacity: 0; }
@@ -22,6 +23,7 @@ const fadeIn = keyframes`
 `;
 
 const MyBids = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const token = localStorage.getItem("access_token");
   const queryClient = useQueryClient();

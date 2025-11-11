@@ -11,6 +11,7 @@ import {
   Box,
 } from "@mui/material";
 import { keyframes } from "@emotion/react";
+import { useTranslation } from 'react-i18next';
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: scale(0.95); }
@@ -18,6 +19,7 @@ const fadeIn = keyframes`
 `;
 
 const UpdateAuction = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(UserContext);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import axiosInstance from '../services/axiosConfig';
 import { getAllCategories } from '../services/categoryService';
 import {
@@ -47,6 +48,7 @@ const fetchDashboardStats = async ({ queryKey }) => {
 const Dashboard = () => {
   const [period, setPeriod] = useState('month');
   const [category, setCategory] = useState('');
+  const { t } = useTranslation();
 
   // Fetch dashboard statistics
   const { data, isLoading, isError } = useQuery({
@@ -181,8 +183,7 @@ const Dashboard = () => {
           <Select
             labelId="period-label"
             value={period}
-            label="Period"
-            onChange={(e) => setPeriod(e.target.value)}
+            label={t("dashboardPage.filters.period")} onChange={(e) => setPeriod(e.target.value)}
           >
             <MenuItem value="week">Week</MenuItem>
             <MenuItem value="month">Month</MenuItem>
@@ -194,8 +195,7 @@ const Dashboard = () => {
           <Select
             labelId="category-label"
             value={category}
-            label="Category"
-            onChange={(e) => setCategory(e.target.value)}
+            label={t("dashboardPage.filters.category")} onChange={(e) => setCategory(e.target.value)}
           >
             <MenuItem value="">All</MenuItem>
             {categoriesData &&

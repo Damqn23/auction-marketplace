@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import axiosInstance from '../services/axiosConfig';
@@ -57,6 +58,7 @@ function DepositForm() {
   const elements = useElements();
   const theme = useTheme();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);

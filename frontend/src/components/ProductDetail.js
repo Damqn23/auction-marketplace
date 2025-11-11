@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import moment from "moment";
 import { toast } from "react-toastify";
+import { useTranslation } from 'react-i18next';
 
 import {
   Box,
@@ -34,6 +35,7 @@ import { UserContext } from "../contexts/UserContext";
 // Countdown Timer Component
 // ----------------------
 const CountdownTimer = ({ endTime }) => {
+  const { t } = useTranslation();
   const calculateTimeLeft = useCallback(() => {
     const difference = new Date(endTime) - new Date();
     if (difference > 0) {
@@ -56,7 +58,7 @@ const CountdownTimer = ({ endTime }) => {
   }, [calculateTimeLeft]);
 
   if (!timeLeft) {
-    return <Typography component="span">Auction ended</Typography>;
+    return <Typography component="span">{t('auction.auctionEnded')}</Typography>;
   }
 
   return (
@@ -151,6 +153,7 @@ const ProductDetails = () => {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [bidAmount, setBidAmount] = useState("");
 
   // 1) Fetch main auction item with polling for live updates
@@ -161,7 +164,7 @@ const ProductDetails = () => {
   } = useQuery({
     queryKey: ["auctionItem", id],
     queryFn: () => getAuctionItem(id),
-    onError: () => toast.error("Failed to load auction item."),
+    onError: () => toast.error(t("auction.toasts.loadFailed")),
     refetchInterval: 5000, // Poll every 5 seconds for updates
   });
 
@@ -177,7 +180,7 @@ const ProductDetails = () => {
     mutationFn: placeBid,
     onSuccess: () => {
       queryClient.invalidateQueries(["auctionItem", id]);
-      toast.success("Bid placed successfully!");
+      toast.success(t("auction.toasts.bidPlaced"));
       setBidAmount("");
     },
     onError: (error) => {
@@ -189,7 +192,7 @@ const ProductDetails = () => {
     mutationFn: buyNow,
     onSuccess: () => {
       queryClient.invalidateQueries(["auctionItem", id]);
-      toast.success("Purchase successful!");
+      toast.success(t("auction.toasts.purchaseSuccess"));
       navigate("/");
     },
     onError: (error) => {
@@ -201,11 +204,11 @@ const ProductDetails = () => {
     mutationFn: deleteAuctionItem,
     onSuccess: () => {
       queryClient.invalidateQueries(["auctionItems"]);
-      toast.success("Auction item deleted successfully.");
+      toast.success(t("auction.toasts.deleteSuccess"));
       navigate("/");
     },
     onError: () => {
-      toast.error("Failed to delete auction item.");
+      toast.error(t("auction.toasts.deleteFailed"));
     },
   });
 
@@ -258,7 +261,7 @@ const ProductDetails = () => {
   };
 
   const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete this auction item?")) {
+    if (window.confirm(t("auction.confirmDelete"))) {
       deleteMutation.mutate(auctionItem.id);
     }
   };
@@ -374,7 +377,7 @@ const ProductDetails = () => {
               Description
             </Typography>
             <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
-              {auctionItem.description || "No description provided."}
+              {auctionItem.description || t("auction.noDescription")}
             </Typography>
           </Paper>
 

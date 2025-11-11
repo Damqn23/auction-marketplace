@@ -5,6 +5,7 @@ import { Box, Typography, Button, Container, useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { keyframes } from '@emotion/react';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { useTranslation } from 'react-i18next';
 
 const float = keyframes`
   0% { transform: translateY(0px); }
@@ -21,6 +22,7 @@ const pulse = keyframes`
 const NotFound = () => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Container>
@@ -55,7 +57,7 @@ const NotFound = () => {
             mb: 2,
           }}
         >
-          404
+          {t('notFound.code')}
         </Typography>
         <Typography
           variant="h4"
@@ -65,7 +67,7 @@ const NotFound = () => {
             fontWeight: 500,
           }}
         >
-          Page Not Found
+          {t('notFound.title')}
         </Typography>
         <Typography
           variant="body1"
@@ -75,8 +77,7 @@ const NotFound = () => {
             maxWidth: '600px',
           }}
         >
-          Oops! The page you're looking for seems to have gone on an adventure.
-          Let's get you back to where you need to be.
+          {t('notFound.message')}
         </Typography>
         <Button
           variant="contained"
@@ -96,7 +97,7 @@ const NotFound = () => {
             },
           }}
         >
-          Back to Home
+          {t('notFound.backHome')}
         </Button>
       </Box>
     </Container>

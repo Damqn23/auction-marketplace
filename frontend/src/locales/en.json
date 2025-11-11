@@ -1,0 +1,333 @@
+{
+  "appTitle": "Auction Marketplace",
+  "searchPlaceholder": "Search items...",
+  "deposit": "Deposit",
+  "depositMoney": "Deposit Money",
+  "createAuction": "Create Auction",
+  "messages": "Messages",
+  "notifications": "Notifications",
+  "account": "Account",
+  "login": "Login",
+  "register": "Register",
+  "menu": "Menu",
+  "dashboard": "Dashboard",
+  "myBids": "My Bids",
+  "myAuctions": "My Auctions",
+  "myPurchases": "My Purchases",
+  "favorites": "Favorites",
+  "logout": "Logout",
+  "notificationsHeader": "Notifications",
+  "noNotifications": "No notifications",
+  "caughtUp": "You're all caught up!",
+  "balance": "Balance",
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "apply": "Apply",
+    "reset": "Reset",
+    "viewDetails": "View Details",
+    "unknown": "Unknown",
+    "all": "All",
+    "edit": "Edit",
+    "update": "Update",
+    "processing": "Processing..."
+  },
+  "filters": {
+    "filters": "Filters",
+    "sortBy": "Sort By",
+    "category": "Category",
+    "location": "Location",
+    "condition": "Condition",
+    "allCategories": "All Categories",
+    "allLocations": "All Locations",
+    "allConditions": "All Conditions",
+    "minPrice": "Min Price",
+    "maxPrice": "Max Price",
+    "new": "New",
+    "like_new": "Like New",
+    "good": "Good",
+    "fair": "Fair",
+    "poor": "Poor",
+    "newest": "Newest First",
+    "ending_soon": "Ending Soon",
+    "highest_bid": "Highest Bid",
+    "lowest_price": "Lowest Price",
+    "applyFilters": "Apply Filters",
+    "resetFilters": "Reset Filters",
+    "sort": {
+      "newest": "Newest First",
+      "endingSoon": "Ending Soon",
+      "highestBid": "Highest Bid",
+      "lowestPrice": "Lowest Price"
+    }
+  },
+  "home": {
+    "hero": {
+      "title": "Discover Unique Auctions",
+      "subtitle": "Find that perfect piece from a wide range of categories.",
+      "cta": "Start Exploring"
+    },
+    "stats": {
+      "activeUsers": "Active Users",
+      "activeAuctions": "Active Auctions",
+      "itemsSold": "Items Sold",
+      "totalBids": "Total Bids"
+    },
+    "categories": {
+      "title": "Browse Categories",
+      "showLess": "Show Less",
+      "seeAll": "See All Categories"
+    },
+    "banner": {
+      "title": "Starting from just $0.01!",
+      "subtitle": "No matter your budget, you can join an auction and start bidding today."
+    },
+    "how": {
+      "title": "How It Works",
+      "search": "Search Auctions",
+      "bid": "Place Your Bid",
+      "win": "Win & Enjoy",
+      "bodySearch": "Browse through thousands of unique items with ease.",
+      "bodyBid": "Enter competitive bids and secure your chance to win.",
+      "bodyWin": "Celebrate your win and enjoy your prized item.",
+      "explore": "Explore Auctions"
+    },
+    "footer": {
+      "copy": "Auction Platform. All rights reserved."
+    }
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "subtitle": "Oops! The page you're looking for seems to have gone on an adventure. Let's get you back to where you need to be.",
+    "backHome": "Back to Home"
+  },
+  "loginPage": {
+    "title": "Welcome Back",
+    "subtitle": "Please sign in to continue",
+    "username": "Username",
+    "password": "Password",
+    "signIn": "Sign In",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign Up",
+    "success": "Login successful!",
+    "failed": "Login failed. Please try again."
+  },
+  "registerPage": {
+    "title": "Create Account",
+    "subtitle": "Join our auction community",
+    "steps": {
+      "account": "Account Details",
+      "personal": "Personal Information",
+      "confirm": "Confirmation"
+    },
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "phoneNumber": "Phone Number",
+    "location": "Location",
+    "back": "Back",
+    "next": "Next",
+    "complete": "Complete Registration",
+    "already": "Already have an account?",
+    "signIn": "Sign In",
+    "passwordMismatch": "Passwords do not match!",
+    "success": "Registration successful! Please login.",
+    "failed": "Registration failed. Please try again."
+  },
+  "auction": {
+    "ended": "Auction ended",
+    "price": "Price",
+    "currentBid": "Current Bid",
+    "startingBid": "Starting Bid",
+    "category": "Category",
+    "condition": "Condition",
+    "location": "Location",
+    "seller": "Seller",
+    "timeRemaining": "Time Remaining",
+    "timeLeft": "Time Left",
+    "min": "Min",
+    "bid": "Bid",
+    "buyNow": "Buy Now",
+    "buyNowAvailable": "Buy Now Available",
+    "buyNowFor": "Buy Now for",
+    "delete": "Delete",
+    "update": "Update",
+    "description": "Description",
+    "noDescription": "No description provided.",
+    "bidHistory": "Bid History",
+    "noBidsYet": "No bids yet.",
+    "similarProducts": "Similar Products",
+    "noImage": "No image",
+    "noImageAvailable": "No image available.",
+    "confirmBuyNow": "Are you sure you want to buy this item now?",
+    "confirmDelete": "Are you sure you want to delete this auction item?",
+    "toasts": {
+      "loadFailed": "Failed to load auction item.",
+      "bidPlaced": "Bid placed successfully!",
+      "bidFailed": "Failed to place bid. Please try again.",
+      "purchaseSuccess": "Purchase successful!",
+      "purchaseFailed": "Failed to complete purchase. Please try again.",
+      "deleteSuccess": "Auction item deleted successfully.",
+      "deleteFailed": "Failed to delete auction item.",
+      "createSuccess": "Auction created successfully!",
+      "createFailed": "Failed to create auction.",
+      "updateSuccess": "Auction updated successfully!",
+      "updateFailed": "Failed to update auction.",
+      "depositSuccess": "Deposit successful!",
+      "depositFailed": "Deposit failed."
+    },
+    "auctionEnded": "Auction ended",
+    "placeBid": "Place Bid",
+    "bids": "Bids",
+    "item": "Item",
+    "amount": "Amount",
+    "youWon": "You won this auction!",
+    "youAreWinning": "You are winning!",
+    "outbid": "You were outbid",
+    "yourBid": "Your bid",
+    "highestBid": "Highest bid",
+    "noBids": "You have no bids yet.",
+    "startBidding": "Start bidding on auctions to see them here!",
+    "noAuctions": "You haven't created any auctions yet.",
+    "createFirst": "Create your first auction to get started!",
+    "noPurchases": "You haven't made any purchases yet.",
+    "startPurchasing": "Start bidding or buying to see your purchases here!",
+    "noFavorites": "You haven't added any favorites yet.",
+    "startFavoriting": "Start adding items to your favorites!",
+    "removeFromFavorites": "Remove from favorites",
+    "markShipped": "Mark as Shipped",
+    "markReceived": "Mark as Received",
+    "purchasedFor": "Purchased for",
+    "shippingStatus": "Shipping Status",
+    "updateTitle": "Update Auction",
+    "confirmPurchase": "Confirm Purchase",
+    "buyNowConfirm": "Are you sure you want to buy this item now?",
+    "quickPreview": "Quick Preview",
+    "bidAmount": "Bid Amount",
+    "bidder": "Bidder",
+    "time": "Time",
+    "beFirstToBid": "Be the first to bid!",
+    "invalidBid": "Please enter a valid bid amount.",
+    "status": {
+      "active": "Active",
+      "ended": "Ended",
+      "sold": "Sold",
+      "cancelled": "Cancelled"
+    },
+    "shipping": {
+      "pending": "Pending",
+      "shipped": "Shipped",
+      "delivered": "Delivered"
+    }
+  },
+  "auctionList": {
+    "noResults": "No auctions found",
+    "tryAdjust": "Try adjusting your filters or search terms",
+    "allAuctions": "All Auctions",
+    "searchResultsFor": "Search results for",
+    "resetFilters": "Reset Filters"
+  },
+  "dashboardPage": {
+    "title": "Dashboard",
+    "loading": "Loading dashboard...",
+    "error": "Error loading dashboard stats.",
+    "cards": {
+      "published": "Published Auctions",
+      "active": "Active Auctions",
+      "revenue": "Total Revenue",
+      "avgBid": "Average Bid",
+      "avgSale": "Average Sale"
+    },
+    "filters": {
+      "period": "Period",
+      "category": "Category",
+      "all": "All",
+      "week": "Week",
+      "month": "Month",
+      "year": "Year"
+    },
+    "charts": {
+      "revenueOverTime": "Revenue Over Time",
+      "expensesByCategory": "Expenses by Category"
+    }
+  },
+  "createAuctionPage": {
+    "title": "Create New Auction",
+    "steps": {
+      "basic": "Basic Info",
+      "pricing": "Pricing & Duration",
+      "condition": "Condition & Images",
+      "review": "Review & Create"
+    },
+    "labels": {
+      "title": "Title",
+      "description": "Description",
+      "category": "Category",
+      "selectCategory": "-- Select Category --",
+      "startingBid": "Starting Bid",
+      "buyNowPrice": "Buy Now Price (Optional)",
+      "duration": "Auction Duration (Hours)",
+      "duration_1": "1 Hour",
+      "duration_3": "3 Hours",
+      "duration_6": "6 Hours",
+      "duration_12": "12 Hours",
+      "duration_24": "24 Hours",
+      "condition": "Condition",
+      "selectCondition": "-- Select Condition --",
+      "new": "New",
+      "used": "Used",
+      "refurbished": "Refurbished",
+      "location": "Location",
+      "selectCity": "-- Select City --",
+      "uploadImages": "Upload Images (optional)",
+      "selectImages": "Select Images",
+      "imagesSelected": "image(s) selected"
+    },
+    "review": {
+      "title": "Review Your Auction",
+      "none": "(None)",
+      "startingBid": "Starting Bid",
+      "buyNowPrice": "Buy Now Price",
+      "duration": "Duration (hrs)",
+      "images": "Images"
+    },
+    "errors": {
+      "fillRequired": "Please fill out all required fields.",
+      "fillPricing": "Please fill out the required pricing fields.",
+      "buyNowHigher": "Buy Now price must be higher than the starting bid.",
+      "selectConditionLocation": "Please select condition and location.",
+      "unknownStep": "Unknown step",
+      "createFailed": "Failed to create auction. Please try again."
+    },
+    "actions": {
+      "back": "Back",
+      "next": "Next",
+      "create": "Create Auction",
+      "backToList": "Back to Auction List"
+    },
+    "toasts": {
+      "created": "Auction created successfully!"
+    }
+  },
+  "language": {
+    "label": "Language",
+    "bg": "Bulgarian",
+    "en": "English",
+    "short": {
+      "bg": "BG",
+      "en": "EN"
+    }
+  },
+  "chat": {
+    "typePlaceholder": "Type a message...",
+    "send": "Send",
+    "noMessages": "No messages yet",
+    "startConversation": "Start a conversation!"
+  }
+}

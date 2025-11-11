@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogTitle,
@@ -55,6 +56,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
 
 const BuyNowModal = ({ open, onClose, onConfirm, item }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   if (!item) return null;
 

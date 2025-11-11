@@ -40,6 +40,7 @@ import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { keyframes } from "@emotion/react";
+import { useTranslation } from 'react-i18next';
 
 // Add new animations
 const slideIn = keyframes`
@@ -66,6 +67,7 @@ const gradientAnimation = keyframes`
 
 const NavBar = ({ toggleColorMode, mode }) => {
   const { user, setUser, unreadCount, setUnreadCount } = useContext(UserContext);
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -221,9 +223,9 @@ const NavBar = ({ toggleColorMode, mode }) => {
 
   const primaryActions = user
     ? [
-        { text: "Create Auction", link: "/create" },
+        { text: t("createAuction"), link: "/create" },
         {
-          text: "Chat",
+          text: t("messages"),
           link: "/chat",
           icon: <ChatIcon />,
           badge: unreadCount > 0 ? unreadCount : null,
@@ -233,16 +235,16 @@ const NavBar = ({ toggleColorMode, mode }) => {
 
   const secondaryActions = user
     ? [
-        { text: "My Bids", link: "/my-bids" },
-        { text: "My Purchases", link: "/my-purchases" },
-        { text: "My Auctions", link: "/my-auctions" },
-        { text: "Favorites", link: "/favorites" },
-        { text: "Dashboard", link: "/dashboard" },
-        { text: "Logout", action: handleLogout },
+        { text: t("myBids"), link: "/my-bids" },
+        { text: t("myPurchases"), link: "/my-purchases" },
+        { text: t("myAuctions"), link: "/my-auctions" },
+        { text: t("favorites"), link: "/favorites" },
+        { text: t("dashboard"), link: "/dashboard" },
+        { text: t("logout"), action: handleLogout },
       ]
     : [
-        { text: "Login", link: "/login" },
-        { text: "Register", link: "/register" },
+        { text: t("login"), link: "/login" },
+        { text: t("register"), link: "/register" },
       ];
 
   const mobileMenuItems = user ? [...primaryActions, ...secondaryActions] : secondaryActions;
@@ -367,7 +369,7 @@ const NavBar = ({ toggleColorMode, mode }) => {
               },
             }}
           >
-            Auction Marketplace
+            {t("appTitle")}
           </Typography>
         </Box>
 
@@ -379,7 +381,7 @@ const NavBar = ({ toggleColorMode, mode }) => {
           display: { xs: "none", md: "block" }
         }}>
           <TextField
-            placeholder="Search items..."
+            placeholder={t("searchPlaceholder")}
             size="small"
             variant="outlined"
             value={searchQuery}
@@ -428,6 +430,27 @@ const NavBar = ({ toggleColorMode, mode }) => {
 
         {/* Right Section */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {/* Language Switcher */}
+          <Tooltip title={t("language.label")} TransitionComponent={Fade}>
+            <Button
+              variant="outlined"
+              color="inherit"
+              onClick={() => i18n.changeLanguage(i18n.language === "bg" ? "en" : "bg")}
+              sx={{
+                borderRadius: "20px",
+                textTransform: "none",
+                borderColor: "rgba(255, 255, 255, 0.5)",
+                color: "#ffffff",
+                minWidth: 56,
+                "&:hover": {
+                  borderColor: "#ffffff",
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                }
+              }}
+            >
+              {t(`language.short.${i18n.language}`)}
+            </Button>
+          </Tooltip>
           {isDesktop && user && (
             <>
               {/* Balance Display */}
@@ -457,7 +480,7 @@ const NavBar = ({ toggleColorMode, mode }) => {
               </Box>
 
               {/* Deposit Button */}
-              <Tooltip title="Deposit Money" TransitionComponent={Fade}>
+              <Tooltip title={t("depositMoney")} TransitionComponent={Fade}>
                 <Button
                   variant="contained"
                   color="secondary"
@@ -475,11 +498,11 @@ const NavBar = ({ toggleColorMode, mode }) => {
                     },
                   }}
                 >
-                  Deposit
+                  {t("deposit")}
                 </Button>
               </Tooltip>
 
-              <Tooltip title="Create Auction" TransitionComponent={Fade}>
+              <Tooltip title={t("createAuction")} TransitionComponent={Fade}>
                 <Button
                   variant="contained"
                   color="secondary"
@@ -496,11 +519,11 @@ const NavBar = ({ toggleColorMode, mode }) => {
                     },
                   }}
                 >
-                  Create Auction
+                  {t("createAuction")}
                 </Button>
               </Tooltip>
 
-              <Tooltip title="Messages" TransitionComponent={Fade}>
+              <Tooltip title={t("messages")} TransitionComponent={Fade}>
                 <IconButton
                   color="inherit"
                   onClick={() => navigate("/chat")}
@@ -517,7 +540,7 @@ const NavBar = ({ toggleColorMode, mode }) => {
                 </IconButton>
               </Tooltip>
 
-              <Tooltip title="Notifications" TransitionComponent={Fade}>
+              <Tooltip title={t("notifications")} TransitionComponent={Fade}>
                 <IconButton
                   color="inherit"
                   onClick={handleNotificationsOpen}
@@ -534,7 +557,7 @@ const NavBar = ({ toggleColorMode, mode }) => {
                 </IconButton>
               </Tooltip>
 
-              <Tooltip title="Account" TransitionComponent={Fade}>
+              <Tooltip title={t("account")} TransitionComponent={Fade}>
                 <IconButton
                   onClick={handleUserMenuOpen}
                   sx={{
@@ -577,7 +600,7 @@ const NavBar = ({ toggleColorMode, mode }) => {
                   }
                 }}
               >
-                Login
+                {t("login")}
               </Button>
               <Button
                 variant="contained"
@@ -593,7 +616,7 @@ const NavBar = ({ toggleColorMode, mode }) => {
                   }
                 }}
               >
-                Register
+                {t("register")}
               </Button>
             </Box>
           )}
@@ -631,7 +654,7 @@ const NavBar = ({ toggleColorMode, mode }) => {
                 {user?.username}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Balance: ${displayedBalance || '0.00'}
+                {t("balance")}: ${displayedBalance || '0.00'}
               </Typography>
             </Box>
           </Box>
@@ -640,38 +663,38 @@ const NavBar = ({ toggleColorMode, mode }) => {
           <ListItemIcon>
             <AccountCircle fontSize="small" />
           </ListItemIcon>
-          Dashboard
+          {t("dashboard")}
         </MenuItem>
         <MenuItem onClick={() => { navigate("/my-bids"); handleUserMenuClose(); }}>
           <ListItemIcon>
             <GavelIcon fontSize="small" />
           </ListItemIcon>
-          My Bids
+          {t("myBids")}
         </MenuItem>
         <MenuItem onClick={() => { navigate("/my-auctions"); handleUserMenuClose(); }}>
           <ListItemIcon>
             <EmojiEventsIcon fontSize="small" />
           </ListItemIcon>
-          My Auctions
+          {t("myAuctions")}
         </MenuItem>
         <MenuItem onClick={() => { navigate("/my-purchases"); handleUserMenuClose(); }}>
           <ListItemIcon>
             <ShoppingBagIcon fontSize="small" />
           </ListItemIcon>
-          My Purchases
+          {t("myPurchases")}
         </MenuItem>
         <MenuItem onClick={() => { navigate("/favorites"); handleUserMenuClose(); }}>
           <ListItemIcon>
             <FavoriteIcon fontSize="small" />
           </ListItemIcon>
-          Favorites
+          {t("favorites")}
         </MenuItem>
         <Divider />
         <MenuItem onClick={() => { handleLogout(); handleUserMenuClose(); }}>
           <ListItemIcon>
             <LogoutIcon fontSize="small" />
           </ListItemIcon>
-          Logout
+          {t("logout")}
         </MenuItem>
       </Menu>
 
@@ -691,7 +714,7 @@ const NavBar = ({ toggleColorMode, mode }) => {
         }}
       >
         <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-          <Typography variant="h6">Notifications</Typography>
+          <Typography variant="h6">{t("notificationsHeader")}</Typography>
         </Box>
         {notifications.length > 0 ? (
           notifications.map((notification) => (
@@ -708,8 +731,8 @@ const NavBar = ({ toggleColorMode, mode }) => {
         ) : (
           <MenuItem disabled>
             <ListItemText
-              primary="No notifications"
-              secondary="You're all caught up!"
+              primary={t("noNotifications")}
+              secondary={t("caughtUp")}
               sx={{ textAlign: "center" }}
             />
           </MenuItem>
@@ -731,7 +754,7 @@ const NavBar = ({ toggleColorMode, mode }) => {
       >
         <Box sx={{ p: 2 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Menu
+            {t("menu")}
           </Typography>
           <Divider sx={{ mb: 2 }} />
           <List>

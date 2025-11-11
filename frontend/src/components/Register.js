@@ -18,6 +18,7 @@ import {
   StepLabel,
 } from "@mui/material";
 import { keyframes } from "@emotion/react";
+import { useTranslation } from 'react-i18next';
 import { styled } from "@mui/material/styles";
 import {
   Visibility,
@@ -82,6 +83,7 @@ const Register = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useTranslation();
   const [activeStep, setActiveStep] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -93,7 +95,7 @@ const Register = () => {
     location: '',
   });
 
-  const steps = ['Account Details', 'Personal Information', 'Confirmation'];
+  const steps = [t('registerPage.steps.account'), t('registerPage.steps.personal'), t('registerPage.steps.confirm')];
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -130,15 +132,15 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match!');
+      toast.error(t('registerPage.passwordMismatch'));
       return;
     }
     try {
       await registerUser(formData);
-      toast.success('Registration successful! Please login.');
+      toast.success(t('registerPage.success'));
       navigate('/login');
     } catch (error) {
-      toast.error(error?.response?.data?.detail || 'Registration failed. Please try again.');
+      toast.error(error?.response?.data?.detail || t('registerPage.failed'));
     }
   };
 
@@ -150,7 +152,7 @@ const Register = () => {
             <StyledTextField
               fullWidth
               name="username"
-              label="Username"
+              label={t('registerPage.username')}
               value={formData.username}
               onChange={handleChange}
               InputProps={{
@@ -164,7 +166,7 @@ const Register = () => {
             <StyledTextField
               fullWidth
               name="email"
-              label="Email"
+              label={t('registerPage.email')}
               type="email"
               value={formData.email}
               onChange={handleChange}
@@ -184,7 +186,7 @@ const Register = () => {
             <StyledTextField
               fullWidth
               name="password"
-              label="Password"
+              label={t('registerPage.password')}
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={handleChange}
@@ -209,7 +211,7 @@ const Register = () => {
             <StyledTextField
               fullWidth
               name="confirmPassword"
-              label="Confirm Password"
+              label={t('registerPage.confirmPassword')}
               type={showPassword ? 'text' : 'password'}
               value={formData.confirmPassword}
               onChange={handleChange}
@@ -229,7 +231,7 @@ const Register = () => {
             <StyledTextField
               fullWidth
               name="phone"
-              label="Phone Number"
+              label={t('registerPage.phoneNumber')}
               value={formData.phone}
               onChange={handleChange}
               InputProps={{
@@ -243,7 +245,7 @@ const Register = () => {
             <StyledTextField
               fullWidth
               name="location"
-              label="Location"
+              label={t('registerPage.location')}
               value={formData.location}
               onChange={handleChange}
               InputProps={{
@@ -285,7 +287,7 @@ const Register = () => {
               mb: 1,
             }}
           >
-            Create Account
+            {t('registerPage.title')}
           </Typography>
           <Typography
             variant="body1"
@@ -295,7 +297,7 @@ const Register = () => {
               mb: 3,
             }}
           >
-            Join our auction community
+            {t('registerPage.subtitle')}
           </Typography>
 
           <Stepper activeStep={activeStep} alternativeLabel sx={{ width: '100%', mb: 4 }}>
@@ -316,7 +318,7 @@ const Register = () => {
                   disabled={activeStep === 0}
                   sx={{ visibility: activeStep === 0 ? 'hidden' : 'visible' }}
                 >
-                  Back
+                  {t('registerPage.back')}
                 </Button>
                 {activeStep === steps.length - 1 ? (
                   <StyledButton
@@ -324,7 +326,7 @@ const Register = () => {
                     variant="contained"
                     disabled={!validateStep()}
                   >
-                    Complete Registration
+                    {t('registerPage.complete')}
                   </StyledButton>
                 ) : (
                   <StyledButton
@@ -332,7 +334,7 @@ const Register = () => {
                     onClick={handleNext}
                     disabled={!validateStep()}
                   >
-                    Next
+                    {t('registerPage.next')}
                   </StyledButton>
                 )}
               </Box>
@@ -340,7 +342,7 @@ const Register = () => {
           </form>
 
           <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
-            Already have an account?{' '}
+            {t('registerPage.already')}{' '}
             <Link
               to="/login"
               style={{
@@ -349,7 +351,7 @@ const Register = () => {
                 fontWeight: 600,
               }}
             >
-              Sign In
+              {t('registerPage.signIn')}
             </Link>
           </Typography>
         </StyledPaper>

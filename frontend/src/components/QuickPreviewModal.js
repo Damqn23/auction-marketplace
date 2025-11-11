@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,7 @@ import CountdownTimer from './CountdownTimer';
 
 const QuickPreviewModal = ({ open, onClose, item }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   if (!item) return null;
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -60,13 +61,14 @@ const CreateAuction = () => {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   // ------------------ Stepper Logic ------------------
   const steps = [
-    "Basic Info",
-    "Pricing & Duration",
-    "Condition & Images",
-    "Review & Create",
+    t("createAuctionPage.steps.basic"),
+    t("createAuctionPage.steps.pricing"),
+    t("createAuctionPage.steps.condition"),
+    t("createAuctionPage.steps.review"),
   ];
 
   const handleNext = () => {
@@ -145,7 +147,7 @@ const CreateAuction = () => {
         exact: false
       });
 
-      toast.success("Auction created successfully!");
+      toast.success(t("auction.toasts.createSuccess"));
       navigate("/"); // redirect to home or anywhere
     } catch (err) {
       console.error(err);
@@ -186,16 +188,14 @@ const CreateAuction = () => {
         return (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField
-              label="Title"
-              variant="outlined"
+              label={t("createAuctionPage.labels.title")} variant="outlined"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               fullWidth
               required
             />
             <TextField
-              label="Description"
-              variant="outlined"
+              label={t("createAuctionPage.labels.description")} variant="outlined"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               multiline
@@ -205,8 +205,7 @@ const CreateAuction = () => {
             />
             <TextField
               select
-              label="Category"
-              variant="outlined"
+              label={t("createAuctionPage.labels.category")} variant="outlined"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               fullWidth
@@ -225,8 +224,7 @@ const CreateAuction = () => {
         return (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField
-              label="Starting Bid"
-              variant="outlined"
+              label={t("createAuctionPage.labels.startingBid")} variant="outlined"
               type="number"
               value={startingBid}
               onChange={(e) => setStartingBid(e.target.value)}
@@ -235,8 +233,7 @@ const CreateAuction = () => {
               inputProps={{ min: "0", step: "0.01" }}
             />
             <TextField
-              label="Buy Now Price (Optional)"
-              variant="outlined"
+              label={t("createAuctionPage.labels.buyNowPrice")} variant="outlined"
               type="number"
               value={buyNowPrice}
               onChange={(e) => setBuyNowPrice(e.target.value)}
@@ -248,8 +245,7 @@ const CreateAuction = () => {
             />
             <TextField
               select
-              label="Auction Duration (Hours)"
-              variant="outlined"
+              label={t("createAuctionPage.labels.duration")} variant="outlined"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
               required
@@ -268,8 +264,7 @@ const CreateAuction = () => {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField
               select
-              label="Condition"
-              variant="outlined"
+              label={t("filters.condition")} variant="outlined"
               value={condition}
               onChange={(e) => setCondition(e.target.value)}
               fullWidth
@@ -282,8 +277,7 @@ const CreateAuction = () => {
             </TextField>
             <TextField
               select
-              label="Location"
-              variant="outlined"
+              label={t("filters.location")} variant="outlined"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               fullWidth
@@ -441,7 +435,7 @@ const CreateAuction = () => {
               {loading ? (
                 <CircularProgress size={24} sx={{ color: "#fff" }} />
               ) : (
-                "Create Auction"
+                t("createAuction")
               )}
             </Button>
           )}

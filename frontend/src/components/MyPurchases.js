@@ -17,6 +17,7 @@ import {
   Pagination,
 } from "@mui/material";
 import { keyframes } from "@emotion/react";
+import { useTranslation } from 'react-i18next';
 
 const fadeIn = keyframes`
   from { opacity: 0; }
@@ -29,6 +30,7 @@ const slideUp = keyframes`
 `;
 
 const MyPurchases = () => {
+  const { t } = useTranslation();
   const { user } = useContext(UserContext);
   const [purchasedItems, setPurchasedItems] = useState([]);
   const [loading, setLoading] = useState(true);

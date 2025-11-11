@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { useParams } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -29,6 +30,7 @@ function formatMessageDate(timestamp) {
 const Chat = () => {
   const { ownerUsername } = useParams();
   const { user, setUnreadCount } = useContext(UserContext);
+  const { t } = useTranslation();
 
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -356,8 +358,7 @@ const Chat = () => {
           fullWidth
           multiline
           maxRows={3}
-          placeholder="Type a message..."
-          value={newMessage}
+          placeholder={t("chat.typePlaceholder")} value={newMessage}
           onChange={handleTyping}
           sx={{
             mx: 1,

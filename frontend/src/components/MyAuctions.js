@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { keyframes } from "@emotion/react";
 import { Link } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 
 const fadeIn = keyframes`
   from { opacity: 0; }
@@ -28,6 +29,7 @@ const slideUp = keyframes`
 `;
 
 const MyAuctions = () => {
+  const { t } = useTranslation();
   const { user } = useContext(UserContext);
   const [auctions, setAuctions] = useState([]);
   const [loading, setLoading] = useState(true);

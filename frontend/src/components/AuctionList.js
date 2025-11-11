@@ -35,6 +35,7 @@ import { keyframes } from "@emotion/react";
 import { getAllAuctionItems, placeBid, buyNow, searchAuctionItems } from "../services/auctionService";
 import { getAllCategories } from "../services/categoryService";
 import { UserContext } from "../contexts/UserContext";
+import { useTranslation } from 'react-i18next';
 
 import CountdownTimer from "./CountdownTimer";
 import BuyNowModal from "./BuyNowModal";
@@ -55,6 +56,7 @@ const pulse = keyframes`
 
 const AuctionList = () => {
   const { user } = useContext(UserContext);
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -99,7 +101,7 @@ const AuctionList = () => {
       }
     },
     refetchInterval: 5000,
-    onError: () => toast.error("Failed to load auction items."),
+    onError: () => t("auction.toasts.loadFailed"),
     getNextPageParam: (lastPage) => {
       if (!lastPage?.meta) return undefined;
       
@@ -132,17 +134,17 @@ const AuctionList = () => {
     mutationFn: placeBid,
     onSuccess: () => {
       queryClient.invalidateQueries(["auctionItems"]);
-      toast.success("Bid placed successfully!");
+      toast.success(t("auction.toasts.bidPlaced"));
     },
     onError: (error) => {
-      toast.error(error?.response?.data?.detail || "Failed to place bid.");
+      toast.error(error?.response?.data?.detail || t("auction.toasts.bidFailed"));
     },
   });
 
   const handlePlaceBid = (auctionId) => {
     const amount = parseFloat(bidAmounts[auctionId]);
     if (isNaN(amount)) {
-      toast.error("Please enter a valid bid amount.");
+      toast.error(t("auction.toasts.invalidBid"));
       return;
     }
     bidMutation.mutate({ id: auctionId, amount });
@@ -152,10 +154,10 @@ const AuctionList = () => {
     mutationFn: buyNow,
     onSuccess: () => {
       queryClient.invalidateQueries(["auctionItems"]);
-      toast.success("Purchase successful!");
+      toast.success(t("auction.toasts.purchaseSuccess"));
     },
     onError: (error) => {
-      toast.error(error?.response?.data?.detail || "Failed to complete purchase.");
+      toast.error(error?.response?.data?.detail || t("auction.toasts.purchaseFailed"));
     },
   });
 
@@ -323,7 +325,7 @@ const AuctionList = () => {
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Tooltip title="Filters">
+          <Tooltip title={t("filters.filters")}>
             <IconButton
               onClick={handleFilterClick}
               sx={{
@@ -339,7 +341,7 @@ const AuctionList = () => {
             </IconButton>
           </Tooltip>
           <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-            {query ? `Search results for "${query}"` : "All Auctions"}
+            {query ? t("auctionList.searchResultsFor", { query }) : t("auctionList.allAuctions")}
           </Typography>
         </Box>
         <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
@@ -347,8 +349,7 @@ const AuctionList = () => {
           <Select
             value={sortBy}
             onChange={handleSortChange}
-            label="Sort By"
-            startAdornment={<SortIcon sx={{ mr: 1, color: 'text.secondary' }} />}
+            label={t("filters.sortBy")} startAdornment={<SortIcon sx={{ mr: 1, color: 'text.secondary' }} />}
           >
             <MenuItem value="newest">Newest First</MenuItem>
             <MenuItem value="ending_soon">Ending Soon</MenuItem>
@@ -530,8 +531,7 @@ const AuctionList = () => {
                   name="category"
                   value={pendingFilters.category}
                   onChange={handleFilterChange}
-                  label="Category"
-                >
+                  label={t("filters.category")}>
                   <MenuItem value="">All Categories</MenuItem>
                   {categoriesData?.map((category) => (
                     <MenuItem key={category.id} value={category.id}>
@@ -545,8 +545,7 @@ const AuctionList = () => {
               <TextField
                 fullWidth
                 size="small"
-                label="Min Price"
-                name="min_price"
+                label={t("filters.minPrice")} name="min_price"
                 type="number"
                 value={pendingFilters.min_price}
                 onChange={handleFilterChange}
@@ -556,8 +555,7 @@ const AuctionList = () => {
               <TextField
                 fullWidth
                 size="small"
-                label="Max Price"
-                name="max_price"
+                label={t("filters.maxPrice")} name="max_price"
                 type="number"
                 value={pendingFilters.max_price}
                 onChange={handleFilterChange}
@@ -570,8 +568,7 @@ const AuctionList = () => {
                   name="condition"
                   value={pendingFilters.condition}
                   onChange={handleFilterChange}
-                  label="Condition"
-                >
+                  label={t("filters.condition")}>
                   <MenuItem value="">All Conditions</MenuItem>
                   <MenuItem value="new">New</MenuItem>
                   <MenuItem value="like_new">Like New</MenuItem>
@@ -588,8 +585,7 @@ const AuctionList = () => {
                   name="location"
                   value={pendingFilters.location}
                   onChange={handleFilterChange}
-                  label="Location"
-                >
+                  label={t("filters.location")}>
                   <MenuItem value="">All Locations</MenuItem>
                   {cities.map((city) => (
                     <MenuItem key={city.id} value={city.city}>

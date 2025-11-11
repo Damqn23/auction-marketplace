@@ -15,8 +15,10 @@ import {
   Box,
 } from "@mui/material";
 import ChatIcon from "@mui/icons-material/Chat";
+import { useTranslation } from 'react-i18next';
 
 const ChatList = () => {
+  const { t } = useTranslation();
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
