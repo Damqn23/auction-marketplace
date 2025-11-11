@@ -123,14 +123,14 @@ const MyBids = () => {
             sx={{
               width: "100%",
               height: 200,
-              backgroundColor: "#e0e0e0",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              backgroundColor: "#f4f4f4",
               borderRadius: "8px 8px 0 0",
             }}
           >
-            <Typography variant="caption">No image available</Typography>
+            <Typography variant="caption">{t('auction.noImageAvailable')}</Typography>
           </Box>
         )}
         <Typography
@@ -139,8 +139,8 @@ const MyBids = () => {
         >
           {item.title}
         </Typography>
-        <Typography variant="body1" sx={{ fontSize: "1rem", color: "#888" }}>
-          Current Bid: ${item.current_bid || "No bids yet"}
+        <Typography variant="body2" color="text.secondary">
+          <strong>{t('auction.currentBid')}:</strong> ${item.current_bid || t('auction.noBidsYetShort')}
         </Typography>
         {/* Display a colored label: green if winning, red if losing */}
         <Typography
@@ -155,7 +155,7 @@ const MyBids = () => {
             fontWeight: "bold",
           }}
         >
-          {isWinning ? "Winning" : "Losing"}
+          {isWinning ? t('myBidsPage.winning') : t('myBidsPage.losing')}
         </Typography>
         {/* For losing items, show a custom bid input and a real Bid button */}
         {!isWinning && (
@@ -186,7 +186,7 @@ const MyBids = () => {
                 },
               }}
             >
-              Bid
+              {t('myBidsPage.bidButton')}
             </Button>
           </Box>
         )}
@@ -202,7 +202,7 @@ const MyBids = () => {
     );
   if (isError)
     return (
-      <Typography sx={{ p: 2 }}>Failed to load bids.</Typography>
+      <Typography sx={{ p: 2 }}>{t('myBidsPage.failedToLoad')}</Typography>
     );
 
   return (
@@ -223,7 +223,7 @@ const MyBids = () => {
           color: "primary.main",
         }}
       >
-        My Bids
+        {t('myBids')}
       </Typography>
       <Button
         onClick={() => navigate("/my-bid-history")}
@@ -241,7 +241,7 @@ const MyBids = () => {
           "&:hover": { backgroundColor: "#125ea2" },
         }}
       >
-        View All Bid History
+        {t('myBidsPage.viewAllBidHistory')}
       </Button>
 
       {/* Winning Now Section */}
@@ -256,7 +256,7 @@ const MyBids = () => {
             pb: 0.5,
           }}
         >
-          Winning Now
+          {t('myBidsPage.winningNow')}
         </Typography>
         {data.winning_now.length > 0 ? (
           <Grid container spacing={2}>
@@ -276,7 +276,7 @@ const MyBids = () => {
               mt: 1,
             }}
           >
-            No current winning bids.
+            {t('myBidsPage.noWinningBids')}
           </Typography>
         )}
       </Box>
@@ -293,7 +293,7 @@ const MyBids = () => {
             pb: 0.5,
           }}
         >
-          Losing Now (You Can Bid)
+          {t('myBidsPage.losingNow')}
         </Typography>
         {data.losing_now.length > 0 ? (
           <Grid container spacing={2}>
@@ -313,7 +313,7 @@ const MyBids = () => {
               mt: 1,
             }}
           >
-            No current losing bids.
+            {t('myBidsPage.noLosingBids')}
           </Typography>
         )}
       </Box>

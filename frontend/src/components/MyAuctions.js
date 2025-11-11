@@ -99,7 +99,7 @@ const MyAuctions = () => {
       >
         <CircularProgress />
         <Typography variant="body1" color="textSecondary" sx={{ mt: 2 }}>
-          Loading your auctions...
+          {t('auction.loadingAuctions')}
         </Typography>
       </Box>
     );
@@ -112,7 +112,7 @@ const MyAuctions = () => {
           {error}
         </Typography>
         <Button variant="contained" onClick={fetchMyAuctionsData}>
-          Retry
+          {t('auction.retry')}
         </Button>
       </Box>
     );
@@ -140,7 +140,7 @@ const MyAuctions = () => {
           color: "primary.main",
         }}
       >
-        My Auctions
+        {t('myAuctions')}
       </Typography>
       {auctions.length > 0 ? (
         <>
@@ -186,7 +186,7 @@ const MyAuctions = () => {
                       }}
                     >
                       <Typography variant="body2" color="textSecondary">
-                        No image available
+                        {t('auction.noImageAvailable')}
                       </Typography>
                     </Box>
                   )}
@@ -215,7 +215,7 @@ const MyAuctions = () => {
                         color: auction.status === "active" ? "primary.main" : "error.main",
                       }}
                     >
-                      <strong>Status:</strong> {auction.status}
+                      <strong>{t('auction.just_status')}:</strong> {auction.status}
                     </Typography>
 
                     {auction.status === "closed" && auction.shipping_status === "not_shipped" && (
@@ -226,7 +226,7 @@ const MyAuctions = () => {
                         sx={{ mt: 1 }}
                         onClick={() => handleMarkShipped(auction.id)}
                       >
-                        Mark Shipped
+                        {t('auction.markShipped')}
                       </Button>
                     )}
 
@@ -246,7 +246,7 @@ const MyAuctions = () => {
                         },
                       }}
                     >
-                      View Auction
+                      {t('auction.viewAuction')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -264,7 +264,7 @@ const MyAuctions = () => {
         </>
       ) : (
         <Typography variant="body1" sx={{ mt: 3, textAlign: "center", color: "#777" }}>
-          You have not posted any auctions yet.
+          {t('auction.noAuctions')}
         </Typography>
       )}
     </Box>

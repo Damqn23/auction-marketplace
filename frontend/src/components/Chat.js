@@ -18,11 +18,11 @@ import {
 } from "../services/auctionService";
 import { UserContext } from "../contexts/UserContext";
 
-function formatMessageDate(timestamp) {
+function formatMessageDate(timestamp, t) {
   const messageDate = new Date(timestamp);
   const now = new Date();
   if (messageDate.toDateString() === now.toDateString()) {
-    return "Today";
+    return t("chat.today");
   }
   return messageDate.toLocaleDateString(undefined, { month: "long", day: "numeric" });
 }
@@ -156,7 +156,7 @@ const Chat = () => {
   if (loading) {
     return (
       <Box sx={{ textAlign: "center", mt: 4 }}>
-        <Typography>Loading chat...</Typography>
+        <Typography>{t("chat.loadingChat")}</Typography>
       </Box>
     );
   }
@@ -181,7 +181,7 @@ const Chat = () => {
           color: "primary.main",
         }}
       >
-        Your Chats
+        {t("chat.yourChats")}
       </Typography>
       
       {/* Top Bar */}
@@ -201,7 +201,7 @@ const Chat = () => {
             textShadow: "0 1px 2px rgba(0,0,0,0.2)",
           }}
         >
-          Chat with {ownerUsername}
+          {t("chat.chatWith")} {ownerUsername}
         </Typography>
       </Box>
 
@@ -221,7 +221,7 @@ const Chat = () => {
             variant="body1"
             sx={{ fontStyle: "italic", color: "#666", textAlign: "center", mt: 2 }}
           >
-            No messages yet.
+            {t("chat.noMessagesYet")}
           </Typography>
         ) : (
           messages.map((msg, index) => {
@@ -250,7 +250,7 @@ const Chat = () => {
                       fontWeight: "bold",
                     }}
                   >
-                    {formatMessageDate(msg.timestamp)}
+                    {formatMessageDate(msg.timestamp, t)}
                   </Typography>
                 )}
 
@@ -320,7 +320,7 @@ const Chat = () => {
             variant="body2"
             sx={{ fontStyle: "italic", color: "#666", mt: 1, textAlign: "left" }}
           >
-            {ownerUsername} is typing...
+            {ownerUsername} {t("chat.isTyping")}
           </Typography>
         )}
       </Box>

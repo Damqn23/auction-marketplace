@@ -70,7 +70,7 @@ const ChatList = () => {
           color: "primary.main",
         }}
       >
-        Messages
+        {t("chat.messages")}
       </Typography>
       <Paper
         elevation={3}
@@ -93,7 +93,7 @@ const ChatList = () => {
             textAlign: "center",
           }}
         >
-          Your Chats
+          {t("chat.yourChats")}
         </Typography>
         <Divider />
         <List
@@ -113,7 +113,7 @@ const ChatList = () => {
                 fontSize: "1rem",
               }}
             >
-              No conversations yet. Start chatting now!
+              {t("chat.noConversations")}
             </Typography>
           ) : (
             chats.map((chat, index) => (

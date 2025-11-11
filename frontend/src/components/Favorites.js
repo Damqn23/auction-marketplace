@@ -109,7 +109,7 @@ const Favorites = () => {
     if (!selectedItem) return;
     try {
       await buyNow(selectedItem.id);
-      toast.success("Purchase successful!");
+      toast.success(t('auction.toasts.purchaseSuccess'));
       closeBuyNowModal();
       fetchFavorites();
     } catch (error) {
@@ -148,7 +148,7 @@ const Favorites = () => {
           textShadow: '0 2px 4px rgba(0,0,0,0.05)',
         }}
       >
-        Favorite Items
+        {t('favorites')}
       </Typography>
 
       {favorites.length === 0 ? (
@@ -163,7 +163,7 @@ const Favorites = () => {
           }}
         >
           <Typography variant="body1">
-            No favorites yet.
+            {t('auction.noFavorites')}
           </Typography>
         </Box>
       ) : (
@@ -241,7 +241,7 @@ const Favorites = () => {
                       }}
                     >
                       <Typography variant="caption" color="textSecondary">
-                        No image
+                        {t('auction.noImage')}
                       </Typography>
                     </Box>
                   )}
@@ -265,11 +265,11 @@ const Favorites = () => {
                     </Typography>
                   )}
                   <Typography variant="body2" sx={{ mt: 1 }}>
-                    <strong>Current Bid:</strong>{" "}
-                    {item.current_bid ? `$${item.current_bid}` : "No bids yet"}
+                    <strong>{t('auction.currentBid')}:</strong>{" "}
+                    {item.current_bid ? `$${item.current_bid}` : t('auction.noBidsYetShort')}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Time Left:</strong> <CountdownTimer endTime={item.end_time} />
+                    <strong>{t('auction.timeLeft')}:</strong> <CountdownTimer endTime={item.end_time} />
                   </Typography>
                 </Box>
 

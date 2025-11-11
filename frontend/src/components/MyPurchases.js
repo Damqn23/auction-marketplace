@@ -52,7 +52,7 @@ const MyPurchases = () => {
         [];
 
       if (items.length === 0) {
-        toast.warn("No purchases found.");
+        toast.warn(t('auction.noPurchases'));
       }
       // Sort by newest purchase (using end_time)
       items.sort((a, b) => new Date(b.end_time) - new Date(a.end_time));
@@ -106,7 +106,7 @@ const MyPurchases = () => {
           {error}
         </Typography>
         <Button variant="contained" onClick={fetchPurchasedItems}>
-          Retry
+          {t('auction.retry')}
         </Button>
       </Box>
     );
@@ -115,7 +115,7 @@ const MyPurchases = () => {
   if (!Array.isArray(purchasedItems) || purchasedItems.length === 0) {
     return (
       <Typography variant="body1" align="center" sx={{ mt: 2 }}>
-        You have not purchased any items yet.
+        {t('auction.noPurchases')}
       </Typography>
     );
   }
@@ -152,7 +152,7 @@ const MyPurchases = () => {
           color: "primary.main",
         }}
       >
-        My Purchases
+        {t('myPurchases')}
       </Typography>
 
       <Box
@@ -166,7 +166,7 @@ const MyPurchases = () => {
       >
         <Link to="/" style={{ textDecoration: "none" }}>
           <Button variant="contained" color="primary">
-            Back to Auction List
+            {t('auction.backToAuctionList')}
           </Button>
         </Link>
       </Box>
@@ -233,29 +233,29 @@ const MyPurchases = () => {
                     {item.description}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Bought Price:</strong> $
+                    <strong>{t('auction.boughtPrice')}:</strong> $
                     {item.current_bid ? item.current_bid : item.buy_now_price}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Status:</strong> {item.status}
+                    <strong>{t('auction.status.active')}:</strong> {item.status}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Bought On:</strong>{" "}
+                    <strong>{t('auction.boughtOn')}:</strong>{" "}
                     {moment(item.end_time).format("MMMM Do YYYY, h:mm a")}
                   </Typography>
                   {item.owner?.username && (
                     <Typography variant="body2">
-                      <strong>Seller:</strong> {item.owner.username}
+                      <strong>{t('auction.seller')}:</strong> {item.owner.username}
                     </Typography>
                   )}
 
                   {item.buy_now_buyer && user && item.buy_now_buyer.id === user.id ? (
                     <Typography variant="body2" color="secondary" sx={{ mt: 1 }}>
-                      Purchased via Buy Now
+                      {t('auction.purchasedViaBuyNow')}
                     </Typography>
                   ) : (
                     <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-                      Won via Bidding
+                      {t('auction.wonViaBidding')}
                     </Typography>
                   )}
 
@@ -267,7 +267,7 @@ const MyPurchases = () => {
                       sx={{ mt: 1, mr: 1 }}
                       onClick={() => navigate(`/chat/${item.owner.username}`)}
                     >
-                      Chat
+                      {t('auction.chat')}
                     </Button>
                   )}
 
@@ -279,7 +279,7 @@ const MyPurchases = () => {
                       sx={{ mt: 1 }}
                       onClick={() => handleMarkReceived(item.id)}
                     >
-                      Mark Received
+                      {t('auction.markReceived')}
                     </Button>
                   )}
                 </CardContent>

@@ -16,6 +16,18 @@
   "myPurchases": "Покупки",
   "favorites": "Любими",
   "logout": "Изход",
+  "myBidsPage": {
+    "winningNow": "Печеля сега",
+    "losingNow": "Губя сега (Можеш да наддаваш)",
+    "noWinningBids": "Няма текущи печеливши оферти.",
+    "noLosingBids": "Няма текущи губещи оферти.",
+    "viewAllBidHistory": "Виж цялата история на офертите",
+    "winning": "Печеля",
+    "losing": "Губя",
+    "bidButton": "Наддавай",
+    "failedToLoad": "Неуспешно зареждане на офертите.",
+    "minBid": "Мин."
+  },
   "notificationsHeader": "Известия",
   "noNotifications": "Няма известия",
   "caughtUp": "Всичко е прегледано!",
@@ -165,6 +177,18 @@
     "similarProducts": "Подобни продукти",
     "noImage": "Няма изображение",
     "noImageAvailable": "Няма налично изображение.",
+    "noImageAvailableShort": "Няма налично изображение",
+    "noBidsYetShort": "Няма оферти",
+    "loadingBids": "Зареждане на офертите ти...",
+    "loadingAuctions": "Зареждане на аукционите ти...",
+    "retry": "Опитай отново",
+    "viewAuction": "Виж аукцион",
+    "boughtPrice": "Купена цена",
+    "boughtOn": "Закупен на",
+    "chat": "Чат",
+    "backToAuctionList": "Обратно към списъка с аукциони",
+    "purchasedViaBuyNow": "Закупен чрез Купи сега",
+    "wonViaBidding": "Спечелен чрез наддаване",
     "confirmBuyNow": "Сигурен ли си, че искаш да купиш този артикул сега?",
     "confirmDelete": "Сигурен ли си, че искаш да изтриеш този артикул?",
     "toasts": {
@@ -214,6 +238,7 @@
     "time": "Време",
     "beFirstToBid": "Бъдете първият, който прави оферта!",
     "invalidBid": "Моля, въведете валидна сума за оферта.",
+    "just_status": "Статус",
     "status": {
       "active": "Активен",
       "ended": "Приключил",
@@ -325,9 +350,17 @@
     }
   },
   "chat": {
-    "typePlaceholder": "Напишете съобщение...",
+    "typePlaceholder": "Напиши съобщение...",
     "send": "Изпрати",
-    "noMessages": "Все още няма съобщения",
-    "startConversation": "Започнете разговор!"
+    "noMessages": "Няма съобщения",
+    "startConversation": "Започни разговор!",
+    "yourChats": "Твоите чатове",
+    "chatWith": "Чат с",
+    "isTyping": "пише...",
+    "loadingChat": "Зареждане на чата...",
+    "today": "Днес",
+    "noMessagesYet": "Все още няма съобщения.",
+    "messages": "Съобщения",
+    "noConversations": "Все още няма разговори. Започни да чатиш сега!"
   }
 }
