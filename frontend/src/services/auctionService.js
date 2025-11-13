@@ -70,7 +70,7 @@ export const markAsReceived = async (id) => {
 export const getAuctionItem = async (id) => {
     try {
         console.log(`Fetching item with ID: ${id}`); // Debugging line
-        const response = await axiosInstance.get(`auction_items/${id}/`);
+        const response = await axiosInstance.get(`auction-items/${id}/`);
         return response.data;
     } catch (error) {
         throw error;

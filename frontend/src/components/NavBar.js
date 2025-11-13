@@ -442,6 +442,7 @@ const NavBar = ({ toggleColorMode, mode }) => {
                 borderColor: "rgba(255, 255, 255, 0.5)",
                 color: "#ffffff",
                 minWidth: 56,
+                width: 56,
                 "&:hover": {
                   borderColor: "#ffffff",
                   backgroundColor: "rgba(255, 255, 255, 0.1)",

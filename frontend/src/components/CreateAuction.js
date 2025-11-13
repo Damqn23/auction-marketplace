@@ -77,24 +77,24 @@ const CreateAuction = () => {
     if (activeStep === 0) {
       // Basic info validation
       if (!title || !description || !selectedCategory) {
-        setErrorMsg("Please fill out all required fields.");
+        setErrorMsg(t("createAuctionPage.errors.fillRequired"));
         return;
       }
     } else if (activeStep === 1) {
       // Pricing validation
       if (!startingBid || !duration) {
-        setErrorMsg("Please fill out the required pricing fields.");
+        setErrorMsg(t("createAuctionPage.errors.fillPricing"));
         return;
       }
       // If buyNowPrice is set, ensure it's higher than startingBid
       if (buyNowPrice && parseFloat(buyNowPrice) <= parseFloat(startingBid)) {
-        setErrorMsg("Buy Now price must be higher than the starting bid.");
+        setErrorMsg(t("createAuctionPage.errors.buyNowHigher"));
         return;
       }
     } else if (activeStep === 2) {
       // Condition & location validation
       if (!condition || !location) {
-        setErrorMsg("Please select condition and location.");
+        setErrorMsg(t("createAuctionPage.errors.selectConditionLocation"));
         return;
       }
       // images are optional, no check needed
@@ -151,7 +151,7 @@ const CreateAuction = () => {
       navigate("/"); // redirect to home or anywhere
     } catch (err) {
       console.error(err);
-      toast.error("Failed to create auction. Please try again.");
+      toast.error(t("createAuctionPage.errors.createFailed"));
     }
 
     setLoading(false);
@@ -211,7 +211,7 @@ const CreateAuction = () => {
               fullWidth
               required
             >
-              <MenuItem value="">-- Select Category --</MenuItem>
+              <MenuItem value="">{t("createAuctionPage.labels.selectCategory")}</MenuItem>
               {categories.map((cat) => (
                 <MenuItem key={cat.id} value={cat.id}>
                   {cat.name}
@@ -251,11 +251,11 @@ const CreateAuction = () => {
               required
               fullWidth
             >
-              <MenuItem value="1">1 Hour</MenuItem>
-              <MenuItem value="3">3 Hours</MenuItem>
-              <MenuItem value="6">6 Hours</MenuItem>
-              <MenuItem value="12">12 Hours</MenuItem>
-              <MenuItem value="24">24 Hours</MenuItem>
+              <MenuItem value="1">{t('createAuctionPage.labels.duration_1')}</MenuItem>
+              <MenuItem value="3">{t('createAuctionPage.labels.duration_3')}</MenuItem>
+              <MenuItem value="6">{t('createAuctionPage.labels.duration_6')}</MenuItem>
+              <MenuItem value="12">{t('createAuctionPage.labels.duration_12')}</MenuItem>
+              <MenuItem value="24">{t('createAuctionPage.labels.duration_24')}</MenuItem>
             </TextField>
           </Box>
         );
@@ -270,10 +270,10 @@ const CreateAuction = () => {
               fullWidth
               required
             >
-              <MenuItem value="">-- Select Condition --</MenuItem>
-              <MenuItem value="New">New</MenuItem>
-              <MenuItem value="Used">Used</MenuItem>
-              <MenuItem value="Refurbished">Refurbished</MenuItem>
+              <MenuItem value="">{t('createAuctionPage.labels.selectCondition')}</MenuItem>
+              <MenuItem value="New">{t('createAuctionPage.labels.new')}</MenuItem>
+              <MenuItem value="Used">{t('createAuctionPage.labels.used')}</MenuItem>
+              <MenuItem value="Refurbished">{t('createAuctionPage.labels.refurbished')}</MenuItem>
             </TextField>
             <TextField
               select
@@ -283,7 +283,7 @@ const CreateAuction = () => {
               fullWidth
               required
             >
-              <MenuItem value="">-- Select City --</MenuItem>
+              <MenuItem value="">{t('createAuctionPage.labels.selectCity')}</MenuItem>
               {cities.map((c) => (
                 <MenuItem key={c.city} value={c.city}>
                   {c.city}
@@ -292,10 +292,10 @@ const CreateAuction = () => {
             </TextField>
             <Box>
               <Typography variant="body1" sx={{ mb: 1 }}>
-                Upload Images (optional)
+                {t('createAuctionPage.labels.uploadImages')}
               </Typography>
               <Button variant="outlined" component="label">
-                Select Images
+                {t('createAuctionPage.labels.selectImages')}
                 <input
                   type="file"
                   accept="image/*"
@@ -309,7 +309,7 @@ const CreateAuction = () => {
               </Button>
               {images.length > 0 && (
                 <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                  {images.length} image(s) selected
+                  {images.length} {t('createAuctionPage.labels.imagesSelected')}
                 </Typography>
               )}
             </Box>
@@ -320,40 +320,40 @@ const CreateAuction = () => {
         return (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-              Review Your Auction
+              {t('createAuctionPage.review.title')}
             </Typography>
             <Divider />
             <Typography variant="body1">
-              <strong>Title:</strong> {title}
+              <strong>{t('createAuctionPage.labels.title')}:</strong> {title}
             </Typography>
             <Typography variant="body1">
-              <strong>Description:</strong> {description}
+              <strong>{t('createAuctionPage.labels.description')}:</strong> {description}
             </Typography>
             <Typography variant="body1">
-              <strong>Category:</strong>{" "}
+              <strong>{t('createAuctionPage.labels.category')}:</strong>{' '}
               {categories.find((cat) => cat.id === Number(selectedCategory))
-                ?.name || "(None)"}
+                ?.name || t('createAuctionPage.review.none')}
             </Typography>
             <Divider />
             <Typography variant="body1">
-              <strong>Starting Bid:</strong> ${startingBid}
+              <strong>{t('createAuctionPage.review.startingBid')}:</strong>{' '}${startingBid}
             </Typography>
             <Typography variant="body1">
-              <strong>Buy Now Price:</strong>{" "}
-              {buyNowPrice ? `$${buyNowPrice}` : "N/A"}
+              <strong>{t('createAuctionPage.review.buyNowPrice')}:</strong>{' '}
+              {buyNowPrice ? `$${buyNowPrice}` : t('common.unknown')}
             </Typography>
             <Typography variant="body1">
-              <strong>Duration (hrs):</strong> {duration}
+              <strong>{t('createAuctionPage.review.duration')}:</strong> {duration}
             </Typography>
             <Divider />
             <Typography variant="body1">
-              <strong>Condition:</strong> {condition}
+              <strong>{t('createAuctionPage.labels.condition')}:</strong> {condition || t('createAuctionPage.review.none')}
             </Typography>
             <Typography variant="body1">
-              <strong>Location:</strong> {location}
+              <strong>{t('createAuctionPage.labels.location')}:</strong> {location || t('createAuctionPage.review.none')}
             </Typography>
             <Typography variant="body1">
-              <strong>Images:</strong> {images.length} file(s) selected
+              <strong>{t('createAuctionPage.review.images')}:</strong> {images.length} {t('createAuctionPage.labels.imagesSelected')}
             </Typography>
           </Box>
         );
@@ -389,7 +389,7 @@ const CreateAuction = () => {
           variant="h4"
           sx={{ textAlign: "center", mb: 2, fontWeight: "bold" }}
         >
-          Create New Auction
+          {t('createAuctionPage.title')}
         </Typography>
 
         {/* Stepper */}
@@ -418,12 +418,12 @@ const CreateAuction = () => {
             onClick={handleBack}
             variant="outlined"
           >
-            Back
+            {t('createAuctionPage.actions.back')}
           </Button>
 
           {activeStep < steps.length - 1 ? (
             <Button variant="contained" onClick={handleNext}>
-              Next
+              {t('createAuctionPage.actions.next')}
             </Button>
           ) : (
             <Button
@@ -444,7 +444,7 @@ const CreateAuction = () => {
         {/* Back to Auction List */}
         <Box sx={{ mt: 2, textAlign: "center" }}>
           <Link to="/" style={{ textDecoration: "none", color: "#1976d2" }}>
-            Back to Auction List
+            {t('createAuctionPage.actions.backToList')}
           </Link>
         </Box>
       </Paper>

@@ -28,7 +28,6 @@
     "failedToLoad": "Failed to load bids.",
     "minBid": "Min"
   },
-  "notificationsHeader": "Notifications",
   "noNotifications": "No notifications",
   "caughtUp": "You're all caught up!",
   "balance": "Balance",
@@ -348,6 +347,23 @@
       "bg": "BG",
       "en": "EN"
     }
+  },
+  "depositPage": {
+    "title": "Deposit Funds",
+    "goBack": "Go back",
+    "amountLabel": "Amount (USD)",
+    "cardDetails": "Card Details",
+    "processing": "Processing...",
+    "completeDeposit": "Complete Deposit",
+    "depositSuccess": "Deposit successful! Check your new balance in the app.",
+    "errorOccurred": "An error occurred. Please try again.",
+    "securePayment": "Secure Payment",
+    "securePaymentBody": "Your payment information is encrypted and secure. We use industry-standard SSL encryption to protect your data.",
+    "depositGuidelinesTitle": "Deposit Guidelines",
+    "minimumDeposit": "Minimum deposit: $10",
+    "maximumDeposit": "Maximum deposit: $10,000",
+    "fundsAvailable": "Funds are available immediately after successful deposit",
+    "secureTransactions": "All transactions are secure and encrypted"
   },
   "chat": {
     "typePlaceholder": "Type a message...",

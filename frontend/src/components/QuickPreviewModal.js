@@ -49,7 +49,7 @@ const QuickPreviewModal = ({ open, onClose, item }) => {
         borderColor: 'divider'
       }}>
         <Typography variant="h6" component="div">
-          Quick Preview
+          {t('auction.quickPreview')}
         </Typography>
         <IconButton
           aria-label="close"
@@ -99,7 +99,7 @@ const QuickPreviewModal = ({ open, onClose, item }) => {
                 />
                 {item.buy_now_price && (
                   <Chip
-                    label="Buy Now Available"
+                    label={t('auction.buyNowAvailable')}
                     color="primary"
                     size="small"
                   />
@@ -123,7 +123,7 @@ const QuickPreviewModal = ({ open, onClose, item }) => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">
-                  Current Bid
+                  {t('auction.currentBid')}
                 </Typography>
                 <Typography variant="h5" color="primary">
                   ${item.current_bid || item.starting_bid}
@@ -131,7 +131,7 @@ const QuickPreviewModal = ({ open, onClose, item }) => {
               </Box>
               <Box>
                 <Typography variant="subtitle2" color="text.secondary" align="right">
-                  Time Left
+                  {t('auction.timeLeft')}
                 </Typography>
                 <CountdownTimer endTime={item.end_time} />
               </Box>
@@ -146,14 +146,14 @@ const QuickPreviewModal = ({ open, onClose, item }) => {
                 onClick={onClose}
                 fullWidth
               >
-                Close
+                {t('common.close')}
               </Button>
               <Button
                 variant="contained"
                 onClick={handleViewDetails}
                 fullWidth
               >
-                View Details
+                {t('common.viewDetails')}
               </Button>
             </Box>
           </Grid>

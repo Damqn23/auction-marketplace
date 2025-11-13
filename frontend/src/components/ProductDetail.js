@@ -214,9 +214,9 @@ const ProductDetails = () => {
 
   // ----- Loading/Error states -----
   if (isLoading)
-    return <Typography variant="body1" sx={{ p: 2 }}>Loading...</Typography>;
+    return <Typography variant="body1" sx={{ p: 2 }}>{t('common.loading')}</Typography>;
   if (isError || !auctionItem)
-    return <Typography variant="body1" sx={{ p: 2 }}>Failed to load auction item.</Typography>;
+    return <Typography variant="body1" sx={{ p: 2 }}>{t('auction.toasts.loadFailed')}</Typography>;
 
   // ----- Permissions -----
   const canBid =
@@ -244,18 +244,18 @@ const ProductDetails = () => {
   const handlePlaceBid = () => {
     const amount = parseFloat(bidAmount);
     if (isNaN(amount)) {
-      toast.error("Please enter a valid bid amount.");
+      toast.error(t('auction.invalidBid'));
       return;
     }
     if (amount < minRequiredBid) {
-      toast.error(`Bid must be at least $${minRequiredBid}.`);
+      toast.error(t('auction.toasts.bidFailed'));
       return;
     }
     bidMutation.mutate({ id: auctionItem.id, amount });
   };
 
   const handleBuyNow = () => {
-    if (window.confirm("Are you sure you want to buy this item now?")) {
+    if (window.confirm(t('auction.confirmBuyNow'))) {
       buyNowMutation.mutate(auctionItem.id);
     }
   };
@@ -267,7 +267,7 @@ const ProductDetails = () => {
   };
 
   return (
-    <Box sx={{ p: 3, backgroundColor: "#f7f7f7", minHeight: "100vh" }}>
+    <Box sx={{ pt: { xs: '88px', sm: '96px' }, p: 3, backgroundColor: "#f7f7f7", minHeight: "100vh" }}>
       <Fade in timeout={900}>
         <Box
           sx={{
@@ -302,7 +302,7 @@ const ProductDetails = () => {
                   sx={{ width: "100%", height: "auto", objectFit: "cover" }}
                 />
               ) : (
-                <Typography variant="body2">No image available.</Typography>
+                <Typography variant="body2">{t('auction.noImageAvailable')}</Typography>
               )}
             </Grid>
 
@@ -316,25 +316,25 @@ const ProductDetails = () => {
                 sx={{ color: "primary.main", fontWeight: "bold", mb: 2 }}
               >
                 {auctionItem.buy_now_price
-                  ? `Price: $${auctionItem.buy_now_price}`
+                  ? `${t('auction.price')}: $${auctionItem.buy_now_price}`
                   : auctionItem.current_bid
-                  ? `Current Bid: $${auctionItem.current_bid}`
-                  : `Starting Bid: $${auctionItem.starting_bid}`}
+                  ? `${t('auction.currentBid')}: $${auctionItem.current_bid}`
+                  : `${t('auction.startingBid')}: $${auctionItem.starting_bid}`}
               </Typography>
               <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                Category: {auctionItem.category_data?.name}
+                {t('auction.category')}: {auctionItem.category_data?.name}
               </Typography>
               <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                Condition: {auctionItem.condition}
+                {t('auction.condition')}: {auctionItem.condition}
               </Typography>
               <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                Location: {auctionItem.location}
+                {t('auction.location')}: {auctionItem.location}
               </Typography>
               <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                Seller: {auctionItem.owner?.username}
+                {t('auction.seller')}: {auctionItem.owner?.username}
               </Typography>
               <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                Time Remaining: <CountdownTimer endTime={auctionItem.end_time} />
+                {t('auction.timeRemaining')}: <CountdownTimer endTime={auctionItem.end_time} />
               </Typography>
 
               {/* Bid & Buy Buttons */}
@@ -344,27 +344,27 @@ const ProductDetails = () => {
                     type="number"
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
-                    label={`Min: $${minRequiredBid}`}
+                    label={`${t('auction.min')}: $${minRequiredBid}`}
                     size="small"
                     sx={{ width: 140 }}
                   />
                   <Button variant="contained" color="success" onClick={handlePlaceBid}>
-                    Bid
+                    {t('auction.bid')}
                   </Button>
                 </Box>
               )}
               {canBuyNow && (
                 <Button variant="contained" color="secondary" onClick={handleBuyNow} sx={{ mt: 2 }}>
-                  Buy Now for ${auctionItem.buy_now_price}
+                  {t('auction.buyNowFor')} ${auctionItem.buy_now_price}
                 </Button>
               )}
               {user?.username === auctionItem.owner?.username && (
                 <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
                   <Button variant="outlined" onClick={handleDelete}>
-                    Delete
+                    {t('auction.delete')}
                   </Button>
                   <Button variant="outlined" component={Link} to={`/update/${auctionItem.id}`}>
-                    Update
+                    {t('auction.update')}
                   </Button>
                 </Box>
               )}
@@ -374,7 +374,7 @@ const ProductDetails = () => {
           {/* Description Section */}
           <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2, borderColor: "#ddd" }}>
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
-              Description
+              {t('auction.description')}
             </Typography>
             <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
               {auctionItem.description || t("auction.noDescription")}
@@ -384,19 +384,19 @@ const ProductDetails = () => {
           {/* Bid History Section */}
           <Box sx={{ mb: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
-              Bid History
+              {t('auction.bidHistory')}
             </Typography>
             {auctionItem.bids && auctionItem.bids.length ? (
               <Box component="ul" sx={{ listStyle: "none", p: 0, m: 0 }}>
                 {auctionItem.bids.map((bid) => (
                   <Box key={bid.id} component="li" sx={{ py: 1, borderBottom: "1px solid #eee" }}>
-                    <strong>{bid.bidder?.username}</strong> bid ${bid.amount} on{" "}
+                    <strong>{bid.bidder?.username}</strong> {t('auction.bid').toLowerCase()} ${bid.amount} on{" "}
                     {moment(bid.timestamp).format("MMMM Do YYYY, h:mm:ss a")}
                   </Box>
                 ))}
               </Box>
             ) : (
-              <Typography variant="body2">No bids yet.</Typography>
+              <Typography variant="body2">{t('auction.noBidsYet')}</Typography>
             )}
           </Box>
 
@@ -404,7 +404,7 @@ const ProductDetails = () => {
           {similarAuctions && similarAuctions.length > 0 && (
             <Box sx={{ mt: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
-                Similar Products
+                {t('auction.similarProducts')}
               </Typography>
               <Box
                 sx={{
@@ -445,7 +445,7 @@ const ProductDetails = () => {
                           justifyContent: "center",
                         }}
                       >
-                        <Typography variant="caption">No image</Typography>
+                        <Typography variant="caption">{t('auction.noImage')}</Typography>
                       </Box>
                     )}
                     <CardContent>

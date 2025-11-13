@@ -82,12 +82,12 @@ function DepositForm() {
         console.error(error);
         setMessage(error.message);
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        setMessage('Deposit successful! Check your new balance in the app.');
+        setMessage(t('depositPage.depositSuccess'));
         setTimeout(() => navigate('/'), 2000);
       }
     } catch (err) {
       console.error(err);
-      setMessage('An error occurred. Please try again.');
+      setMessage(t('depositPage.errorOccurred'));
     }
     setLoading(false);
   };
@@ -115,7 +115,7 @@ function DepositForm() {
             </IconButton>
           </Tooltip>
           <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-            Deposit Funds
+            {t('depositPage.title')}
           </Typography>
         </Box>
 
@@ -134,7 +134,7 @@ function DepositForm() {
             >
               <Box component="form" onSubmit={handleSubmit}>
                 <TextField
-                  label="Amount (USD)"
+                  label={t('depositPage.amountLabel')}
                   type="number"
                   fullWidth
                   value={amount}
@@ -159,7 +159,7 @@ function DepositForm() {
                   }}
                 >
                   <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
-                    Card Details
+                    {t('depositPage.cardDetails')}
                   </Typography>
                   <CardElement options={CARD_ELEMENT_OPTIONS} />
                 </Box>
@@ -181,7 +181,7 @@ function DepositForm() {
                     },
                   }}
                 >
-                  {loading ? 'Processing...' : 'Complete Deposit'}
+                  {loading ? t('depositPage.processing') : t('depositPage.completeDeposit')}
                 </Button>
                 {message && (
                   <Alert 
@@ -219,11 +219,11 @@ function DepositForm() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                   <SecurityIcon color="primary" />
                   <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    Secure Payment
+                    {t('depositPage.securePayment')}
                   </Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary" paragraph>
-                  Your payment information is encrypted and secure. We use industry-standard SSL encryption to protect your data.
+                  {t('depositPage.securePaymentBody')}
                 </Typography>
               </Paper>
 
@@ -238,20 +238,20 @@ function DepositForm() {
                 }}
               >
                 <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
-                  Deposit Guidelines
+                  {t('depositPage.depositGuidelinesTitle')}
                 </Typography>
                 <Box component="ul" sx={{ pl: 2, '& li': { mb: 1 } }}>
                   <Typography component="li" variant="body2" color="text.secondary">
-                    Minimum deposit: $10
+                    {t('depositPage.minimumDeposit')}
                   </Typography>
                   <Typography component="li" variant="body2" color="text.secondary">
-                    Maximum deposit: $10,000
+                    {t('depositPage.maximumDeposit')}
                   </Typography>
                   <Typography component="li" variant="body2" color="text.secondary">
-                    Funds are available immediately after successful deposit
+                    {t('depositPage.fundsAvailable')}
                   </Typography>
                   <Typography component="li" variant="body2" color="text.secondary">
-                    All transactions are secure and encrypted
+                    {t('depositPage.secureTransactions')}
                   </Typography>
                 </Box>
               </Paper>

@@ -345,16 +345,16 @@ const AuctionList = () => {
           </Typography>
         </Box>
         <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
-          <InputLabel>Sort By</InputLabel>
+          <InputLabel>{t('filters.sortBy')}</InputLabel>
           <Select
             value={sortBy}
             onChange={handleSortChange}
             label={t("filters.sortBy")} startAdornment={<SortIcon sx={{ mr: 1, color: 'text.secondary' }} />}
           >
-            <MenuItem value="newest">Newest First</MenuItem>
-            <MenuItem value="ending_soon">Ending Soon</MenuItem>
-            <MenuItem value="highest_bid">Highest Bid</MenuItem>
-            <MenuItem value="lowest_price">Lowest Price</MenuItem>
+            <MenuItem value="newest">{t('filters.sort.newest')}</MenuItem>
+            <MenuItem value="ending_soon">{t('filters.sort.endingSoon')}</MenuItem>
+            <MenuItem value="highest_bid">{t('filters.sort.highestBid')}</MenuItem>
+            <MenuItem value="lowest_price">{t('filters.sort.lowestPrice')}</MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -439,7 +439,7 @@ const AuctionList = () => {
                           <Box sx={{ width: '100%' }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                               <Typography variant="subtitle2" color="text.secondary">
-                                Current Bid
+                                {t('auction.currentBid')}
                               </Typography>
                               <Typography variant="h6" color="primary">
                                 ${item.current_bid || item.starting_bid}
@@ -467,7 +467,7 @@ const AuctionList = () => {
                                   }}
                                   disabled={bidMutation.isLoading}
                                 >
-                                  Bid
+                                  {t('auction.bid')}
                                 </Button>
                               )}
                               {canBuyNow && (
@@ -479,7 +479,7 @@ const AuctionList = () => {
                                     openBuyNowModal(item);
                                   }}
                                 >
-                                  Buy Now
+                                  {t('auction.buyNow')}
                                 </Button>
                               )}
                             </Box>
