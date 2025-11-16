@@ -28,9 +28,16 @@
     "failedToLoad": "Failed to load bids.",
     "minBid": "Min"
   },
+  "notificationsHeader": "Notifications",
   "noNotifications": "No notifications",
   "caughtUp": "You're all caught up!",
   "balance": "Balance",
+  "notificationMessages": {
+    "auctionEnded": "Auction Ended",
+    "newBidPlaced": "New bid placed on \"{{item}}\"",
+    "bidIncreased": "Bid increased on \"{{item}}\"",
+    "outbid": "You have been outbid on \"{{item}}\""
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",

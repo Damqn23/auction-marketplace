@@ -39,8 +39,8 @@ const BidHistory = () => {
       setBids(sortedBids);
       setLoading(false);
     } catch (err) {
-      setError("Failed to load bid history.");
-      toast.error("Failed to load bid history.");
+      setError(t("myBidsPage.failedToLoad"));
+      toast.error(t("myBidsPage.failedToLoad"));
       setLoading(false);
     }
   };
@@ -70,7 +70,7 @@ const BidHistory = () => {
   if (bids.length === 0) {
     return (
       <Typography variant="body1" sx={{ textAlign: "center", mt: 2, color: "grey.600" }}>
-        No bids placed yet.
+        {t('auction.noBids')}
       </Typography>
     );
   }
@@ -100,7 +100,7 @@ const BidHistory = () => {
       }}
     >
       <Typography variant="h4" sx={{ mb: 3, textAlign: "center" }}>
-        My Bids
+        {t('myBids')}
       </Typography>
       {sortedDates.map((date) => (
         <Box key={date} sx={{ mb: 3 }}>
@@ -133,13 +133,13 @@ const BidHistory = () => {
             >
               <CardContent>
                 <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
-                  <strong>Bid on:</strong> {bid.auction_item}
+                  <strong>{t('auction.item')}:</strong> {bid.auction_item}
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 0.5 }}>
-                  <strong>Amount:</strong> ${bid.amount}
+                  <strong>{t('auction.amount')}:</strong> ${bid.amount}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Time:</strong>{" "}
+                  <strong>{t('auction.time')}:</strong>{" "}
                   {moment(bid.timestamp).format("h:mm:ss a")}
                 </Typography>
               </CardContent>

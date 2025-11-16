@@ -281,6 +281,28 @@ const NavBar = ({ toggleColorMode, mode }) => {
     setNotificationsAnchor(null);
   };
 
+  // Function to translate notification titles
+  const translateNotificationTitle = (title) => {
+    // Pattern matching for different notification types
+    if (title === "Auction Ended") {
+      return t("notificationMessages.auctionEnded");
+    }
+    if (title.startsWith("New bid placed on")) {
+      const itemName = title.match(/New bid placed on "(.+)"/)?.[1] || "";
+      return t("notificationMessages.newBidPlaced", { item: itemName });
+    }
+    if (title.startsWith("Bid increased on")) {
+      const itemName = title.match(/Bid increased on "(.+)"/)?.[1] || "";
+      return t("notificationMessages.bidIncreased", { item: itemName });
+    }
+    if (title.startsWith("You have been outbid on")) {
+      const itemName = title.match(/You have been outbid on "(.+)"/)?.[1] || "";
+      return t("notificationMessages.outbid", { item: itemName });
+    }
+    // Return original title if no pattern matches
+    return title;
+  };
+
   return (
     <AppBar
       position="fixed"
@@ -721,7 +743,7 @@ const NavBar = ({ toggleColorMode, mode }) => {
           notifications.map((notification) => (
             <MenuItem key={notification.id}>
               <ListItemText
-                primary={notification.title}
+                primary={translateNotificationTitle(notification.title)}
                 secondary={moment(notification.created_at).fromNow()}
                 primaryTypographyProps={{
                   fontWeight: notification.is_read ? 'normal' : 'bold',

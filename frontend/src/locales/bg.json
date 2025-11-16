@@ -32,6 +32,12 @@
   "noNotifications": "Няма известия",
   "caughtUp": "Всичко е прегледано!",
   "balance": "Баланс",
+  "notificationMessages": {
+    "auctionEnded": "Аукционът приключи",
+    "newBidPlaced": "Нова оферта за \"{{item}}\"",
+    "bidIncreased": "Оферта увеличена за \"{{item}}\"",
+    "outbid": "Надбит сте за \"{{item}}\""
+  },
   "common": {
     "loading": "Зареждане...",
     "error": "Грешка",
