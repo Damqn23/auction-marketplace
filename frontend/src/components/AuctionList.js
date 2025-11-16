@@ -36,6 +36,12 @@ import { getAllAuctionItems, placeBid, buyNow, searchAuctionItems } from "../ser
 import { getAllCategories } from "../services/categoryService";
 import { UserContext } from "../contexts/UserContext";
 import { useTranslation } from 'react-i18next';
+import {
+  calculateMinBid,
+  canUserBid,
+  canUserBuyNow,
+  validateBidAmount,
+} from "../utils/biddingUtils";
 
 import CountdownTimer from "./CountdownTimer";
 import BuyNowModal from "./BuyNowModal";
@@ -141,13 +147,19 @@ const AuctionList = () => {
     },
   });
 
-  const handlePlaceBid = (auctionId) => {
-    const amount = parseFloat(bidAmounts[auctionId]);
-    if (isNaN(amount)) {
-      toast.error(t("auction.toasts.invalidBid"));
+  const handlePlaceBid = (auctionId, minRequired) => {
+    const validation = validateBidAmount(bidAmounts[auctionId], minRequired);
+    
+    if (!validation.valid) {
+      if (validation.error === 'invalidBid') {
+        toast.error(t("auction.toasts.invalidBid"));
+      } else if (validation.error === 'bidTooLow') {
+        toast.error(`${t("auction.toasts.bidFailed")} Min: $${validation.minRequired}`);
+      }
       return;
     }
-    bidMutation.mutate({ id: auctionId, amount });
+    
+    bidMutation.mutate({ id: auctionId, amount: parseFloat(bidAmounts[auctionId]) });
   };
 
   const buyNowMutation = useMutation({
@@ -365,12 +377,9 @@ const AuctionList = () => {
           {auctionItems.pages.map((page, pageIndex) => (
             <React.Fragment key={pageIndex}>
               {page.items?.map((item, index) => {
-                const isNotOwner = user && item.owner && user.username !== item.owner.username;
-                const canBid = isNotOwner && item.status === "active" && !item.buy_now_buyer;
-                const canBuyNow = isNotOwner && item.status === "active" && item.buy_now_price && !item.buy_now_buyer;
-                const minBid = item.current_bid ? parseFloat(item.current_bid) : parseFloat(item.starting_bid);
-                const minIncrement = minBid * 0.02;
-                const minRequiredBid = (minBid + minIncrement).toFixed(2);
+                const canBid = canUserBid(user, item);
+                const canBuyNow = canUserBuyNow(user, item);
+                const minRequiredBid = calculateMinBid(item);
                 const isLastElement = pageIndex === auctionItems.pages.length - 1 && index === page.items.length - 1;
 
                 return (
@@ -463,7 +472,7 @@ const AuctionList = () => {
                                   variant="contained"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handlePlaceBid(item.id);
+                                    handlePlaceBid(item.id, minRequiredBid);
                                   }}
                                   disabled={bidMutation.isLoading}
                                 >

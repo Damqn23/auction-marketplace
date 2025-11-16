@@ -4,6 +4,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import moment from "moment";
 import { toast } from "react-toastify";
 import { useTranslation } from 'react-i18next';
+import {
+  calculateMinBid,
+  canUserBid,
+  canUserBuyNow,
+  validateBidAmount,
+  getCurrentBidAmount,
+} from "../utils/biddingUtils";
 
 import {
   Box,
@@ -219,39 +226,26 @@ const ProductDetails = () => {
     return <Typography variant="body1" sx={{ p: 2 }}>{t('auction.toasts.loadFailed')}</Typography>;
 
   // ----- Permissions -----
-  const canBid =
-    user &&
-    auctionItem.owner &&
-    user.username !== auctionItem.owner.username &&
-    auctionItem.status === "active" &&
-    !auctionItem.buy_now_buyer;
-  const canBuyNow =
-    user &&
-    auctionItem.owner &&
-    user.username !== auctionItem.owner.username &&
-    auctionItem.status === "active" &&
-    auctionItem.buy_now_price &&
-    !auctionItem.buy_now_buyer;
+  const canBid = canUserBid(user, auctionItem);
+  const canBuyNow = canUserBuyNow(user, auctionItem);
 
   // ----- Minimum Bid Logic -----
-  const minBid = auctionItem.current_bid
-    ? parseFloat(auctionItem.current_bid)
-    : parseFloat(auctionItem.starting_bid);
-  const minIncrement = minBid * 0.02;
-  const minRequiredBid = (minBid + minIncrement).toFixed(2);
+  const minRequiredBid = calculateMinBid(auctionItem);
 
   // ----- Handlers -----
   const handlePlaceBid = () => {
-    const amount = parseFloat(bidAmount);
-    if (isNaN(amount)) {
-      toast.error(t('auction.invalidBid'));
+    const validation = validateBidAmount(bidAmount, minRequiredBid);
+    
+    if (!validation.valid) {
+      if (validation.error === 'invalidBid') {
+        toast.error(t('auction.invalidBid'));
+      } else if (validation.error === 'bidTooLow') {
+        toast.error(t('auction.toasts.bidFailed'));
+      }
       return;
     }
-    if (amount < minRequiredBid) {
-      toast.error(t('auction.toasts.bidFailed'));
-      return;
-    }
-    bidMutation.mutate({ id: auctionItem.id, amount });
+    
+    bidMutation.mutate({ id: auctionItem.id, amount: parseFloat(bidAmount) });
   };
 
   const handleBuyNow = () => {

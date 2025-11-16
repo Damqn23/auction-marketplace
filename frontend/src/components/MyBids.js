@@ -16,6 +16,10 @@ import axios from "axios";
 import CountdownTimer from "./CountdownTimer";
 import FavoriteButton from "./FavoriteButton";
 import { useTranslation } from 'react-i18next';
+import {
+  calculateMinBid,
+  validateBidAmount,
+} from "../utils/biddingUtils";
 
 const fadeIn = keyframes`
   from { opacity: 0; }
@@ -64,16 +68,18 @@ const MyBids = () => {
   });
 
   const handlePlaceBid = (auctionId, minRequiredBid) => {
-    const amount = parseFloat(bidAmounts[auctionId]);
-    if (isNaN(amount)) {
-      toast.error(t("auction.invalidBid"));
+    const validation = validateBidAmount(bidAmounts[auctionId], minRequiredBid);
+    
+    if (!validation.valid) {
+      if (validation.error === 'invalidBid') {
+        toast.error(t("auction.invalidBid"));
+      } else if (validation.error === 'bidTooLow') {
+        toast.error(`Bid must be at least $${validation.minRequired}`);
+      }
       return;
     }
-    if (amount < minRequiredBid) {
-      toast.error(`Bid must be at least $${minRequiredBid}`);
-      return;
-    }
-    bidMutation.mutate({ id: auctionId, amount });
+    
+    bidMutation.mutate({ id: auctionId, amount: parseFloat(bidAmounts[auctionId]) });
   };
 
   const navigateToAuction = (id) => {
@@ -82,12 +88,8 @@ const MyBids = () => {
 
   // Render a bid card for each auction item in either "winning" or "losing" state.
   const renderBidCard = (item, isWinning) => {
-    // Calculate minimum bid value: if there's a current bid, use that; otherwise, use starting bid.
-    const minBidValue = item.current_bid
-      ? parseFloat(item.current_bid)
-      : parseFloat(item.starting_bid);
-    const minIncrement = minBidValue * 0.02;
-    const minRequiredBid = (minBidValue + minIncrement).toFixed(2);
+    // Calculate minimum required bid using utility
+    const minRequiredBid = calculateMinBid(item);
 
     return (
       <Box

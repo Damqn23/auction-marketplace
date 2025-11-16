@@ -18,6 +18,12 @@ import BuyNowModal from "./BuyNowModal"; // Same modal used in AuctionList
 import { placeBid, buyNow } from "../services/auctionService";
 import { UserContext } from "../contexts/UserContext";
 import { useTranslation } from 'react-i18next';
+import {
+  calculateMinBid,
+  canUserBid,
+  canUserBuyNow,
+  validateBidAmount,
+} from "../utils/biddingUtils";
 
 /**
  * Helper: get image from item (similar to AuctionList logic).
@@ -76,14 +82,20 @@ const Favorites = () => {
 
   // ----- Bidding & Buy Now logic (similar to AuctionList) -----
 
-  const handlePlaceBid = async (itemId) => {
-    const amount = parseFloat(bidAmounts[itemId]);
-    if (isNaN(amount)) {
-      toast.error("Please enter a valid bid amount.");
+  const handlePlaceBid = async (itemId, minRequired) => {
+    const validation = validateBidAmount(bidAmounts[itemId], minRequired);
+    
+    if (!validation.valid) {
+      if (validation.error === 'invalidBid') {
+        toast.error("Please enter a valid bid amount.");
+      } else if (validation.error === 'bidTooLow') {
+        toast.error(`Bid must be at least $${validation.minRequired}`);
+      }
       return;
     }
+    
     try {
-      await placeBid({ id: itemId, amount });
+      await placeBid({ id: itemId, amount: parseFloat(bidAmounts[itemId]) });
       toast.success("Bid placed successfully!");
       // Clear input and refresh favorites
       setBidAmounts({ ...bidAmounts, [itemId]: "" });
@@ -172,18 +184,12 @@ const Favorites = () => {
             const item = fav.auction_item;
             const imageUrl = getAuctionImage(item);
 
-            // If user is logged in, check ownership
-            const isNotOwner = user && item.owner && user.username !== item.owner.username;
-            const canBid = isNotOwner && item.status === "active" && !item.buy_now_buyer;
-            const canBuyNow =
-              isNotOwner && item.status === "active" && item.buy_now_price && !item.buy_now_buyer;
+            // Use utility functions for permission checks
+            const canBid = canUserBid(user, item);
+            const canBuyNow = canUserBuyNow(user, item);
 
-            // Minimum bid logic
-            const minBid = item.current_bid
-              ? parseFloat(item.current_bid)
-              : parseFloat(item.starting_bid);
-            const minIncrement = minBid * 0.02;
-            const minRequiredBid = (minBid + minIncrement).toFixed(2);
+            // Calculate minimum bid using utility
+            const minRequiredBid = calculateMinBid(item);
 
             return (
               <Box
@@ -333,7 +339,7 @@ const Favorites = () => {
                       />
                       <Button
                         variant="contained"
-                        onClick={() => handlePlaceBid(item.id)}
+                        onClick={() => handlePlaceBid(item.id, minRequiredBid)}
                         sx={{
                           backgroundColor: "#2e7d32",
                           color: "#fff",
